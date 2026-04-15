@@ -2,33 +2,34 @@
 
 Base URL: `/api/v1/resorts`
 
-Resorts are the core entities of the application. Each resort belongs to a country and optionally a city. All records support soft-delete — deleted records are hidden from all responses.
+Resorts are the core entities of the application. Each resort belongs to a country and optionally a city. All records
+support soft-delete — deleted records are hidden from all responses.
 
 ---
 
 ## Endpoints
 
-| Method | Path                     | Description      |
-|--------|--------------------------|------------------|
-| POST   | `/api/v1/resorts`        | Create a resort  |
-| GET    | `/api/v1/resorts`        | List all resorts |
-| GET    | `/api/v1/resorts/{id}`   | Get a resort     |
-| PUT    | `/api/v1/resorts/{id}`   | Update a resort  |
-| DELETE | `/api/v1/resorts/{id}`   | Delete a resort  |
+| Method | Path                   | Description      |
+|--------|------------------------|------------------|
+| POST   | `/api/v1/resorts`      | Create a resort  |
+| GET    | `/api/v1/resorts`      | List all resorts |
+| GET    | `/api/v1/resorts/{id}` | Get a resort     |
+| PUT    | `/api/v1/resorts/{id}` | Update a resort  |
+| DELETE | `/api/v1/resorts/{id}` | Delete a resort  |
 
 ---
 
-## Data Model
+## Data Modely
 
-| Field           | Type   | Required | Max Length | Description                               |
-|-----------------|--------|----------|------------|-------------------------------------------|
-| `name`          | String | Yes      | 255        | Display name of the resort                |
-| `description`   | String | Yes      | unlimited  | Full description of the resort            |
-| `address`       | String | No       | unlimited  | Physical address                          |
-| `country_id`    | Long   | Yes      | —          | ID of the associated country              |
-| `city_id`       | Long   | No       | —          | ID of the associated city                 |
-| `contact_email` | String | No       | 255        | Contact email address                     |
-| `contact_phone` | String | No       | 50         | Contact phone number                      |
+| Field           | Type   | Required | Max Length | Description                    |
+|-----------------|--------|----------|------------|--------------------------------|
+| `name`          | String | Yes      | 255        | Display name of the resort     |
+| `description`   | String | Yes      | unlimited  | Full description of the resort |
+| `address`       | String | No       | unlimited  | Physical address               |
+| `country_id`    | Long   | Yes      | —          | ID of the associated country   |
+| `city_id`       | Long   | Yes      | —          | ID of the associated city      |
+| `contact_email` | String | No       | 255        | Contact email address          |
+| `contact_phone` | String | No       | 50         | Contact phone number           |
 
 ---
 
@@ -235,9 +236,9 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                              |
-|-------------|----------------------------|----------------------------------------------------|
-| 400         | `INVALID_ARGUMENT`         | Invalid sort field or bad request data             |
+| HTTP Status | Error Code                 | Cause                                                  |
+|-------------|----------------------------|--------------------------------------------------------|
+| 400         | `INVALID_ARGUMENT`         | Invalid sort field or bad request data                 |
 | 404         | `ENTITY_NOT_FOUND`         | Resort not found, or referenced country/city not found |
-| 409         | `DATA_INTEGRITY_VIOLATION` | Constraint violation                               |
-| 500         | `INTERNAL_SERVER_ERROR`    | Unexpected server error                            |
+| 409         | `DATA_INTEGRITY_VIOLATION` | Constraint violation                                   |
+| 500         | `INTERNAL_SERVER_ERROR`    | Unexpected server error                                |

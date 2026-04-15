@@ -1,5 +1,6 @@
 package com.example.resortbackendapplication1.repository;
 
+import com.example.resortbackendapplication1.auth.model.enitty.UserEntity;
 import com.example.resortbackendapplication1.model.entity.ResortEntity;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
@@ -14,6 +15,14 @@ public interface ResortRepository extends JpaRepository<@NonNull ResortEntity, @
     <T> Page<@NonNull T> findAllByIsActiveAndIsDeleted(
             boolean isActive,
             boolean isDeleted,
+            Pageable pageable,
+            Class<T> type
+    );
+
+    <T> Page<@NonNull T> findAllByIsActiveAndIsDeletedAndUserResortAccessesEntities_UserEntity(
+            boolean isActive,
+            boolean isDeleted,
+            UserEntity userEntity,
             Pageable pageable,
             Class<T> type
     );

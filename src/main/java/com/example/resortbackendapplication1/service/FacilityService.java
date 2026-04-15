@@ -9,6 +9,9 @@ import com.example.resortbackendapplication1.model.dto.FacilityDto;
 import com.example.resortbackendapplication1.model.entity.FacilityEntity;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
+import java.util.Set;
+
 public interface FacilityService {
 
     SuccessResponse createFacility(CreateFacilityRequest request);
@@ -22,4 +25,6 @@ public interface FacilityService {
     SuccessResponse updateFacility(Long id, UpdateFacilityRequest request);
 
     SuccessResponse deleteFacility(Long id);
+
+    List<FacilityEntity> getFacilityEntities(Set<Long> ids);
 }

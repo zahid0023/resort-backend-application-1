@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -48,4 +50,8 @@ public class ResortEntity extends AuditableEntity {
     @Size(max = 50)
     @Column(name = "contact_phone", length = 50)
     private String contactPhone;
+
+    @OneToMany(mappedBy = "resortEntity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<UserResortAccessEntity> userResortAccessesEntities = new LinkedHashSet<>();
+
 }

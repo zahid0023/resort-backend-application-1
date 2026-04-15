@@ -1,26 +1,35 @@
 package com.example.resortbackendapplication1.model.mapper;
 
+import com.example.resortbackendapplication1.auth.model.enitty.UserEntity;
 import com.example.resortbackendapplication1.dto.request.resorts.CreateResortRequest;
 import com.example.resortbackendapplication1.dto.request.resorts.UpdateResortRequest;
 import com.example.resortbackendapplication1.model.dto.ResortDto;
 import com.example.resortbackendapplication1.model.entity.CityEntity;
 import com.example.resortbackendapplication1.model.entity.CountryEntity;
+import com.example.resortbackendapplication1.model.entity.ResortAccessTypeEntity;
 import com.example.resortbackendapplication1.model.entity.ResortEntity;
+import com.example.resortbackendapplication1.model.entity.UserResortAccessEntity;
 import lombok.experimental.UtilityClass;
 
+import java.util.Set;
 import java.util.UUID;
 
 @UtilityClass
 public class ResortMapper {
 
-    public static ResortEntity fromRequest(CreateResortRequest request, CountryEntity country, CityEntity city) {
+    public static ResortEntity fromRequest(CreateResortRequest request,
+                                           UserEntity userEntity,
+                                           ResortAccessTypeEntity resortAccessTypeEntity,
+                                           CountryEntity countryEntity,
+                                           CityEntity cityEntity) {
         ResortEntity entity = new ResortEntity();
+        entity.setUserResortAccessesEntities(Set.of(toUserAccessEntity(entity, userEntity, resortAccessTypeEntity)));
         entity.setUuid(UUID.randomUUID());
         entity.setName(request.getName());
         entity.setDescription(request.getDescription() != null ? request.getDescription() : "");
         entity.setAddress(request.getAddress());
-        entity.setCountryEntity(country);
-        entity.setCityEntity(city);
+        entity.setCountryEntity(countryEntity);
+        entity.setCityEntity(cityEntity);
         entity.setContactEmail(request.getContactEmail());
         entity.setContactPhone(request.getContactPhone());
         return entity;
@@ -34,6 +43,16 @@ public class ResortMapper {
         if (city != null) entity.setCityEntity(city);
         if (request.getContactEmail() != null) entity.setContactEmail(request.getContactEmail());
         if (request.getContactPhone() != null) entity.setContactPhone(request.getContactPhone());
+    }
+
+    private static UserResortAccessEntity toUserAccessEntity(ResortEntity resortEntity,
+                                                             UserEntity userEntity,
+                                                             ResortAccessTypeEntity accessTypeEntity) {
+        UserResortAccessEntity entity = new UserResortAccessEntity();
+        entity.setResortEntity(resortEntity);
+        entity.setUserEntity(userEntity);
+        entity.setAccessTypeEntity(accessTypeEntity);
+        return entity;
     }
 
     public static ResortDto toDto(ResortEntity entity) {

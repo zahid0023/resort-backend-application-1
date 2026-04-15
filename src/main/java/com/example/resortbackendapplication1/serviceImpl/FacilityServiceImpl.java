@@ -20,6 +20,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.example.resortbackendapplication1.utils.EntityLookup;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 @Service
 @Slf4j
 public class FacilityServiceImpl implements FacilityService {
@@ -79,5 +85,12 @@ public class FacilityServiceImpl implements FacilityService {
         entity.setIsActive(false);
         facilityRepository.save(entity);
         return new SuccessResponse(true, id);
+    }
+
+    @Override
+    public List<FacilityEntity> getFacilityEntities(Set<Long> ids) {
+        List<FacilityEntity> facilityEntities = facilityRepository.findAllByIdInAndIsActiveAndIsDeleted(ids, true, false);
+        Map<Long, FacilityEntity> map = EntityLookup.validateAndMap(ids, facilityEntities, FacilityEntity::getId, "Facility");
+        return List.copyOf(map.values());
     }
 }

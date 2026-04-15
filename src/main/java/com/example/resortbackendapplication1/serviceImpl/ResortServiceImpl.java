@@ -1,7 +1,6 @@
 package com.example.resortbackendapplication1.serviceImpl;
 
 import com.example.resortbackendapplication1.auth.model.enitty.UserEntity;
-import com.example.resortbackendapplication1.auth.service.UserService;
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.dto.request.resorts.CreateResortRequest;
@@ -15,7 +14,6 @@ import com.example.resortbackendapplication1.repository.ResortRepository;
 import com.example.resortbackendapplication1.repository.UserResortAccessRepository;
 import com.example.resortbackendapplication1.service.CityService;
 import com.example.resortbackendapplication1.service.CountryService;
-import com.example.resortbackendapplication1.service.ResortAccessTypeService;
 import com.example.resortbackendapplication1.service.ResortService;
 import com.example.resortbackendapplication1.utils.Pagination;
 import jakarta.persistence.EntityNotFoundException;
@@ -31,49 +29,29 @@ import org.springframework.transaction.annotation.Transactional;
 public class ResortServiceImpl implements ResortService {
 
     private final ResortRepository resortRepository;
-    private final UserResortAccessRepository userResortAccessRepository;
-    private final UserService userService;
     private final CountryService countryService;
     private final CityService cityService;
-    private final ResortAccessTypeService resortAccessTypeService;
 
     public ResortServiceImpl(
             ResortRepository resortRepository,
-            UserResortAccessRepository userResortAccessRepository,
-            UserService userService,
             CountryService countryService,
-            CityService cityService,
-            ResortAccessTypeService resortAccessTypeService
+            CityService cityService
     ) {
         this.resortRepository = resortRepository;
-        this.userResortAccessRepository = userResortAccessRepository;
-        this.userService = userService;
         this.countryService = countryService;
         this.cityService = cityService;
-        this.resortAccessTypeService = resortAccessTypeService;
     }
 
     @Override
     @Transactional
-    public SuccessResponse createResort(CreateResortRequest request) {
-        UserEntity user = userService.getAuthenticatedUserEntity();
-        CountryEntity country = countryService.getCountryEntity(request.getCountryId());
-        CityEntity city = request.getCityId() != null
-                ? cityService.getCityEntity(request.getCityId())
-                : null;
+    public SuccessResponse createResort(UserEntity userEntity,
+                                        ResortAccessTypeEntity resortAccessTypeEntity,
+                                        CountryEntity countryEntity,
+                                        CityEntity cityEntity,
+                                        CreateResortRequest request) {
 
-        ResortEntity resort = ResortMapper.fromRequest(request, country, city);
-        resort = resortRepository.save(resort);
-
-        ResortAccessTypeEntity ownerAccessType = resortAccessTypeService.getResortAccessTypeByCode("OWNER");
-
-        UserResortAccessEntity access = new UserResortAccessEntity();
-        access.setUserEntity(user);
-        access.setResortEntity(resort);
-        access.setAccessTypeEntity(ownerAccessType);
-        userResortAccessRepository.save(access);
-
-        return new SuccessResponse(true, resort.getId());
+        ResortEntity resortEntity = resortRepository.save(ResortMapper.fromRequest(request, userEntity, resortAccessTypeEntity, countryEntity, cityEntity));
+        return new SuccessResponse(true, resortEntity.getId());
     }
 
     @Override
@@ -83,9 +61,16 @@ public class ResortServiceImpl implements ResortService {
     }
 
     @Override
-    public PaginatedResponse<ResortDto> getAllResorts(Pageable pageable) {
-        Page<@NonNull ResortSummary> page = resortRepository
-                .findAllByIsActiveAndIsDeleted(true, false, pageable, ResortSummary.class);
+    public PaginatedResponse<ResortDto> getAllResorts(UserEntity userEntity, Pageable pageable) {
+        Page<@NonNull ResortSummary> page;
+
+        if (userEntity.getRoleEntity().getName().equals("ADMIN")) {
+            page = resortRepository.findAllByIsActiveAndIsDeleted(true, false, pageable, ResortSummary.class);
+        } else {
+            page = resortRepository.findAllByIsActiveAndIsDeletedAndUserResortAccessesEntities_UserEntity(
+                    true, false, userEntity, pageable, ResortSummary.class
+            );
+        }
 
         Page<@NonNull ResortDto> dtoPage = page.map(p ->
                 ResortDto.builder()

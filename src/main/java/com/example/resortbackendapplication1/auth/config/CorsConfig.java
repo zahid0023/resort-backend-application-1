@@ -10,7 +10,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Configuration
-public class    CorsConfig {
+public class CorsConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -18,8 +18,8 @@ public class    CorsConfig {
 
         // Allow your frontend origin(s)
         configuration.setAllowedOrigins(Arrays.asList(
-                "https://loficonnect.lofistack.com",
                 "http://localhost:3000",
+                "http://localhost:3001",
                 "http://localhost:8080"
         ));
 
