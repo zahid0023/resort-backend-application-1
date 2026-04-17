@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Generated;
+import org.hibernate.generator.EventType;
 
 import java.math.BigDecimal;
 
@@ -45,8 +47,8 @@ public class RoomEntity extends AuditableEntity {
     @Column(name = "max_children")
     private Integer maxChildren;
 
-    @ColumnDefault("(max_adults + max_children)")
-    @Column(name = "max_occupancy")
+    @Generated(event = {EventType.INSERT, EventType.UPDATE})
+    @Column(name = "max_occupancy", insertable = false, updatable = false)
     private Integer maxOccupancy;
 
     @NotNull
