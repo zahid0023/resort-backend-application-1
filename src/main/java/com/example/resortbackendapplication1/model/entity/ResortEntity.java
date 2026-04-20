@@ -54,4 +54,7 @@ public class ResortEntity extends AuditableEntity {
     @OneToMany(mappedBy = "resortEntity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<UserResortAccessEntity> userResortAccessesEntities = new LinkedHashSet<>();
 
+    @OneToMany(mappedBy = "resortEntity")
+    private Set<ResortImageEntity> resortImageEntities = new LinkedHashSet<>();
+
 }

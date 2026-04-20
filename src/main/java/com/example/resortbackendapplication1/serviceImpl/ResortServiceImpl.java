@@ -11,7 +11,6 @@ import com.example.resortbackendapplication1.model.entity.*;
 import com.example.resortbackendapplication1.model.mapper.ResortMapper;
 import com.example.resortbackendapplication1.model.projection.ResortSummary;
 import com.example.resortbackendapplication1.repository.ResortRepository;
-import com.example.resortbackendapplication1.repository.UserResortAccessRepository;
 import com.example.resortbackendapplication1.service.CityService;
 import com.example.resortbackendapplication1.service.CountryService;
 import com.example.resortbackendapplication1.service.ResortService;
@@ -49,7 +48,6 @@ public class ResortServiceImpl implements ResortService {
                                         CountryEntity countryEntity,
                                         CityEntity cityEntity,
                                         CreateResortRequest request) {
-
         ResortEntity resortEntity = resortRepository.save(ResortMapper.fromRequest(request, userEntity, resortAccessTypeEntity, countryEntity, cityEntity));
         return new SuccessResponse(true, resortEntity.getId());
     }

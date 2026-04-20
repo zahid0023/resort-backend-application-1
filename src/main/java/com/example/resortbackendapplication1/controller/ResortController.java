@@ -8,10 +8,7 @@ import com.example.resortbackendapplication1.dto.request.resorts.UpdateResortReq
 import com.example.resortbackendapplication1.model.entity.CityEntity;
 import com.example.resortbackendapplication1.model.entity.CountryEntity;
 import com.example.resortbackendapplication1.model.entity.ResortAccessTypeEntity;
-import com.example.resortbackendapplication1.service.CityService;
-import com.example.resortbackendapplication1.service.CountryService;
-import com.example.resortbackendapplication1.service.ResortAccessTypeService;
-import com.example.resortbackendapplication1.service.ResortService;
+import com.example.resortbackendapplication1.service.*;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -52,6 +49,7 @@ public class ResortController {
         ResortAccessTypeEntity accessTypeEntity = resortAccessTypeService.getResortAccessTypeByCode("OWNER");
         CountryEntity countryEntity = countryService.getCountryEntity(request.getCountryId());
         CityEntity cityEntity = cityService.getCityEntity(request.getCityId());
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(resortService.createResort(userEntity, accessTypeEntity, countryEntity, cityEntity, request));
     }

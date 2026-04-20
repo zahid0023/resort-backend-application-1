@@ -11,7 +11,7 @@ public class ResortRequest {
     private String description;
     private String address;
     private Long countryId;
-    private Long cityId;
+    private Long cityId;    
     private String contactEmail;
     private String contactPhone;
 }

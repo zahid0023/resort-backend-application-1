@@ -26,6 +26,22 @@ spring:
       mail.smtp.starttls.required: true
       mail.debug: ${MAIL_DEBUG:false}
 
+image:
+  hosting:
+    provider: ${IMAGE_HOSTING_PROVIDER:CLOUDINARY}
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+  api-key: ${CLOUDINARY_API_KEY:}
+  api-secret: ${CLOUDINARY_API_SECRET:}
+
+aws:
+  s3:
+    bucket: ${AWS_S3_BUCKET:}
+    region: ${AWS_S3_REGION:}
+    access-key: ${AWS_S3_ACCESS_KEY:}
+    secret-key: ${AWS_S3_SECRET_KEY:}
+
 jwt:
   secret: ${JWT_SECRET:?JWT_SECRET_must_be_set}
   access-token-expiration-minutes: ${JWT_ACCESS_EXPIRATION_MINUTES:?JWT_ACCESS_EXPIRATION_MINUTES must be set!}

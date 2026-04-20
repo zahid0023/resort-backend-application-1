@@ -1,18 +1,17 @@
 package com.example.resortbackendapplication1.model.mapper;
 
 import com.example.resortbackendapplication1.auth.model.enitty.UserEntity;
+import com.example.resortbackendapplication1.commons.dto.request.ImageRequest;
 import com.example.resortbackendapplication1.dto.request.resorts.CreateResortRequest;
 import com.example.resortbackendapplication1.dto.request.resorts.UpdateResortRequest;
 import com.example.resortbackendapplication1.model.dto.ResortDto;
-import com.example.resortbackendapplication1.model.entity.CityEntity;
-import com.example.resortbackendapplication1.model.entity.CountryEntity;
-import com.example.resortbackendapplication1.model.entity.ResortAccessTypeEntity;
-import com.example.resortbackendapplication1.model.entity.ResortEntity;
-import com.example.resortbackendapplication1.model.entity.UserResortAccessEntity;
+import com.example.resortbackendapplication1.model.entity.*;
 import lombok.experimental.UtilityClass;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @UtilityClass
 public class ResortMapper {

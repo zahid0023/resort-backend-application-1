@@ -1,0 +1,4 @@
+package com.example.resortbackendapplication1.dto.request.resortimagestorageconfigs;
+
+public class CreateResortImageStorageConfigRequest extends ResortImageStorageConfigRequest {
+}
