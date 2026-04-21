@@ -1,11 +1,8 @@
 package com.example.resortbackendapplication1.controller;
 
-import com.example.resortbackendapplication1.commons.dto.request.ImageItemRequest;
+import com.example.resortbackendapplication1.commons.dto.request.ImageMetaRequest;
 import com.example.resortbackendapplication1.commons.dto.request.ImageRequest;
-import com.example.resortbackendapplication1.commons.dto.request.ImagesWrapperRequest;
 import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
-import com.example.resortbackendapplication1.commons.dto.response.ImageUploadResponse;
-import com.example.resortbackendapplication1.commons.enums.ImageHostingProvider;
 import com.example.resortbackendapplication1.commons.service.ImageUploadService;
 import com.example.resortbackendapplication1.dto.response.resortimagestorageconfigs.ResortImageStorageConfigResponse;
 import com.example.resortbackendapplication1.model.entity.ResortEntity;
@@ -45,25 +42,14 @@ public class ResortImageController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadImages(
             @PathVariable("resort-id") Long resortId,
-            @ModelAttribute ImagesWrapperRequest request) {
+            @ModelAttribute List<ImageMetaRequest> request) {
         ResortEntity resortEntity = resortService.getResortById(resortId);
 
         ResortImageStorageConfigResponse resortImageStorageConfigResponse = resortImageStorageConfigService.getResortImageStorageConfig(resortId);
 
         Map<String, String> config = resortImageStorageConfigResponse.getData().getConfig();
 
-        List<ImageRequest> imageRequests = request.getImages().stream()
-                .map(imageItemRequest -> {
-                    ImageUploadResponse imageUploadResponse = imageUploadService.upload(imageItemRequest.getImage(), ImageHostingProvider.valueOf(resortImageStorageConfigResponse.getData().getProvider()), config);
-                    return ImageRequest.builder()
-                            .imageUrl(imageUploadResponse.getImageUrl())
-                            .publicId(imageUploadResponse.getPublicId())
-                            .caption(imageItemRequest.getCaption())
-                            .isDefault(imageItemRequest.getIsDefault())
-                            .sortOrder(imageItemRequest.getSortOrder())
-                            .build();
-                })
-                .toList();
+        List<ImageRequest> imageRequests = List.of(null);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(resortImageService.saveImages(resortEntity, imageRequests));
