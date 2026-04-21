@@ -1,8 +1,10 @@
 package com.example.resortbackendapplication1.service;
 
 import com.example.resortbackendapplication1.auth.model.enitty.UserEntity;
+import com.example.resortbackendapplication1.commons.dto.request.ImageRequest;
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
+import com.example.resortbackendapplication1.dto.request.resortimagestorageconfigs.CreateResortImageStorageConfigRequest;
 import com.example.resortbackendapplication1.dto.request.resorts.CreateResortRequest;
 import com.example.resortbackendapplication1.dto.request.resorts.UpdateResortRequest;
 import com.example.resortbackendapplication1.dto.response.resorts.ResortResponse;
@@ -13,12 +15,18 @@ import com.example.resortbackendapplication1.model.entity.ResortAccessTypeEntity
 import com.example.resortbackendapplication1.model.entity.ResortEntity;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
+
 public interface ResortService {
-    SuccessResponse createResort(UserEntity userEntity,
-                                 ResortAccessTypeEntity resortAccessTypeEntity,
-                                 CountryEntity countryEntity,
-                                 CityEntity cityEntity,
-                                 CreateResortRequest request);
+
+    SuccessResponse createResort(
+            CreateResortRequest request,
+            UserEntity userEntity,
+            ResortAccessTypeEntity resortAccessTypeEntity,
+            CountryEntity countryEntity,
+            CityEntity cityEntity,
+            CreateResortImageStorageConfigRequest createResortImageStorageConfigRequest,
+            List<ImageRequest> imageRequests);
 
     ResortEntity getResortById(Long id);
 

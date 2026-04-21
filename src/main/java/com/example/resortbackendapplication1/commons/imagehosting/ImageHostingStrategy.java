@@ -10,4 +10,6 @@ public interface ImageHostingStrategy {
     ImageHostingProvider provider();
 
     ImageUploadResponse upload(MultipartFile file, Map<String, String> configs);
+
+    void delete(String publicId, Map<String, String> config);
 }

@@ -10,6 +10,7 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
@@ -72,6 +73,20 @@ public class S3HostingStrategy implements ImageHostingStrategy {
             log.error("S3 upload failed for '{}': {}", file.getOriginalFilename(), ex.getMessage());
             throw new IllegalStateException("S3 upload failed: " + ex.getMessage(), ex);
         }
+    }
 
+    @Override
+    public void delete(String publicId, Map<String, String> config) {
+        provider().validate(config);
+        try (S3Client s3Client = S3Client.builder()
+                .region(Region.of(config.get("region")))
+                .credentialsProvider(StaticCredentialsProvider.create(
+                        AwsBasicCredentials.create(config.get("access_key"), config.get("secret_key"))))
+                .build()) {
+            s3Client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(config.get("bucket"))
+                    .key(publicId)
+                    .build());
+        }
     }
 }

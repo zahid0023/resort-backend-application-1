@@ -1,8 +1,10 @@
 package com.example.resortbackendapplication1.serviceImpl;
 
 import com.example.resortbackendapplication1.auth.model.enitty.UserEntity;
+import com.example.resortbackendapplication1.commons.dto.request.ImageRequest;
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
+import com.example.resortbackendapplication1.dto.request.resortimagestorageconfigs.CreateResortImageStorageConfigRequest;
 import com.example.resortbackendapplication1.dto.request.resorts.CreateResortRequest;
 import com.example.resortbackendapplication1.dto.request.resorts.UpdateResortRequest;
 import com.example.resortbackendapplication1.dto.response.resorts.ResortResponse;
@@ -10,6 +12,8 @@ import com.example.resortbackendapplication1.model.dto.ResortDto;
 import com.example.resortbackendapplication1.model.entity.*;
 import com.example.resortbackendapplication1.model.mapper.ResortMapper;
 import com.example.resortbackendapplication1.model.projection.ResortSummary;
+import com.example.resortbackendapplication1.repository.ResortImageRepository;
+import com.example.resortbackendapplication1.repository.ResortImageStorageConfigRepository;
 import com.example.resortbackendapplication1.repository.ResortRepository;
 import com.example.resortbackendapplication1.service.CityService;
 import com.example.resortbackendapplication1.service.CountryService;
@@ -22,6 +26,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @Slf4j
@@ -43,12 +49,18 @@ public class ResortServiceImpl implements ResortService {
 
     @Override
     @Transactional
-    public SuccessResponse createResort(UserEntity userEntity,
-                                        ResortAccessTypeEntity resortAccessTypeEntity,
-                                        CountryEntity countryEntity,
-                                        CityEntity cityEntity,
-                                        CreateResortRequest request) {
-        ResortEntity resortEntity = resortRepository.save(ResortMapper.fromRequest(request, userEntity, resortAccessTypeEntity, countryEntity, cityEntity));
+    public SuccessResponse createResort(
+            CreateResortRequest request,
+            UserEntity userEntity,
+            ResortAccessTypeEntity resortAccessTypeEntity,
+            CountryEntity countryEntity,
+            CityEntity cityEntity,
+            CreateResortImageStorageConfigRequest createResortImageStorageConfigRequest,
+            List<ImageRequest> imageRequests) {
+        // 1. Create resort
+        ResortEntity resortEntity = resortRepository.save(
+                ResortMapper.fromRequest(request, userEntity, resortAccessTypeEntity, countryEntity, cityEntity, createResortImageStorageConfigRequest, imageRequests));
+
         return new SuccessResponse(true, resortEntity.getId());
     }
 

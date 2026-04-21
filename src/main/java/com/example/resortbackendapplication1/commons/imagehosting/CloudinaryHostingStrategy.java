@@ -53,4 +53,21 @@ public class CloudinaryHostingStrategy implements ImageHostingStrategy {
             throw new IllegalStateException("Cloudinary upload failed: " + ex.getMessage(), ex);
         }
     }
+
+    @Override
+    public void delete(String publicId, Map<String, String> config) {
+        provider().validate(config);
+        try {
+            Cloudinary cloudinary = new Cloudinary(ObjectUtils.asMap(
+                    "cloud_name", config.get("cloud_name"),
+                    "api_key", config.get("api_key"),
+                    "api_secret", config.get("api_secret"),
+                    "secure", true
+            ));
+            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+        } catch (IOException ex) {
+            log.error("Cloudinary delete failed for publicId '{}': {}", publicId, ex.getMessage());
+            throw new IllegalStateException("Cloudinary delete failed: " + ex.getMessage(), ex);
+        }
+    }
 }

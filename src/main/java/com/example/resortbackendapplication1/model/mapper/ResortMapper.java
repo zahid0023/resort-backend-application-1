@@ -2,6 +2,7 @@ package com.example.resortbackendapplication1.model.mapper;
 
 import com.example.resortbackendapplication1.auth.model.enitty.UserEntity;
 import com.example.resortbackendapplication1.commons.dto.request.ImageRequest;
+import com.example.resortbackendapplication1.dto.request.resortimagestorageconfigs.CreateResortImageStorageConfigRequest;
 import com.example.resortbackendapplication1.dto.request.resorts.CreateResortRequest;
 import com.example.resortbackendapplication1.dto.request.resorts.UpdateResortRequest;
 import com.example.resortbackendapplication1.model.dto.ResortDto;
@@ -20,7 +21,9 @@ public class ResortMapper {
                                            UserEntity userEntity,
                                            ResortAccessTypeEntity resortAccessTypeEntity,
                                            CountryEntity countryEntity,
-                                           CityEntity cityEntity) {
+                                           CityEntity cityEntity,
+                                           CreateResortImageStorageConfigRequest createResortImageStorageConfigRequest,
+                                           List<ImageRequest> imageRequests) {
         ResortEntity entity = new ResortEntity();
         entity.setUserResortAccessesEntities(Set.of(toUserAccessEntity(entity, userEntity, resortAccessTypeEntity)));
         entity.setUuid(UUID.randomUUID());
@@ -31,6 +34,14 @@ public class ResortMapper {
         entity.setCityEntity(cityEntity);
         entity.setContactEmail(request.getContactEmail());
         entity.setContactPhone(request.getContactPhone());
+
+        ResortImageStorageConfigEntity resortImageStorageConfigEntity = ResortImageStorageConfigMapper.fromRequest(createResortImageStorageConfigRequest, entity);
+        entity.setResortImageStorageConfigEntities(Set.of(resortImageStorageConfigEntity));
+
+        Set<ResortImageEntity> resortImageEntities = imageRequests.stream()
+                .map(imageRequest -> ResortImageMapper.fromRequest(imageRequest, entity))
+                .collect(Collectors.toSet());
+        entity.setResortImageEntities(resortImageEntities);
         return entity;
     }
 
