@@ -3,13 +3,16 @@ package com.example.resortbackendapplication1.controller;
 import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
 import com.example.resortbackendapplication1.dto.request.facilitygroups.CreateFacilityGroupRequest;
 import com.example.resortbackendapplication1.dto.request.facilitygroups.UpdateFacilityGroupRequest;
+import com.example.resortbackendapplication1.enums.IconType;
 import com.example.resortbackendapplication1.service.FacilityGroupService;
+import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.Set;
 
 @RestController
@@ -22,8 +25,13 @@ public class FacilityGroupController {
         this.facilityGroupService = facilityGroupService;
     }
 
+    @GetMapping("/icon-types")
+    public ResponseEntity<?> getAllIconTypes() {
+        return ResponseEntity.ok(Arrays.asList(IconType.values()));
+    }
+
     @PostMapping
-    public ResponseEntity<?> createFacilityGroup(@RequestBody CreateFacilityGroupRequest request) {
+    public ResponseEntity<?> createFacilityGroup(@Valid @RequestBody CreateFacilityGroupRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(facilityGroupService.createFacilityGroup(request));
     }
 
@@ -39,7 +47,7 @@ public class FacilityGroupController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateFacilityGroup(@PathVariable Long id, @RequestBody UpdateFacilityGroupRequest request) {
+    public ResponseEntity<?> updateFacilityGroup(@PathVariable Long id, @Valid @RequestBody UpdateFacilityGroupRequest request) {
         return ResponseEntity.ok(facilityGroupService.updateFacilityGroup(id, request));
     }
 

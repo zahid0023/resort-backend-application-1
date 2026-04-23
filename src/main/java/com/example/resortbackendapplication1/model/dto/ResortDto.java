@@ -22,4 +22,5 @@ public class ResortDto {
     private Long cityId;
     private String contactEmail;
     private String contactPhone;
+    private String displayImageUrl;
 }

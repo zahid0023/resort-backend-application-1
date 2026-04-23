@@ -13,8 +13,11 @@ public class FacilityGroupMapper {
         FacilityGroupEntity entity = new FacilityGroupEntity();
         entity.setCode(request.getCode());
         entity.setName(request.getName());
-        entity.setDescription(request.getDescription());
-        entity.setSortOrder(request.getSortOrder());
+        entity.setDescription(request.getDescription() != null ? request.getDescription() : "");
+        entity.setSortOrder(request.getSortOrder() != null ? request.getSortOrder() : 0);
+        entity.setIconType(request.getIconType());
+        entity.setIconValue(request.getIconValue());
+        entity.setIconMeta(request.getIconMeta());
         return entity;
     }
 
@@ -23,6 +26,9 @@ public class FacilityGroupMapper {
         if (request.getName() != null) entity.setName(request.getName());
         if (request.getDescription() != null) entity.setDescription(request.getDescription());
         if (request.getSortOrder() != null) entity.setSortOrder(request.getSortOrder());
+        if (request.getIconType() != null) entity.setIconType(request.getIconType());
+        if (request.getIconValue() != null) entity.setIconValue(request.getIconValue());
+        if (request.getIconMeta() != null) entity.setIconMeta(request.getIconMeta());
     }
 
     public static FacilityGroupDto toDto(FacilityGroupEntity entity) {
@@ -32,6 +38,9 @@ public class FacilityGroupMapper {
                 .name(entity.getName())
                 .description(entity.getDescription())
                 .sortOrder(entity.getSortOrder())
+                .iconType(entity.getIconType())
+                .iconValue(entity.getIconValue())
+                .iconMeta(entity.getIconMeta())
                 .build();
     }
 }

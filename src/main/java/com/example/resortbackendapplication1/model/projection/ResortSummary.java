@@ -24,4 +24,7 @@ public interface ResortSummary {
 
     @Value("#{target.cityEntity?.id}")
     Long getCityId();
+
+    @Value("#{target.resortImageEntities.?[isDefault == true].isEmpty() ? null : target.resortImageEntities.?[isDefault == true][0].imageUrl}")
+    String getDefaultImageUrl();
 }

@@ -12,8 +12,6 @@ import com.example.resortbackendapplication1.model.dto.ResortDto;
 import com.example.resortbackendapplication1.model.entity.*;
 import com.example.resortbackendapplication1.model.mapper.ResortMapper;
 import com.example.resortbackendapplication1.model.projection.ResortSummary;
-import com.example.resortbackendapplication1.repository.ResortImageRepository;
-import com.example.resortbackendapplication1.repository.ResortImageStorageConfigRepository;
 import com.example.resortbackendapplication1.repository.ResortRepository;
 import com.example.resortbackendapplication1.service.CityService;
 import com.example.resortbackendapplication1.service.CountryService;
@@ -93,6 +91,7 @@ public class ResortServiceImpl implements ResortService {
                         .cityId(p.getCityId())
                         .contactEmail(p.getContactEmail())
                         .contactPhone(p.getContactPhone())
+                        .displayImageUrl(p.getDefaultImageUrl())
                         .build()
         );
         return Pagination.buildPaginatedResponse(dtoPage);

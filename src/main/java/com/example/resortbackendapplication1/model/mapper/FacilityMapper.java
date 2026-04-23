@@ -16,8 +16,10 @@ public class FacilityMapper {
         entity.setCode(request.getCode());
         entity.setName(request.getName());
         entity.setDescription(request.getDescription());
-        entity.setType(request.getType());
-        entity.setIcon(request.getIcon());
+        entity.setIconType(request.getIconType());
+        entity.setIconValue(request.getIconValue());
+        entity.setIconMeta(request.getIconMeta());
+        entity.setSortOrder(request.getSortOrder() != null ? request.getSortOrder() : 1);
         return entity;
     }
 
@@ -26,8 +28,10 @@ public class FacilityMapper {
         if (request.getCode() != null) entity.setCode(request.getCode());
         if (request.getName() != null) entity.setName(request.getName());
         if (request.getDescription() != null) entity.setDescription(request.getDescription());
-        if (request.getType() != null) entity.setType(request.getType());
-        if (request.getIcon() != null) entity.setIcon(request.getIcon());
+        if (request.getIconType() != null) entity.setIconType(request.getIconType());
+        if (request.getIconValue() != null) entity.setIconValue(request.getIconValue());
+        if (request.getIconMeta() != null) entity.setIconMeta(request.getIconMeta());
+        if (request.getSortOrder() != null) entity.setSortOrder(request.getSortOrder());
     }
 
     public static FacilityDto toDto(FacilityEntity entity) {
@@ -37,8 +41,10 @@ public class FacilityMapper {
                 .code(entity.getCode())
                 .name(entity.getName())
                 .description(entity.getDescription())
-                .type(entity.getType())
-                .icon(entity.getIcon())
+                .iconType(entity.getIconType())
+                .iconValue(entity.getIconValue())
+                .iconMeta(entity.getIconMeta())
+                .sortOrder(entity.getSortOrder())
                 .build();
     }
 }
