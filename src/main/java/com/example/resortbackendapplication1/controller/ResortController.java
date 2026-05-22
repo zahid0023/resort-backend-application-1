@@ -56,8 +56,8 @@ public class ResortController {
                                           @RequestPart("images") List<MultipartFile> images) {
         UserEntity userEntity = userService.getAuthenticatedUserEntity();
         ResortAccessTypeEntity accessTypeEntity = resortAccessTypeService.getResortAccessTypeByCode("OWNER");
-        CountryEntity countryEntity = countryService.getCountryEntity(request.getCountryId());
-        CityEntity cityEntity = cityService.getCityEntity(request.getCityId());
+        CountryEntity countryEntity = countryService.getEntityById(request.getCountryId());
+        CityEntity cityEntity = cityService.getEntityById(null, null);
 
         List<ImageRequest> imageRequests = imageUploadService.uploadAll(
                 images,

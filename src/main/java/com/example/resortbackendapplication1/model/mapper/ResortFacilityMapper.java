@@ -12,23 +12,27 @@ import lombok.experimental.UtilityClass;
 public class ResortFacilityMapper {
 
     public static ResortFacilityEntity fromRequest(CreateResortFacilityRequest request,
-                                                   FacilityEntity facilityEntity,
-                                                   ResortFacilityGroupEntity resortFacilityGroupEntity) {
+                                                   ResortFacilityGroupEntity resortFacilityGroupEntity,
+                                                   FacilityEntity facilityEntity) {
         ResortFacilityEntity entity = new ResortFacilityEntity();
-        entity.setFacilityEntity(facilityEntity);
         entity.setResortFacilityGroupEntity(resortFacilityGroupEntity);
+        entity.setFacilityEntity(facilityEntity);
         entity.setName(request.getName());
         entity.setDescription(request.getDescription());
-        entity.setIcon(request.getIcon());
-        entity.setValue(request.getValue());
+        entity.setSortOrder(request.getSortOrder());
+        entity.setIconType(request.getIconType());
+        entity.setIconValue(request.getIconValue());
+        entity.setIconMeta(request.getIconMeta());
         return entity;
     }
 
     public static void updateEntity(ResortFacilityEntity entity, UpdateResortFacilityRequest request) {
         if (request.getName() != null) entity.setName(request.getName());
         if (request.getDescription() != null) entity.setDescription(request.getDescription());
-        if (request.getIcon() != null) entity.setIcon(request.getIcon());
-        if (request.getValue() != null) entity.setValue(request.getValue());
+        if (request.getSortOrder() != null) entity.setSortOrder(request.getSortOrder());
+        if (request.getIconType() != null) entity.setIconType(request.getIconType());
+        if (request.getIconValue() != null) entity.setIconValue(request.getIconValue());
+        if (request.getIconMeta() != null) entity.setIconMeta(request.getIconMeta());
     }
 
     public static ResortFacilityDto toDto(ResortFacilityEntity entity) {
@@ -38,8 +42,10 @@ public class ResortFacilityMapper {
                 .facilityId(entity.getFacilityEntity().getId())
                 .name(entity.getName())
                 .description(entity.getDescription())
-                .icon(entity.getIcon())
-                .value(entity.getValue())
+                .sortOrder(entity.getSortOrder())
+                .iconType(entity.getIconType())
+                .iconValue(entity.getIconValue())
+                .iconMeta(entity.getIconMeta())
                 .build();
     }
 }

@@ -1,5 +1,6 @@
 package com.example.resortbackendapplication1.serviceImpl;
 
+import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.dto.request.facilities.CreateFacilityRequest;
@@ -8,19 +9,20 @@ import com.example.resortbackendapplication1.dto.response.facilities.FacilityRes
 import com.example.resortbackendapplication1.model.dto.FacilityDto;
 import com.example.resortbackendapplication1.model.entity.FacilityEntity;
 import com.example.resortbackendapplication1.model.entity.FacilityGroupEntity;
+import com.example.resortbackendapplication1.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.model.enums.FacilitySortField;
 import com.example.resortbackendapplication1.model.mapper.FacilityMapper;
+import com.example.resortbackendapplication1.model.projection.FacilitySummary;
 import com.example.resortbackendapplication1.repository.FacilityRepository;
-import com.example.resortbackendapplication1.service.FacilityGroupService;
 import com.example.resortbackendapplication1.service.FacilityService;
 import com.example.resortbackendapplication1.utils.Pagination;
+import com.example.resortbackendapplication1.validation.EntityValidator;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import com.example.resortbackendapplication1.utils.EntityLookup;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -30,67 +32,70 @@ import java.util.Set;
 @Slf4j
 public class FacilityServiceImpl implements FacilityService {
 
-    private final FacilityRepository facilityRepository;
-    private final FacilityGroupService facilityGroupService;
+    private static final Set<String> ALLOWED_SORT_FIELDS = FacilitySortField.allowedFields();
 
-    public FacilityServiceImpl(FacilityRepository facilityRepository,
-                               FacilityGroupService facilityGroupService) {
+    private final FacilityRepository facilityRepository;
+
+    public FacilityServiceImpl(FacilityRepository facilityRepository) {
         this.facilityRepository = facilityRepository;
-        this.facilityGroupService = facilityGroupService;
     }
 
+    @Transactional
     @Override
-    public SuccessResponse createFacility(CreateFacilityRequest request) {
-        FacilityGroupEntity facilityGroup = facilityGroupService.getFacilityGroupEntity(request.getFacilityGroupId());
-        FacilityEntity entity = FacilityMapper.fromRequest(request, facilityGroup);
-        entity = facilityRepository.save(entity);
+    public SuccessResponse create(CreateFacilityRequest request,
+                                  Map<Long, LocaleEntity> localeEntityMap,
+                                  FacilityGroupEntity facilityGroupEntity) {
+        FacilityEntity entity = FacilityMapper.create(request, facilityGroupEntity, localeEntityMap);
+        facilityRepository.save(entity);
+        log.info("Facility created with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
     }
 
     @Override
-    public FacilityEntity getFacilityEntity(Long id) {
-        return facilityRepository.findByIdAndIsActiveAndIsDeleted(id, true, false)
-                .orElseThrow(() -> new EntityNotFoundException("Facility with id: " + id + " was not found."));
+    public FacilityEntity getEntityById(Long facilityGroupId, Long id) {
+        return facilityRepository.findByFacilityGroupEntity_IdAndIdAndIsActiveAndIsDeleted(facilityGroupId, id, true, false)
+                .orElseThrow(() -> new EntityNotFoundException("Facility not found with id: " + id));
     }
 
     @Override
-    public FacilityResponse getFacility(Long id) {
-        FacilityEntity entity = getFacilityEntity(id);
+    public FacilityResponse getById(Long facilityGroupId, Long id) {
+        FacilityEntity entity = getEntityById(facilityGroupId, id);
         FacilityDto dto = FacilityMapper.toDto(entity);
         return new FacilityResponse(dto);
     }
 
     @Override
-    public PaginatedResponse<FacilityDto> getAllFacilities(Pageable pageable) {
-        Page<@NonNull FacilityEntity> page = facilityRepository.findAllByIsActiveAndIsDeleted(true, false, pageable);
-        Page<@NonNull FacilityDto> dtoPage = page.map(FacilityMapper::toDto);
-        return Pagination.buildPaginatedResponse(dtoPage);
+    public PaginatedResponse<FacilitySummary> getAll(Long facilityGroupId, PaginatedRequest request) {
+        Page<@NonNull FacilitySummary> page = facilityRepository.findAllByFacilityGroupEntity_IdAndIsActiveAndIsDeleted(
+                facilityGroupId, true, false, request.toPageable(ALLOWED_SORT_FIELDS)
+        );
+        return Pagination.buildPaginatedResponse(page);
     }
 
+    @Transactional
     @Override
-    public SuccessResponse updateFacility(Long id, UpdateFacilityRequest request) {
-        FacilityEntity entity = getFacilityEntity(id);
-        FacilityGroupEntity facilityGroup = request.getFacilityGroupId() != null
-                ? facilityGroupService.getFacilityGroupEntity(request.getFacilityGroupId())
-                : null;
-        FacilityMapper.updateEntity(entity, request, facilityGroup);
-        entity = facilityRepository.save(entity);
+    public SuccessResponse update(FacilityEntity entity, UpdateFacilityRequest request) {
+        FacilityMapper.update(entity, request);
+        facilityRepository.save(entity);
+        log.info("Facility updated with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
     }
 
+    @Transactional
     @Override
-    public SuccessResponse deleteFacility(Long id) {
-        FacilityEntity entity = getFacilityEntity(id);
+    public SuccessResponse delete(Long facilityGroupId, Long id) {
+        FacilityEntity entity = getEntityById(facilityGroupId, id);
         entity.setIsDeleted(true);
         entity.setIsActive(false);
         facilityRepository.save(entity);
+        log.info("Facility soft-deleted with id: {}", id);
         return new SuccessResponse(true, id);
     }
 
     @Override
-    public List<FacilityEntity> getFacilityEntities(Set<Long> ids) {
-        List<FacilityEntity> facilityEntities = facilityRepository.findAllByIdInAndIsActiveAndIsDeleted(ids, true, false);
-        Map<Long, FacilityEntity> map = EntityLookup.validateAndMap(ids, facilityEntities, FacilityEntity::getId, "Facility");
-        return List.copyOf(map.values());
+    public List<FacilityEntity> getAll(Set<Long> ids) {
+        List<FacilityEntity> entities = facilityRepository.findAllByIdInAndIsActiveAndIsDeleted(ids, true, false);
+        EntityValidator.validateAllFound(ids, entities, FacilityEntity::getId, "Facility");
+        return entities;
     }
 }

@@ -20,14 +20,19 @@ public class ResortFacilityGroupMapper {
         entity.setName(request.getName());
         entity.setDescription(request.getDescription());
         entity.setSortOrder(request.getSortOrder());
+        entity.setIconType(request.getIconType());
+        entity.setIconValue(request.getIconValue());
+        entity.setIconMeta(request.getIconMeta());
         return entity;
     }
 
-    public static void updateEntity(ResortFacilityGroupEntity entity,
-                                    UpdateResortFacilityGroupRequest request) {
+    public static void updateEntity(ResortFacilityGroupEntity entity, UpdateResortFacilityGroupRequest request) {
         if (request.getName() != null) entity.setName(request.getName());
         if (request.getDescription() != null) entity.setDescription(request.getDescription());
         if (request.getSortOrder() != null) entity.setSortOrder(request.getSortOrder());
+        if (request.getIconType() != null) entity.setIconType(request.getIconType());
+        if (request.getIconValue() != null) entity.setIconValue(request.getIconValue());
+        if (request.getIconMeta() != null) entity.setIconMeta(request.getIconMeta());
     }
 
     public static ResortFacilityGroupDto toDto(ResortFacilityGroupEntity entity) {
@@ -38,6 +43,9 @@ public class ResortFacilityGroupMapper {
                 .name(entity.getName())
                 .description(entity.getDescription())
                 .sortOrder(entity.getSortOrder())
+                .iconType(entity.getIconType())
+                .iconValue(entity.getIconValue())
+                .iconMeta(entity.getIconMeta())
                 .build();
     }
 }

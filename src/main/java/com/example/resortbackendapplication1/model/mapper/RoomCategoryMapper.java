@@ -1,37 +1,59 @@
 package com.example.resortbackendapplication1.model.mapper;
 
 import com.example.resortbackendapplication1.dto.request.roomcategories.CreateRoomCategoryRequest;
+import com.example.resortbackendapplication1.dto.request.roomcategories.RoomCategoryRequest;
 import com.example.resortbackendapplication1.dto.request.roomcategories.UpdateRoomCategoryRequest;
+import com.example.resortbackendapplication1.dto.request.roomcategories.roomcategorylocale.CreateRoomCategoryLocaleRequest;
 import com.example.resortbackendapplication1.model.dto.RoomCategoryDto;
+import com.example.resortbackendapplication1.model.dto.RoomCategoryLocaleDto;
+import com.example.resortbackendapplication1.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.model.entity.RoomCategoryEntity;
+import com.example.resortbackendapplication1.model.entity.RoomCategoryLocaleEntity;
 import lombok.experimental.UtilityClass;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @UtilityClass
 public class RoomCategoryMapper {
 
-    public static RoomCategoryEntity fromRequest(CreateRoomCategoryRequest request) {
+    public RoomCategoryEntity create(CreateRoomCategoryRequest request,
+                                     Map<Long, LocaleEntity> localeEntityMap) {
         RoomCategoryEntity entity = new RoomCategoryEntity();
         entity.setCode(request.getCode());
-        entity.setName(request.getName());
-        entity.setDescription(request.getDescription());
-        entity.setSortOrder(request.getSortOrder());
+        applyCommonFields(entity, request);
+        entity.setRoomCategoryLocaleEntities(mapLocales(request.getLocales(), entity, localeEntityMap));
         return entity;
     }
 
-    public static void updateEntity(RoomCategoryEntity entity, UpdateRoomCategoryRequest request) {
-        if (request.getCode() != null) entity.setCode(request.getCode());
-        if (request.getName() != null) entity.setName(request.getName());
-        if (request.getDescription() != null) entity.setDescription(request.getDescription());
-        if (request.getSortOrder() != null) entity.setSortOrder(request.getSortOrder());
+    public void update(RoomCategoryEntity entity, UpdateRoomCategoryRequest request) {
+        applyCommonFields(entity, request);
     }
 
-    public static RoomCategoryDto toDto(RoomCategoryEntity entity) {
+    private void applyCommonFields(RoomCategoryEntity entity, RoomCategoryRequest request) {
+        entity.setSortOrder(request.getSortOrder());
+    }
+
+    private Set<RoomCategoryLocaleEntity> mapLocales(List<CreateRoomCategoryLocaleRequest> locales,
+                                                      RoomCategoryEntity entity,
+                                                      Map<Long, LocaleEntity> localeEntityMap) {
+        return locales.stream()
+                .map(locale -> RoomCategoryLocaleMapper.create(locale, entity, localeEntityMap.get(locale.getLocaleId())))
+                .collect(Collectors.toSet());
+    }
+
+    public RoomCategoryDto toDto(RoomCategoryEntity entity) {
+        List<RoomCategoryLocaleDto> locales = entity.getRoomCategoryLocaleEntities().stream()
+                .map(RoomCategoryLocaleMapper::toDto)
+                .toList();
+
         return RoomCategoryDto.builder()
                 .id(entity.getId())
                 .code(entity.getCode())
-                .name(entity.getName())
-                .description(entity.getDescription())
                 .sortOrder(entity.getSortOrder())
+                .locales(locales)
                 .build();
     }
 }

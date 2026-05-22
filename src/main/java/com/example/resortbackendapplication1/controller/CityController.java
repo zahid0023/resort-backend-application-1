@@ -1,50 +1,78 @@
 package com.example.resortbackendapplication1.controller;
 
 import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
-import com.example.resortbackendapplication1.dto.request.cities.CreateCityRequest;
-import com.example.resortbackendapplication1.dto.request.cities.UpdateCityRequest;
+import com.example.resortbackendapplication1.dto.request.city.CreateCityRequest;
+import com.example.resortbackendapplication1.dto.request.city.UpdateCityRequest;
+import com.example.resortbackendapplication1.dto.request.city.citylocale.CreateCityLocaleRequest;
+import com.example.resortbackendapplication1.model.entity.CityEntity;
+import com.example.resortbackendapplication1.model.entity.CountryEntity;
+import com.example.resortbackendapplication1.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.service.CityService;
+import com.example.resortbackendapplication1.service.CountryService;
+import com.example.resortbackendapplication1.service.LocaleService;
+import com.example.resortbackendapplication1.utils.LocaleUtils;
+import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Set;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/cities")
+@RequestMapping("/api/v1/countries/{country-id}/cities")
 public class CityController {
 
     private final CityService cityService;
+    private final CountryService countryService;
+    private final LocaleService localeService;
 
-    public CityController(CityService cityService) {
+    public CityController(CityService cityService,
+                          CountryService countryService,
+                          LocaleService localeService) {
         this.cityService = cityService;
+        this.countryService = countryService;
+        this.localeService = localeService;
     }
 
     @PostMapping
-    public ResponseEntity<?> createCity(@RequestBody CreateCityRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(cityService.createCity(request));
+    public ResponseEntity<?> create(
+            @PathVariable("country-id") Long countryId,
+            @Valid @RequestBody CreateCityRequest request) {
+        Map<Long, LocaleEntity> localeEntityMap = LocaleUtils.resolveLocaleMap(
+                request.getLocales(), CreateCityLocaleRequest::getLocaleId, localeService);
+        CountryEntity countryEntity = countryService.getEntityById(countryId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(cityService.create(request, countryEntity, localeEntityMap));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getCity(@PathVariable Long id) {
-        return ResponseEntity.ok(cityService.getCity(id));
+    public ResponseEntity<?> getById(
+            @PathVariable("country-id") Long countryId,
+            @PathVariable Long id) {
+        return ResponseEntity.ok(cityService.getById(countryId, id));
     }
 
     @GetMapping
-    public ResponseEntity<?> getAllCities(@ParameterObject PaginatedRequest request) {
-        Pageable pageable = request.toPageable(Set.of("id", "name"));
-        return ResponseEntity.ok(cityService.getAllCities(pageable));
+    public ResponseEntity<?> getAll(
+            @PathVariable("country-id") Long countryId,
+            @Valid @ParameterObject PaginatedRequest request) {
+        return ResponseEntity.ok(cityService.getAll(countryId, request));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateCity(@PathVariable Long id, @RequestBody UpdateCityRequest request) {
-        return ResponseEntity.ok(cityService.updateCity(id, request));
+    public ResponseEntity<?> update(
+            @PathVariable("country-id") Long countryId,
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateCityRequest request) {
+        CityEntity entity = cityService.getEntityById(countryId, id);
+        return ResponseEntity.ok(cityService.update(entity, request));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteCity(@PathVariable Long id) {
-        return ResponseEntity.ok(cityService.deleteCity(id));
+    public ResponseEntity<?> delete(
+            @PathVariable("country-id") Long countryId,
+            @PathVariable Long id) {
+        CityEntity entity = cityService.getEntityById(countryId, id);
+        return ResponseEntity.ok(cityService.delete(entity));
     }
 }

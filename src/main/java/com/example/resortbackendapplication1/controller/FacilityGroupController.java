@@ -3,26 +3,33 @@ package com.example.resortbackendapplication1.controller;
 import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
 import com.example.resortbackendapplication1.dto.request.facilitygroups.CreateFacilityGroupRequest;
 import com.example.resortbackendapplication1.dto.request.facilitygroups.UpdateFacilityGroupRequest;
+import com.example.resortbackendapplication1.dto.request.facilitygroups.facilitygrouplocale.CreateFacilityGroupLocaleRequest;
 import com.example.resortbackendapplication1.enums.IconType;
+import com.example.resortbackendapplication1.model.entity.FacilityGroupEntity;
+import com.example.resortbackendapplication1.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.service.FacilityGroupService;
+import com.example.resortbackendapplication1.service.LocaleService;
+import com.example.resortbackendapplication1.utils.LocaleUtils;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
-import java.util.Set;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/facility-groups")
 public class FacilityGroupController {
 
     private final FacilityGroupService facilityGroupService;
+    private final LocaleService localeService;
 
-    public FacilityGroupController(FacilityGroupService facilityGroupService) {
+    public FacilityGroupController(FacilityGroupService facilityGroupService,
+                                    LocaleService localeService) {
         this.facilityGroupService = facilityGroupService;
+        this.localeService = localeService;
     }
 
     @GetMapping("/icon-types")
@@ -31,28 +38,32 @@ public class FacilityGroupController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createFacilityGroup(@Valid @RequestBody CreateFacilityGroupRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(facilityGroupService.createFacilityGroup(request));
+    public ResponseEntity<?> create(@Valid @RequestBody CreateFacilityGroupRequest request) {
+        Map<Long, LocaleEntity> localeEntityMap = LocaleUtils.resolveLocaleMap(
+                request.getLocales(), CreateFacilityGroupLocaleRequest::getLocaleId, localeService);
+        return ResponseEntity.status(HttpStatus.CREATED).body(facilityGroupService.create(request, localeEntityMap));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getFacilityGroup(@PathVariable Long id) {
-        return ResponseEntity.ok(facilityGroupService.getFacilityGroup(id));
+    public ResponseEntity<?> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(facilityGroupService.getById(id));
     }
 
     @GetMapping
-    public ResponseEntity<?> getAllFacilityGroups(@ParameterObject PaginatedRequest request) {
-        Pageable pageable = request.toPageable(Set.of("id", "code", "name"));
-        return ResponseEntity.ok(facilityGroupService.getAllFacilityGroups(pageable));
+    public ResponseEntity<?> getAll(@Valid @ParameterObject PaginatedRequest request) {
+        return ResponseEntity.ok(facilityGroupService.getAll(request));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateFacilityGroup(@PathVariable Long id, @Valid @RequestBody UpdateFacilityGroupRequest request) {
-        return ResponseEntity.ok(facilityGroupService.updateFacilityGroup(id, request));
+    public ResponseEntity<?> update(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateFacilityGroupRequest request) {
+        FacilityGroupEntity entity = facilityGroupService.getEntityById(id);
+        return ResponseEntity.ok(facilityGroupService.update(entity, request));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteFacilityGroup(@PathVariable Long id) {
-        return ResponseEntity.ok(facilityGroupService.deleteFacilityGroup(id));
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        return ResponseEntity.ok(facilityGroupService.delete(id));
     }
 }

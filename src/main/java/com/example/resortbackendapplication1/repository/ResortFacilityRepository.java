@@ -10,6 +10,8 @@ import java.util.Optional;
 
 public interface ResortFacilityRepository extends JpaRepository<@NonNull ResortFacilityEntity, @NonNull Long> {
 
+    Optional<ResortFacilityEntity> findByIdAndIsActiveAndIsDeleted(Long id, boolean isActive, boolean isDeleted);
+
     Optional<ResortFacilityEntity> findByResortFacilityGroupEntity_IdAndIdAndIsActiveAndIsDeleted(Long resortFacilityGroupId, Long id, boolean isActive, boolean isDeleted);
 
     Page<@NonNull ResortFacilityEntity> findAllByResortFacilityGroupEntity_IdAndIsActiveAndIsDeleted(Long resortFacilityGroupId, boolean isActive, boolean isDeleted, Pageable pageable);

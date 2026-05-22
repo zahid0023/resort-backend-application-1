@@ -38,7 +38,7 @@ public class ResortRoomCategoryController {
             @PathVariable("resort-id") Long resortId,
             @RequestBody CreateResortRoomCategoryRequest request) {
         ResortEntity resort = resortService.getResortById(resortId);
-        RoomCategoryEntity roomCategory = roomCategoryService.getRoomCategoryEntity(request.getRoomCategoryId());
+        RoomCategoryEntity roomCategory = null;
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(resortRoomCategoryService.createResortRoomCategory(request, resort, roomCategory));
     }

@@ -101,10 +101,10 @@ public class ResortServiceImpl implements ResortService {
     public ResortResponse updateResort(Long id, UpdateResortRequest request) {
         ResortEntity entity = getResortById(id);
         CountryEntity country = request.getCountryId() != null
-                ? countryService.getCountryEntity(request.getCountryId())
+                ? countryService.getEntityById(request.getCountryId())
                 : null;
         CityEntity city = request.getCityId() != null
-                ? cityService.getCityEntity(request.getCityId())
+                ? null
                 : null;
         ResortMapper.updateEntity(entity, request, country, city);
         entity = resortRepository.save(entity);

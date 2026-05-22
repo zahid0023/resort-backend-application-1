@@ -11,13 +11,16 @@ import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 @Getter
 @Setter
 @Entity
 @Table(name = "facilities")
 public class FacilityEntity extends AuditableEntity {
+
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "facility_group_id", nullable = false)
@@ -25,16 +28,8 @@ public class FacilityEntity extends AuditableEntity {
 
     @Size(max = 100)
     @NotNull
-    @Column(name = "code", nullable = false, length = 100, unique = true)
+    @Column(name = "code", nullable = false, length = 100)
     private String code;
-
-    @Size(max = 255)
-    @NotNull
-    @Column(name = "name", nullable = false)
-    private String name;
-
-    @Column(name = "description", length = Integer.MAX_VALUE)
-    private String description;
 
     @NotNull
     @Enumerated(EnumType.STRING)
@@ -51,5 +46,8 @@ public class FacilityEntity extends AuditableEntity {
     @NotNull
     @ColumnDefault("1")
     @Column(name = "sort_order", nullable = false)
-    private Integer sortOrder;
+    private Integer sortOrder = 1;
+
+    @OneToMany(mappedBy = "facilityEntity", cascade = CascadeType.ALL)
+    private Set<FacilityLocaleEntity> facilityLocaleEntities = new LinkedHashSet<>();
 }

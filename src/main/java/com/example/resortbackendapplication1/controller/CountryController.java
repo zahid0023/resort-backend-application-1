@@ -1,50 +1,62 @@
 package com.example.resortbackendapplication1.controller;
 
 import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
-import com.example.resortbackendapplication1.dto.request.countries.CreateCountryRequest;
-import com.example.resortbackendapplication1.dto.request.countries.UpdateCountryRequest;
+import com.example.resortbackendapplication1.dto.request.country.CreateCountryRequest;
+import com.example.resortbackendapplication1.dto.request.country.UpdateCountryRequest;
+import com.example.resortbackendapplication1.dto.request.country.countrylocale.CreateCountryLocaleRequest;
+import com.example.resortbackendapplication1.model.entity.CountryEntity;
+import com.example.resortbackendapplication1.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.service.CountryService;
+import com.example.resortbackendapplication1.service.LocaleService;
+import com.example.resortbackendapplication1.utils.LocaleUtils;
+import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Set;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/countries")
 public class CountryController {
 
     private final CountryService countryService;
+    private final LocaleService localeService;
 
-    public CountryController(CountryService countryService) {
+    public CountryController(CountryService countryService,
+                             LocaleService localeService) {
         this.countryService = countryService;
+        this.localeService = localeService;
     }
 
     @PostMapping
-    public ResponseEntity<?> createCountry(@RequestBody CreateCountryRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(countryService.createCountry(request));
+    public ResponseEntity<?> create(@Valid @RequestBody CreateCountryRequest request) {
+        Map<Long, LocaleEntity> localeEntityMap = LocaleUtils.resolveLocaleMap(
+                request.getLocales(), CreateCountryLocaleRequest::getLocaleId, localeService);
+        return ResponseEntity.status(HttpStatus.CREATED).body(countryService.create(request, localeEntityMap));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getCountry(@PathVariable Long id) {
-        return ResponseEntity.ok(countryService.getCountry(id));
+    public ResponseEntity<?> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(countryService.getById(id));
     }
 
     @GetMapping
-    public ResponseEntity<?> getAllCountries(@ParameterObject PaginatedRequest request) {
-        Pageable pageable = request.toPageable(Set.of("id", "code", "name"));
-        return ResponseEntity.ok(countryService.getAllCountries(pageable));
+    public ResponseEntity<?> getAll(@Valid @ParameterObject PaginatedRequest request) {
+        return ResponseEntity.ok(countryService.getAll(request));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateCountry(@PathVariable Long id, @RequestBody UpdateCountryRequest request) {
-        return ResponseEntity.ok(countryService.updateCountry(id, request));
+    public ResponseEntity<?> update(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateCountryRequest request) {
+        CountryEntity entity = countryService.getEntityById(id);
+        return ResponseEntity.ok(countryService.update(entity, request));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteCountry(@PathVariable Long id) {
-        return ResponseEntity.ok(countryService.deleteCountry(id));
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        return ResponseEntity.ok(countryService.delete(id));
     }
 }

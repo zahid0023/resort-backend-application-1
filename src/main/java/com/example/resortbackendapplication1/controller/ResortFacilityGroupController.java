@@ -9,6 +9,7 @@ import com.example.resortbackendapplication1.model.entity.ResortFacilityGroupEnt
 import com.example.resortbackendapplication1.service.FacilityGroupService;
 import com.example.resortbackendapplication1.service.ResortFacilityGroupService;
 import com.example.resortbackendapplication1.service.ResortService;
+import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -34,19 +35,26 @@ public class ResortFacilityGroupController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createResortFacilityGroup(@PathVariable("resort-id") Long resortId, @RequestBody CreateResortFacilityGroupRequest request) {
+    public ResponseEntity<?> createResortFacilityGroup(
+            @PathVariable("resort-id") Long resortId,
+            @Valid @RequestBody CreateResortFacilityGroupRequest request) {
         ResortEntity resortEntity = resortService.getResortById(resortId);
-        FacilityGroupEntity facilityGroupEntity = facilityGroupService.getFacilityGroupEntity(request.getFacilityGroupId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(resortFacilityGroupService.createResortFacilityGroup(request, resortEntity, facilityGroupEntity));
+        FacilityGroupEntity facilityGroupEntity = null;
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(resortFacilityGroupService.createResortFacilityGroup(request, resortEntity, facilityGroupEntity));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getResortFacilityGroup(@PathVariable("resort-id") Long resortId, @PathVariable Long id) {
+    public ResponseEntity<?> getResortFacilityGroup(
+            @PathVariable("resort-id") Long resortId,
+            @PathVariable Long id) {
         return ResponseEntity.ok(resortFacilityGroupService.getResortFacilityGroup(resortId, id));
     }
 
     @GetMapping
-    public ResponseEntity<?> getAllResortFacilityGroups(@PathVariable("resort-id") Long resortId, @ParameterObject PaginatedRequest request) {
+    public ResponseEntity<?> getAllResortFacilityGroups(
+            @PathVariable("resort-id") Long resortId,
+            @ParameterObject PaginatedRequest request) {
         Pageable pageable = request.toPageable(Set.of("id", "name", "sortOrder"));
         return ResponseEntity.ok(resortFacilityGroupService.getAllResortFacilityGroups(resortId, pageable));
     }
@@ -55,13 +63,15 @@ public class ResortFacilityGroupController {
     public ResponseEntity<?> updateResortFacilityGroup(
             @PathVariable("resort-id") Long resortId,
             @PathVariable Long id,
-            @RequestBody UpdateResortFacilityGroupRequest request) {
-        ResortFacilityGroupEntity resortFacilityGroupEntity = resortFacilityGroupService.getResortFacilityGroupEntity(resortId, id);
-        return ResponseEntity.ok(resortFacilityGroupService.updateResortFacilityGroup(resortFacilityGroupEntity, request));
+            @Valid @RequestBody UpdateResortFacilityGroupRequest request) {
+        ResortFacilityGroupEntity entity = resortFacilityGroupService.getResortFacilityGroupEntity(resortId, id);
+        return ResponseEntity.ok(resortFacilityGroupService.updateResortFacilityGroup(entity, request));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteResortFacilityGroup(@PathVariable("resort-id") Long resortId, @PathVariable Long id) {
+    public ResponseEntity<?> deleteResortFacilityGroup(
+            @PathVariable("resort-id") Long resortId,
+            @PathVariable Long id) {
         return ResponseEntity.ok(resortFacilityGroupService.deleteResortFacilityGroup(resortId, id));
     }
 }

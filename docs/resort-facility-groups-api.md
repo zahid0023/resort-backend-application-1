@@ -2,30 +2,37 @@
 
 Base URL: `/api/v1/resorts/{resort-id}/resort-facility-groups`
 
-Links a facility group to a specific resort with a custom name, description, and sort order. All records support soft-delete.
+Links a facility group to a specific resort with a custom name, description, sort order, and optional icon override. All records support soft-delete.
 
 ---
 
 ## Endpoints
 
-| Method | Path                                                             | Description                        |
-|--------|------------------------------------------------------------------|------------------------------------|
-| POST   | `/api/v1/resorts/{resort-id}/resort-facility-groups`            | Create a resort facility group     |
-| GET    | `/api/v1/resorts/{resort-id}/resort-facility-groups`            | List all resort facility groups    |
-| GET    | `/api/v1/resorts/{resort-id}/resort-facility-groups/{id}`       | Get a resort facility group        |
-| PUT    | `/api/v1/resorts/{resort-id}/resort-facility-groups/{id}`       | Update a resort facility group     |
-| DELETE | `/api/v1/resorts/{resort-id}/resort-facility-groups/{id}`       | Delete a resort facility group     |
+| Method | Path                                                              | Description                     |
+|--------|-------------------------------------------------------------------|---------------------------------|
+| POST   | `/api/v1/resorts/{resort-id}/resort-facility-groups`             | Create a resort facility group  |
+| GET    | `/api/v1/resorts/{resort-id}/resort-facility-groups`             | List all resort facility groups |
+| GET    | `/api/v1/resorts/{resort-id}/resort-facility-groups/{id}`        | Get a resort facility group     |
+| PUT    | `/api/v1/resorts/{resort-id}/resort-facility-groups/{id}`        | Update a resort facility group  |
+| DELETE | `/api/v1/resorts/{resort-id}/resort-facility-groups/{id}`        | Delete a resort facility group  |
 
 ---
 
 ## Data Model
 
-| Field               | Type    | Required | Description                                      |
-|---------------------|---------|----------|--------------------------------------------------|
-| `facility_group_id` | Long    | Yes      | ID of the facility group to link                 |
-| `name`              | String  | Yes      | Display name (max 255 chars)                     |
-| `description`       | String  | Yes      | Description (unlimited)                          |
-| `sort_order`        | Integer | Yes      | Display order                                    |
+| Field               | Type    | Required | Constraints       | Description                                                      |
+|---------------------|---------|----------|-------------------|------------------------------------------------------------------|
+| `id`                | Long    | —        | read-only         | Auto-generated identifier                                        |
+| `resort_id`         | Long    | —        | read-only         | ID of the parent resort                                          |
+| `facility_group_id` | Long    | Yes      | —                 | ID of the facility group to link                                 |
+| `name`              | String  | Yes      | max 255 chars     | Display name for this resort's version of the group              |
+| `description`       | String  | Yes      | unlimited         | Description of this group for this resort                        |
+| `sort_order`        | Integer | Yes      | >= 0              | Display order                                                    |
+| `icon_type`         | String  | No       | max 100 chars     | Icon type override (e.g. `LUCIDE`, `IMAGE`, `SVG`, `EXTERNAL`)   |
+| `icon_value`        | String  | No       | max 2000 chars    | Icon value override — name, URL, or SVG content                  |
+| `icon_meta`         | Object  | No       | any key-value pairs | Optional rendering hints (size, color, alt, etc.)              |
+
+> `icon_type`, `icon_value`, and `icon_meta` are optional overrides. If omitted, the frontend falls back to the icon defined on the base facility group.
 
 ---
 
@@ -35,8 +42,8 @@ Links a facility group to a specific resort with a custom name, description, and
 
 ### Path Parameters
 
-| Parameter   | Type | Description    |
-|-------------|------|----------------|
+| Parameter   | Type | Description      |
+|-------------|------|------------------|
 | `resort-id` | Long | ID of the resort |
 
 ### Request Body
@@ -46,9 +53,27 @@ Links a facility group to a specific resort with a custom name, description, and
   "facility_group_id": 2,
   "name": "Dining & Beverages",
   "description": "All dining outlets at this resort.",
-  "sort_order": 1
+  "sort_order": 1,
+  "icon_type": "LUCIDE",
+  "icon_value": "UtensilsCrossed",
+  "icon_meta": {
+    "size": 24,
+    "color": "#f59e0b"
+  }
 }
 ```
+
+### Request Fields
+
+| Field               | Type    | Required | Validation                        |
+|---------------------|---------|----------|-----------------------------------|
+| `facility_group_id` | Long    | Yes      | Must reference an existing group  |
+| `name`              | String  | Yes      | Not blank, max 255 chars          |
+| `description`       | String  | Yes      | Not null                          |
+| `sort_order`        | Integer | Yes      | Not null, >= 0                    |
+| `icon_type`         | String  | No       | Max 100 chars                     |
+| `icon_value`        | String  | No       | Max 2000 chars                    |
+| `icon_meta`         | Object  | No       | Any JSON object                   |
 
 ### Response `201 Created`
 
@@ -67,9 +92,9 @@ Links a facility group to a specific resort with a custom name, description, and
 
 ### Path Parameters
 
-| Parameter   | Type | Description                    |
-|-------------|------|--------------------------------|
-| `resort-id` | Long | ID of the resort               |
+| Parameter   | Type | Description                     |
+|-------------|------|---------------------------------|
+| `resort-id` | Long | ID of the resort                |
 | `id`        | Long | ID of the resort facility group |
 
 ### Response `200 OK`
@@ -82,10 +107,18 @@ Links a facility group to a specific resort with a custom name, description, and
     "facility_group_id": 2,
     "name": "Dining & Beverages",
     "description": "All dining outlets at this resort.",
-    "sort_order": 1
+    "sort_order": 1,
+    "icon_type": "LUCIDE",
+    "icon_value": "UtensilsCrossed",
+    "icon_meta": {
+      "size": 24,
+      "color": "#f59e0b"
+    }
   }
 }
 ```
+
+> Fields with `null` values are omitted from the response (`icon_type`, `icon_value`, `icon_meta` will be absent if not set).
 
 ---
 
@@ -101,12 +134,12 @@ Links a facility group to a specific resort with a custom name, description, and
 
 ### Query Parameters
 
-| Parameter  | Type   | Default | Constraints                  | Description              |
-|------------|--------|---------|------------------------------|--------------------------|
-| `page`     | int    | `0`     | >= 0                         | Zero-based page index    |
-| `size`     | int    | `10`    | 1 – 50                       | Number of items per page |
-| `sort_by`  | String | `id`    | `id`, `name`, `sortOrder`    | Field to sort by         |
-| `sort_dir` | String | `ASC`   | `ASC`, `DESC`                | Sort direction           |
+| Parameter  | Type   | Default | Constraints               | Description              |
+|------------|--------|---------|---------------------------|--------------------------|
+| `page`     | int    | `0`     | >= 0                      | Zero-based page index    |
+| `size`     | int    | `10`    | 1 – 50                    | Number of items per page |
+| `sort_by`  | String | `id`    | `id`, `name`, `sortOrder` | Field to sort by         |
+| `sort_dir` | String | `ASC`   | `ASC`, `DESC`             | Sort direction           |
 
 ### Response `200 OK`
 
@@ -119,12 +152,26 @@ Links a facility group to a specific resort with a custom name, description, and
       "facility_group_id": 2,
       "name": "Dining & Beverages",
       "description": "All dining outlets at this resort.",
-      "sort_order": 1
+      "sort_order": 1,
+      "icon_type": "LUCIDE",
+      "icon_value": "UtensilsCrossed",
+      "icon_meta": {
+        "size": 24,
+        "color": "#f59e0b"
+      }
+    },
+    {
+      "id": 11,
+      "resort_id": 1,
+      "facility_group_id": 3,
+      "name": "Wellness & Spa",
+      "description": "Spa and wellness facilities.",
+      "sort_order": 2
     }
   ],
   "current_page": 0,
   "total_pages": 1,
-  "total_elements": 1,
+  "total_elements": 2,
   "page_size": 10,
   "has_next": false,
   "has_previous": false
@@ -137,7 +184,7 @@ Links a facility group to a specific resort with a custom name, description, and
 
 `PUT /api/v1/resorts/{resort-id}/resort-facility-groups/{id}`
 
-All fields are optional — only provided fields are updated.
+All fields are optional — only provided (non-null) fields are updated.
 
 ### Path Parameters
 
@@ -151,15 +198,26 @@ All fields are optional — only provided fields are updated.
 ```json
 {
   "name": "Food & Beverage",
-  "sort_order": 2
+  "sort_order": 2,
+  "icon_type": "LUCIDE",
+  "icon_value": "ChefHat",
+  "icon_meta": {
+    "size": 20,
+    "color": "#ef4444"
+  }
 }
 ```
 
-| Field         | Type    | Required |
-|---------------|---------|----------|
-| `name`        | String  | No       |
-| `description` | String  | No       |
-| `sort_order`  | Integer | No       |
+### Request Fields
+
+| Field         | Type    | Required | Validation            |
+|---------------|---------|----------|-----------------------|
+| `name`        | String  | No       | Max 255 chars         |
+| `description` | String  | No       | —                     |
+| `sort_order`  | Integer | No       | >= 0                  |
+| `icon_type`   | String  | No       | Max 100 chars         |
+| `icon_value`  | String  | No       | Max 2000 chars        |
+| `icon_meta`   | Object  | No       | Any JSON object       |
 
 ### Response `200 OK`
 
@@ -176,7 +234,7 @@ All fields are optional — only provided fields are updated.
 
 `DELETE /api/v1/resorts/{resort-id}/resort-facility-groups/{id}`
 
-Soft-deletes the record.
+Soft-deletes the record. The record is not removed from the database but will no longer appear in any response.
 
 ### Path Parameters
 
@@ -207,9 +265,10 @@ Soft-deletes the record.
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                             |
-|-------------|----------------------------|---------------------------------------------------|
-| 400         | `INVALID_ARGUMENT`         | Invalid sort field or bad request data            |
-| 404         | `ENTITY_NOT_FOUND`         | Resort, facility group, or record not found       |
-| 409         | `DATA_INTEGRITY_VIOLATION` | Constraint violation                              |
-| 500         | `INTERNAL_SERVER_ERROR`    | Unexpected server error                           |
+| HTTP Status | Error Code                 | Cause                                                        |
+|-------------|----------------------------|--------------------------------------------------------------|
+| 400         | `VALIDATION_ERROR`         | Missing required fields or constraint violations             |
+| 400         | `INVALID_ARGUMENT`         | Invalid sort field or malformed request                      |
+| 404         | `ENTITY_NOT_FOUND`         | Resort, facility group, or resort facility group not found   |
+| 409         | `DATA_INTEGRITY_VIOLATION` | Constraint violation                                         |
+| 500         | `INTERNAL_SERVER_ERROR`    | Unexpected server error                                      |

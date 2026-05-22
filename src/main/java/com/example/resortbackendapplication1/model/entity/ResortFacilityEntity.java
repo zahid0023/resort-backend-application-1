@@ -6,11 +6,16 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import java.util.Map;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "resort_facility")
+@Table(name = "resort_facilities")
 public class ResortFacilityEntity extends AuditableEntity {
 
     @NotNull
@@ -30,11 +35,20 @@ public class ResortFacilityEntity extends AuditableEntity {
     @Column(name = "description", length = Integer.MAX_VALUE)
     private String description;
 
-    @Size(max = 255)
-    @Column(name = "icon")
-    private String icon;
+    @NotNull
+    @ColumnDefault("1")
+    @Column(name = "sort_order", nullable = false)
+    private Integer sortOrder;
 
-    @Size(max = 255)
-    @Column(name = "value")
-    private String value;
+    @Size(max = 100)
+    @Column(name = "icon_type", length = 100)
+    private String iconType;
+
+    @Column(name = "icon_value", length = Integer.MAX_VALUE)
+    private String iconValue;
+
+    @Column(name = "icon_meta")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private Map<String, Object> iconMeta;
+
 }

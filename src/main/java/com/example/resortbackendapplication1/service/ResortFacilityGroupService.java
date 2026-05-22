@@ -25,7 +25,7 @@ public interface ResortFacilityGroupService {
 
     PaginatedResponse<ResortFacilityGroupDto> getAllResortFacilityGroups(Long resortId, Pageable pageable);
 
-    SuccessResponse updateResortFacilityGroup(ResortFacilityGroupEntity resortFacilityGroupEntity, UpdateResortFacilityGroupRequest request);
+    SuccessResponse updateResortFacilityGroup(ResortFacilityGroupEntity entity, UpdateResortFacilityGroupRequest request);
 
     SuccessResponse deleteResortFacilityGroup(Long resortId, Long id);
 }

@@ -1,17 +1,26 @@
 package com.example.resortbackendapplication1.model.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
 
+import java.util.List;
+
 @Data
 @Builder
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@NoArgsConstructor
+@AllArgsConstructor
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class CountryDto {
     private Long id;
     private String code;
-    private String name;
+
+    private String iso3Code;
+    private String phoneCode;
+    private Integer sortOrder;
+
+    private List<CountryLocaleDto> locales;
 }

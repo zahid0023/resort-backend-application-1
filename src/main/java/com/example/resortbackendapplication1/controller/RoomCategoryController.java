@@ -3,48 +3,60 @@ package com.example.resortbackendapplication1.controller;
 import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
 import com.example.resortbackendapplication1.dto.request.roomcategories.CreateRoomCategoryRequest;
 import com.example.resortbackendapplication1.dto.request.roomcategories.UpdateRoomCategoryRequest;
+import com.example.resortbackendapplication1.dto.request.roomcategories.roomcategorylocale.CreateRoomCategoryLocaleRequest;
+import com.example.resortbackendapplication1.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.model.entity.RoomCategoryEntity;
+import com.example.resortbackendapplication1.service.LocaleService;
 import com.example.resortbackendapplication1.service.RoomCategoryService;
+import com.example.resortbackendapplication1.utils.LocaleUtils;
+import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Set;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/room-categories")
 public class RoomCategoryController {
 
     private final RoomCategoryService roomCategoryService;
+    private final LocaleService localeService;
 
-    public RoomCategoryController(RoomCategoryService roomCategoryService) {
+    public RoomCategoryController(RoomCategoryService roomCategoryService,
+                                  LocaleService localeService) {
         this.roomCategoryService = roomCategoryService;
+        this.localeService = localeService;
     }
 
     @PostMapping
-    public ResponseEntity<?> createRoomCategory(@RequestBody CreateRoomCategoryRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(roomCategoryService.createRoomCategory(request));
+    public ResponseEntity<?> create(@Valid @RequestBody CreateRoomCategoryRequest request) {
+        Map<Long, LocaleEntity> localeEntityMap = LocaleUtils.resolveLocaleMap(
+                request.getLocales(), CreateRoomCategoryLocaleRequest::getLocaleId, localeService);
+        return ResponseEntity.status(HttpStatus.CREATED).body(roomCategoryService.create(request, localeEntityMap));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getRoomCategory(@PathVariable Long id) {
-        return ResponseEntity.ok(roomCategoryService.getRoomCategory(id));
+    public ResponseEntity<?> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(roomCategoryService.getById(id));
     }
 
     @GetMapping
-    public ResponseEntity<?> getAllRoomCategories(@ParameterObject PaginatedRequest request) {
-        Pageable pageable = request.toPageable(Set.of("id", "code", "name"));
-        return ResponseEntity.ok(roomCategoryService.getAllRoomCategories(pageable));
+    public ResponseEntity<?> getAll(@Valid @ParameterObject PaginatedRequest request) {
+        return ResponseEntity.ok(roomCategoryService.getAll(request));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateRoomCategory(@PathVariable Long id, @RequestBody UpdateRoomCategoryRequest request) {
-        return ResponseEntity.ok(roomCategoryService.updateRoomCategory(id, request));
+    public ResponseEntity<?> update(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateRoomCategoryRequest request) {
+        RoomCategoryEntity entity = roomCategoryService.getEntityById(id);
+        return ResponseEntity.ok(roomCategoryService.update(entity, request));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteRoomCategory(@PathVariable Long id) {
-        return ResponseEntity.ok(roomCategoryService.deleteRoomCategory(id));
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        return ResponseEntity.ok(roomCategoryService.delete(id));
     }
 }

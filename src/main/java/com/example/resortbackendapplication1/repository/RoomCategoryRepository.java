@@ -1,6 +1,7 @@
 package com.example.resortbackendapplication1.repository;
 
 import com.example.resortbackendapplication1.model.entity.RoomCategoryEntity;
+import com.example.resortbackendapplication1.model.projection.RoomCategorySummary;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,7 +11,7 @@ import java.util.Optional;
 
 public interface RoomCategoryRepository extends JpaRepository<@NonNull RoomCategoryEntity, @NonNull Long> {
 
-    Optional<RoomCategoryEntity> findByIdAndIsActiveAndIsDeleted(Long id, boolean isActive, boolean isDeleted);
+    Optional<RoomCategoryEntity> findByIdAndIsActiveAndIsDeleted(Long id, Boolean isActive, Boolean isDeleted);
 
-    Page<@NonNull RoomCategoryEntity> findAllByIsActiveAndIsDeleted(boolean isActive, boolean isDeleted, Pageable pageable);
+    Page<@NonNull RoomCategorySummary> findAllByIsActiveAndIsDeleted(Boolean isActive, Boolean isDeleted, Pageable pageable);
 }

@@ -6,11 +6,17 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "resort_facility_group")
+@Table(name = "resort_facility_groups")
 public class ResortFacilityGroupEntity extends AuditableEntity {
 
     @NotNull
@@ -35,4 +41,19 @@ public class ResortFacilityGroupEntity extends AuditableEntity {
     @Column(name = "sort_order")
     @NotNull
     private Integer sortOrder;
+
+    @Size(max = 100)
+    @Column(name = "icon_type", length = 100)
+    private String iconType;
+
+    @Column(name = "icon_value", length = Integer.MAX_VALUE)
+    private String iconValue;
+
+    @Column(name = "icon_meta")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private Map<String, Object> iconMeta;
+
+    @OneToMany(mappedBy = "resortFacilityGroupEntity")
+    private Set<ResortFacilityEntity> resortFacilityEntities = new LinkedHashSet<>();
+
 }

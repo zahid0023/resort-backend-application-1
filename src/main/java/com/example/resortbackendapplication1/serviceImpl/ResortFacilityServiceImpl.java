@@ -2,7 +2,6 @@ package com.example.resortbackendapplication1.serviceImpl;
 
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
-import com.example.resortbackendapplication1.dto.request.resortfacilities.BulkCreateResortFacilityRequest;
 import com.example.resortbackendapplication1.dto.request.resortfacilities.CreateResortFacilityRequest;
 import com.example.resortbackendapplication1.dto.request.resortfacilities.UpdateResortFacilityRequest;
 import com.example.resortbackendapplication1.dto.response.resortfacilities.ResortFacilityResponse;
@@ -21,9 +20,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Service
 @Slf4j
 public class ResortFacilityServiceImpl implements ResortFacilityService {
@@ -36,24 +32,11 @@ public class ResortFacilityServiceImpl implements ResortFacilityService {
 
     @Override
     public SuccessResponse createResortFacility(CreateResortFacilityRequest request,
-                                                FacilityEntity facilityEntity,
-                                                ResortFacilityGroupEntity resortFacilityGroupEntity) {
-        ResortFacilityEntity entity = ResortFacilityMapper.fromRequest(request, facilityEntity, resortFacilityGroupEntity);
+                                                ResortFacilityGroupEntity resortFacilityGroupEntity,
+                                                FacilityEntity facilityEntity) {
+        ResortFacilityEntity entity = ResortFacilityMapper.fromRequest(request, resortFacilityGroupEntity, facilityEntity);
         entity = resortFacilityRepository.save(entity);
         return new SuccessResponse(true, entity.getId());
-    }
-
-    @Override
-    public SuccessResponse bulkCreateResortFacilities(BulkCreateResortFacilityRequest request,
-                                                      ResortFacilityGroupEntity resortFacilityGroupEntity,
-                                                      List<FacilityEntity> facilityEntities) {
-        List<ResortFacilityEntity> entities = new ArrayList<>();
-        List<CreateResortFacilityRequest> facilities = request.getFacilities();
-        for (int i = 0; i < facilities.size(); i++) {
-            entities.add(ResortFacilityMapper.fromRequest(facilities.get(i), facilityEntities.get(i), resortFacilityGroupEntity));
-        }
-        resortFacilityRepository.saveAll(entities);
-        return new SuccessResponse(true, 0L);
     }
 
     @Override
@@ -65,22 +48,22 @@ public class ResortFacilityServiceImpl implements ResortFacilityService {
     @Override
     public ResortFacilityResponse getResortFacility(Long resortFacilityGroupId, Long id) {
         ResortFacilityEntity entity = getResortFacilityEntity(resortFacilityGroupId, id);
-        return new ResortFacilityResponse(ResortFacilityMapper.toDto(entity));
+        ResortFacilityDto dto = ResortFacilityMapper.toDto(entity);
+        return new ResortFacilityResponse(dto);
     }
 
     @Override
     public PaginatedResponse<ResortFacilityDto> getAllResortFacilities(Long resortFacilityGroupId, Pageable pageable) {
-        Page<@NonNull ResortFacilityEntity> page = resortFacilityRepository
-                .findAllByResortFacilityGroupEntity_IdAndIsActiveAndIsDeleted(resortFacilityGroupId, true, false, pageable);
+        Page<@NonNull ResortFacilityEntity> page = resortFacilityRepository.findAllByResortFacilityGroupEntity_IdAndIsActiveAndIsDeleted(resortFacilityGroupId, true, false, pageable);
         Page<@NonNull ResortFacilityDto> dtoPage = page.map(ResortFacilityMapper::toDto);
         return Pagination.buildPaginatedResponse(dtoPage);
     }
 
     @Override
-    public SuccessResponse updateResortFacility(ResortFacilityEntity resortFacilityEntity, UpdateResortFacilityRequest request) {
-        ResortFacilityMapper.updateEntity(resortFacilityEntity, request);
-        resortFacilityEntity = resortFacilityRepository.save(resortFacilityEntity);
-        return new SuccessResponse(true, resortFacilityEntity.getId());
+    public SuccessResponse updateResortFacility(ResortFacilityEntity entity, UpdateResortFacilityRequest request) {
+        ResortFacilityMapper.updateEntity(entity, request);
+        entity = resortFacilityRepository.save(entity);
+        return new SuccessResponse(true, entity.getId());
     }
 
     @Override

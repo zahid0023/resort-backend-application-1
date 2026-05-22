@@ -1,13 +1,17 @@
 package com.example.resortbackendapplication1.serviceImpl;
 
+import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.dto.request.roomcategories.CreateRoomCategoryRequest;
 import com.example.resortbackendapplication1.dto.request.roomcategories.UpdateRoomCategoryRequest;
 import com.example.resortbackendapplication1.dto.response.roomcategories.RoomCategoryResponse;
 import com.example.resortbackendapplication1.model.dto.RoomCategoryDto;
+import com.example.resortbackendapplication1.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.model.entity.RoomCategoryEntity;
+import com.example.resortbackendapplication1.model.enums.RoomCategorySortField;
 import com.example.resortbackendapplication1.model.mapper.RoomCategoryMapper;
+import com.example.resortbackendapplication1.model.projection.RoomCategorySummary;
 import com.example.resortbackendapplication1.repository.RoomCategoryRepository;
 import com.example.resortbackendapplication1.service.RoomCategoryService;
 import com.example.resortbackendapplication1.utils.Pagination;
@@ -15,12 +19,17 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Map;
+import java.util.Set;
 
 @Service
 @Slf4j
 public class RoomCategoryServiceImpl implements RoomCategoryService {
+
+    private static final Set<String> ALLOWED_SORT_FIELDS = RoomCategorySortField.allowedFields();
 
     private final RoomCategoryRepository roomCategoryRepository;
 
@@ -28,47 +37,53 @@ public class RoomCategoryServiceImpl implements RoomCategoryService {
         this.roomCategoryRepository = roomCategoryRepository;
     }
 
+    @Transactional
     @Override
-    public SuccessResponse createRoomCategory(CreateRoomCategoryRequest request) {
-        RoomCategoryEntity entity = RoomCategoryMapper.fromRequest(request);
-        entity = roomCategoryRepository.save(entity);
+    public SuccessResponse create(CreateRoomCategoryRequest request, Map<Long, LocaleEntity> localeEntityMap) {
+        RoomCategoryEntity entity = RoomCategoryMapper.create(request, localeEntityMap);
+        roomCategoryRepository.save(entity);
+        log.info("RoomCategory created with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
     }
 
     @Override
-    public RoomCategoryEntity getRoomCategoryEntity(Long id) {
+    public RoomCategoryEntity getEntityById(Long id) {
         return roomCategoryRepository.findByIdAndIsActiveAndIsDeleted(id, true, false)
-                .orElseThrow(() -> new EntityNotFoundException("Room Category with id: " + id + " was not found."));
+                .orElseThrow(() -> new EntityNotFoundException("RoomCategory not found with id: " + id));
     }
 
     @Override
-    public RoomCategoryResponse getRoomCategory(Long id) {
-        RoomCategoryEntity entity = getRoomCategoryEntity(id);
+    public RoomCategoryResponse getById(Long id) {
+        RoomCategoryEntity entity = getEntityById(id);
         RoomCategoryDto dto = RoomCategoryMapper.toDto(entity);
         return new RoomCategoryResponse(dto);
     }
 
     @Override
-    public PaginatedResponse<RoomCategoryDto> getAllRoomCategories(Pageable pageable) {
-        Page<@NonNull RoomCategoryEntity> page = roomCategoryRepository.findAllByIsActiveAndIsDeleted(true, false, pageable);
-        Page<@NonNull RoomCategoryDto> dtoPage = page.map(RoomCategoryMapper::toDto);
-        return Pagination.buildPaginatedResponse(dtoPage);
+    public PaginatedResponse<RoomCategorySummary> getAll(PaginatedRequest request) {
+        Page<@NonNull RoomCategorySummary> page = roomCategoryRepository.findAllByIsActiveAndIsDeleted(
+                true, false, request.toPageable(ALLOWED_SORT_FIELDS)
+        );
+        return Pagination.buildPaginatedResponse(page);
     }
 
+    @Transactional
     @Override
-    public SuccessResponse updateRoomCategory(Long id, UpdateRoomCategoryRequest request) {
-        RoomCategoryEntity entity = getRoomCategoryEntity(id);
-        RoomCategoryMapper.updateEntity(entity, request);
-        entity = roomCategoryRepository.save(entity);
+    public SuccessResponse update(RoomCategoryEntity entity, UpdateRoomCategoryRequest request) {
+        RoomCategoryMapper.update(entity, request);
+        roomCategoryRepository.save(entity);
+        log.info("RoomCategory updated with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
     }
 
+    @Transactional
     @Override
-    public SuccessResponse deleteRoomCategory(Long id) {
-        RoomCategoryEntity entity = getRoomCategoryEntity(id);
+    public SuccessResponse delete(Long id) {
+        RoomCategoryEntity entity = getEntityById(id);
         entity.setIsDeleted(true);
         entity.setIsActive(false);
         roomCategoryRepository.save(entity);
-        return new SuccessResponse(true, id);
+        log.info("RoomCategory soft-deleted with id: {}", entity.getId());
+        return new SuccessResponse(true, entity.getId());
     }
 }

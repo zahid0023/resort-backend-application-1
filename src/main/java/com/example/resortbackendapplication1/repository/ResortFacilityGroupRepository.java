@@ -14,7 +14,5 @@ public interface ResortFacilityGroupRepository extends JpaRepository<@NonNull Re
 
     Optional<ResortFacilityGroupEntity> findByResortEntity_IdAndIdAndIsActiveAndIsDeleted(Long resortId, Long id, boolean isActive, boolean isDeleted);
 
-    Page<@NonNull ResortFacilityGroupEntity> findAllByIsActiveAndIsDeleted(boolean isActive, boolean isDeleted, Pageable pageable);
-
     Page<@NonNull ResortFacilityGroupEntity> findAllByResortEntity_IdAndIsActiveAndIsDeleted(Long resortId, boolean isActive, boolean isDeleted, Pageable pageable);
 }

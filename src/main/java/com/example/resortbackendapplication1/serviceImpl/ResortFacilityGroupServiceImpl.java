@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 public class ResortFacilityGroupServiceImpl implements ResortFacilityGroupService {
 
     private final ResortFacilityGroupRepository resortFacilityGroupRepository;
+
     public ResortFacilityGroupServiceImpl(ResortFacilityGroupRepository resortFacilityGroupRepository) {
         this.resortFacilityGroupRepository = resortFacilityGroupRepository;
     }
@@ -58,17 +59,17 @@ public class ResortFacilityGroupServiceImpl implements ResortFacilityGroupServic
     }
 
     @Override
-    public PaginatedResponse<ResortFacilityGroupDto> getAllResortFacilityGroups(Long id, Pageable pageable) {
-        Page<@NonNull ResortFacilityGroupEntity> page = resortFacilityGroupRepository.findAllByResortEntity_IdAndIsActiveAndIsDeleted(id, true, false, pageable);
+    public PaginatedResponse<ResortFacilityGroupDto> getAllResortFacilityGroups(Long resortId, Pageable pageable) {
+        Page<@NonNull ResortFacilityGroupEntity> page = resortFacilityGroupRepository.findAllByResortEntity_IdAndIsActiveAndIsDeleted(resortId, true, false, pageable);
         Page<@NonNull ResortFacilityGroupDto> dtoPage = page.map(ResortFacilityGroupMapper::toDto);
         return Pagination.buildPaginatedResponse(dtoPage);
     }
 
     @Override
-    public SuccessResponse updateResortFacilityGroup(ResortFacilityGroupEntity resortFacilityGroupEntity, UpdateResortFacilityGroupRequest request) {
-        ResortFacilityGroupMapper.updateEntity(resortFacilityGroupEntity, request);
-        resortFacilityGroupEntity = resortFacilityGroupRepository.save(resortFacilityGroupEntity);
-        return new SuccessResponse(true, resortFacilityGroupEntity.getId());
+    public SuccessResponse updateResortFacilityGroup(ResortFacilityGroupEntity entity, UpdateResortFacilityGroupRequest request) {
+        ResortFacilityGroupMapper.updateEntity(entity, request);
+        entity = resortFacilityGroupRepository.save(entity);
+        return new SuccessResponse(true, entity.getId());
     }
 
     @Override

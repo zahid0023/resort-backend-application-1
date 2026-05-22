@@ -6,16 +6,20 @@ import lombok.Data;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
 
+import java.util.Map;
+
 @Data
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class ResortFacilityDto {
     private Long id;
-    private Long facilityId;
     private Long resortFacilityGroupId;
+    private Long facilityId;
     private String name;
     private String description;
-    private String icon;
-    private String value;
+    private Integer sortOrder;
+    private String iconType;
+    private String iconValue;
+    private Map<String, Object> iconMeta;
 }

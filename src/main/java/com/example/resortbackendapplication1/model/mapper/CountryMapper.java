@@ -1,31 +1,67 @@
 package com.example.resortbackendapplication1.model.mapper;
 
-import com.example.resortbackendapplication1.dto.request.countries.CreateCountryRequest;
-import com.example.resortbackendapplication1.dto.request.countries.UpdateCountryRequest;
+import com.example.resortbackendapplication1.dto.request.country.CountryRequest;
+import com.example.resortbackendapplication1.dto.request.country.CreateCountryRequest;
+import com.example.resortbackendapplication1.dto.request.country.UpdateCountryRequest;
+import com.example.resortbackendapplication1.dto.request.country.countrylocale.CreateCountryLocaleRequest;
+import com.example.resortbackendapplication1.model.dto.CityDto;
 import com.example.resortbackendapplication1.model.dto.CountryDto;
+import com.example.resortbackendapplication1.model.dto.CountryLocaleDto;
 import com.example.resortbackendapplication1.model.entity.CountryEntity;
+import com.example.resortbackendapplication1.model.entity.CountryLocaleEntity;
+import com.example.resortbackendapplication1.model.entity.LocaleEntity;
 import lombok.experimental.UtilityClass;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 
 @UtilityClass
 public class CountryMapper {
 
-    public static CountryEntity fromRequest(CreateCountryRequest request) {
+    public CountryEntity create(CreateCountryRequest request,
+                                Map<Long, LocaleEntity> localeEntityMap) {
         CountryEntity entity = new CountryEntity();
         entity.setCode(request.getCode());
-        entity.setName(request.getName());
+        applyCommonFields(entity, request);
+        entity.setCountryLocaleEntities(mapLocales(request.getLocales(), entity, localeEntityMap));
         return entity;
     }
 
-    public static void updateEntity(CountryEntity entity, UpdateCountryRequest request) {
-        if (request.getCode() != null) entity.setCode(request.getCode());
-        if (request.getName() != null) entity.setName(request.getName());
+    public void update(CountryEntity entity,
+                       UpdateCountryRequest request) {
+        applyCommonFields(entity, request);
     }
 
-    public static CountryDto toDto(CountryEntity entity) {
+    private void applyCommonFields(CountryEntity entity,
+                                   CountryRequest request) {
+        entity.setIso3Code(request.getIso3Code());
+        entity.setPhoneCode(request.getPhoneCode());
+        entity.setSortOrder(request.getSortOrder());
+    }
+
+    private Set<CountryLocaleEntity> mapLocales(List<CreateCountryLocaleRequest> locales,
+                                                CountryEntity entity,
+                                                Map<Long, LocaleEntity> localeEntityMap) {
+        return locales.stream()
+                .map(locale -> CountryLocaleMapper.create(locale, entity, localeEntityMap.get(locale.getLocaleId())))
+                .collect(Collectors.toSet());
+    }
+
+    public CountryDto toDto(CountryEntity entity) {
+        List<CountryLocaleDto> countryLocales = entity.getCountryLocaleEntities().stream()
+                .map(CountryLocaleMapper::toDto)
+                .toList();
+
         return CountryDto.builder()
                 .id(entity.getId())
                 .code(entity.getCode())
-                .name(entity.getName())
+                .iso3Code(entity.getIso3Code())
+                .phoneCode(entity.getPhoneCode())
+                .sortOrder(entity.getSortOrder())
+                .locales(countryLocales)
                 .build();
     }
 }
