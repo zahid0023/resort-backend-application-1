@@ -1,4 +1,0 @@
-package com.example.resortbackendapplication1.dto.request.resortimagestorageconfigs;
-
-public class UpdateResortImageStorageConfigRequest extends ResortImageStorageConfigRequest {
-}

@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 public class SpringDocJackson2Config {
 
     @Bean
-    public io.swagger.v3.core.jackson.ModelResolver springDocModelResolver() {
+    public ModelResolver springDocModelResolver() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
         return new ModelResolver(mapper);

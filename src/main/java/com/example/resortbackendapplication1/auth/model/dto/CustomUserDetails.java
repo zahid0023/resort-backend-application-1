@@ -40,7 +40,7 @@ public class CustomUserDetails implements UserDetails {
 
         // Permissions (must already be fetched)
         userEntity.getUserPermissions().forEach(p ->
-                auths.add(new SimpleGrantedAuthority(p.getPermission().getName()))
+                auths.add(new SimpleGrantedAuthority(p.getPermissionEntity().getName()))
         );
 
         this.authorities = Collections.unmodifiableSet(auths);

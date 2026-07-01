@@ -5,6 +5,7 @@ import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
 
 import java.util.List;
+import java.util.Set;
 
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
@@ -16,4 +17,6 @@ public class PaginatedResponse<T> {
     private int pageSize;
     private boolean hasNext;
     private boolean hasPrevious;
+    private Set<String> sortableFields;
+    private Set<String> searchableFields;
 }

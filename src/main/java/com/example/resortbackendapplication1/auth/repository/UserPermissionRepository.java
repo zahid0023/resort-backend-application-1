@@ -7,7 +7,7 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserPermissionRepository extends JpaRepository<@NonNull UserPermissionEntity, @NonNull Long> {
-    boolean existsByUserAndPermission(
+    boolean existsByUserEntityAndPermissionEntity(
             UserEntity userEntity,
             PermissionEntity permissionEntity
     );

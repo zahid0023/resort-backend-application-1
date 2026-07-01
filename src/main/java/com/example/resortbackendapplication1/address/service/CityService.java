@@ -1,0 +1,31 @@
+package com.example.resortbackendapplication1.address.service;
+
+import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
+import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
+import com.example.resortbackendapplication1.address.dto.request.city.CityFilterRequest;
+import com.example.resortbackendapplication1.address.dto.request.city.CreateCityRequest;
+import com.example.resortbackendapplication1.address.dto.request.city.UpdateCityRequest;
+import com.example.resortbackendapplication1.address.dto.response.cities.CityResponse;
+import com.example.resortbackendapplication1.address.model.dto.CityDto;
+import com.example.resortbackendapplication1.address.model.entity.CityEntity;
+import com.example.resortbackendapplication1.address.model.entity.CountryEntity;
+import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+
+import java.util.Map;
+
+public interface CityService {
+    SuccessResponse create(CreateCityRequest request,
+                           CountryEntity countryEntity,
+                           Map<Long, LocaleEntity> localeEntityMap);
+
+    CityEntity getEntityById(Long countryId, Long id);
+
+    CityResponse getById(Long countryId, Long id);
+
+    PaginatedResponse<CityDto> getAll(Long countryId, CityFilterRequest request);
+
+    SuccessResponse update(CityEntity entity,
+                           UpdateCityRequest request);
+
+    SuccessResponse delete(CityEntity entity);
+}

@@ -24,7 +24,7 @@ public class PermissionEntity extends AuditableEntity {
     @Column(name = "description")
     private String description;
 
-    @OneToMany(mappedBy = "permission")
-    private Set<UserPermissionEntity> userPermissions = new LinkedHashSet<>();
+    @OneToMany(mappedBy = "permissionEntity")
+    private Set<UserPermissionEntity> userPermissionEntities = new LinkedHashSet<>();
 
 }

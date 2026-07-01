@@ -1,13 +1,14 @@
 package com.example.resortbackendapplication1.auth.repository;
 
 import com.example.resortbackendapplication1.auth.model.enitty.UserEntity;
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
-public interface UserRepository extends JpaRepository<UserEntity, Long> {
+public interface UserRepository extends JpaRepository<@NonNull UserEntity,@NonNull Long> {
     Optional<UserEntity> findByUsername(String username);
 
     @Query("""
@@ -22,7 +23,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
                 select distinct u from UserEntity u
                 join fetch u.roleEntity
                 left join fetch u.userPermissions up
-                left join fetch up.permission
+                left join fetch up.permissionEntity
                 where u.username = :username
             """)
     Optional<UserEntity> findByUsernameWithAuthorities(String username);

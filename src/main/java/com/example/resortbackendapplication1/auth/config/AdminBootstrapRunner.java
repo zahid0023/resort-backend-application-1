@@ -1,7 +1,6 @@
 package com.example.resortbackendapplication1.auth.config;
 
 import com.example.resortbackendapplication1.auth.dto.request.permission.CreatePermissionRequest;
-import com.example.resortbackendapplication1.auth.dto.request.role.CreateRoleRequest;
 import com.example.resortbackendapplication1.auth.dto.request.RegistrationRequest;
 import com.example.resortbackendapplication1.auth.model.enitty.UserEntity;
 import com.example.resortbackendapplication1.auth.service.PermissionService;
@@ -87,17 +86,10 @@ public class AdminBootstrapRunner implements ApplicationRunner {
             return;
         }
 
-        createAdminRole();
         createAdminPermissions();
         createSuperAdmin();
         grantAdminPermissionsToSuperAdmin();
         userService.activateUser(userService.getUserByUsername(SUPER_ADMIN));
-    }
-
-    private void createAdminRole() {
-        CreateRoleRequest request = new CreateRoleRequest();
-        request.setName("ADMIN");
-        roleService.createRole(request);
     }
 
     private void createAdminPermissions() {

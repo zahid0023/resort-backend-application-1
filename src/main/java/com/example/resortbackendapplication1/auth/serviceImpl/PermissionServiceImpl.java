@@ -107,7 +107,7 @@ public class PermissionServiceImpl implements PermissionService {
         // Check if granter has ASSIGN_PERMISSIONS
         boolean hasAssignPermission = granter.getUserPermissions().stream()
                 .filter(UserPermissionEntity::getIsActive)
-                .anyMatch(up -> "ASSIGN_PERMISSIONS".equals(up.getPermission().getName()));
+                .anyMatch(up -> "ASSIGN_PERMISSIONS".equals(up.getPermissionEntity().getName()));
 
         if (!hasAssignPermission) {
             // If they don't have ASSIGN_PERMISSIONS at all, all permissions are unauthorized
@@ -119,7 +119,7 @@ public class PermissionServiceImpl implements PermissionService {
         // Collect all permissions that the granter actually has
         Set<Long> granterPermissionIds = granter.getUserPermissions().stream()
                 .filter(UserPermissionEntity::getIsActive)
-                .map(up -> up.getPermission().getId())
+                .map(up -> up.getPermissionEntity().getId())
                 .collect(Collectors.toSet());
 
         // Find permissions that are not in granter's set
@@ -133,12 +133,12 @@ public class PermissionServiceImpl implements PermissionService {
         for (PermissionEntity permission : permissionEntities) {
             boolean exists =
                     userPermissionRepository
-                            .existsByUserAndPermission(userEntity, permission);
+                            .existsByUserEntityAndPermissionEntity(userEntity, permission);
 
             if (!exists) {
                 UserPermissionEntity up = new UserPermissionEntity();
-                up.setUser(userEntity);
-                up.setPermission(permission);
+                up.setUserEntity(userEntity);
+                up.setPermissionEntity(permission);
                 up.setIsActive(true);
 
                 userPermissionRepository.save(up);
