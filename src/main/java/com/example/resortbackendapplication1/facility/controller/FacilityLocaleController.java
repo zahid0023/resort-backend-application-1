@@ -14,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/facility-groups/{facility-group-id}/facilities/{facility-id}/locales")
+@RequestMapping("/api/v1/facilities/{facility-id}/locales")
 public class FacilityLocaleController {
 
     private final FacilityService facilityService;
@@ -31,10 +31,9 @@ public class FacilityLocaleController {
 
     @PostMapping
     public ResponseEntity<?> create(
-            @PathVariable("facility-group-id") Long facilityGroupId,
             @PathVariable("facility-id") Long facilityId,
             @Valid @RequestBody CreateFacilityLocaleRequest request) {
-        FacilityEntity facility = facilityService.getEntityById(facilityGroupId, facilityId);
+        FacilityEntity facility = facilityService.getEntityById(facilityId);
         LocaleEntity localeEntity = localeService.getEntityById(request.getLocaleId());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(facilityLocaleService.create(facility, localeEntity, request));
@@ -42,7 +41,6 @@ public class FacilityLocaleController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> update(
-            @PathVariable("facility-group-id") Long ignoredFacilityGroupId,
             @PathVariable("facility-id") Long facilityId,
             @PathVariable Long id,
             @Valid @RequestBody UpdateFacilityLocaleRequest request) {
@@ -52,7 +50,6 @@ public class FacilityLocaleController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(
-            @PathVariable("facility-group-id") Long ignoredFacilityGroupId,
             @PathVariable("facility-id") Long facilityId,
             @PathVariable Long id) {
         FacilityLocaleEntity entity = facilityLocaleService.getEntityById(facilityId, id);

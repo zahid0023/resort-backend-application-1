@@ -18,6 +18,7 @@ hidden from all responses.
 | GET    | `/api/v1/countries/{id}`                      | Get a country           |
 | PUT    | `/api/v1/countries/{id}`                      | Update a country        |
 | DELETE | `/api/v1/countries/{id}`                      | Delete a country        |
+| GET    | `/api/v1/countries/{country-id}/cities`       | List cities by country  |
 | POST   | `/api/v1/countries/{country-id}/locales`      | Create a country locale |
 | PUT    | `/api/v1/countries/{country-id}/locales/{id}` | Update a country locale |
 | DELETE | `/api/v1/countries/{country-id}/locales/{id}` | Delete a country locale |
@@ -160,19 +161,21 @@ Optional fields (`iso3_code`, `phone_code`, locale `description`) are omitted fr
 
 `GET /api/v1/countries`
 
-Returns a paginated, filterable list of active (non-deleted) countries. Each item includes all locale translations. All filter parameters are optional; omitting them returns all countries. Multiple filters are combined with AND. Each filter performs a case-insensitive partial match.
+Returns a paginated, filterable list of active (non-deleted) countries. Each item includes all locale translations. All
+filter parameters are optional; omitting them returns all countries. Multiple filters are combined with AND. Each filter
+performs a case-insensitive partial match.
 
 ### Query Parameters
 
-| Parameter    | Type   | Default | Constraints                                    | Description                                      |
-|--------------|--------|---------|------------------------------------------------|--------------------------------------------------|
-| `code`       | String | —       | —                                              | Filter by country code (partial, case-insensitive) |
-| `iso3Code`   | String | —       | —                                              | Filter by ISO 3166-1 alpha-3 code (partial, case-insensitive) |
-| `phoneCode`  | String | —       | —                                              | Filter by dialing code (partial, case-insensitive) |
-| `page`       | int    | `0`     | >= 0                                           | Zero-based page index                            |
-| `size`       | int    | `10`    | 1 – 50                                         | Number of items per page                         |
-| `sort_by`    | String | `id`    | `id`, `code`, `name`, `sortOrder`, `createdAt` | Field to sort by                                 |
-| `sort_dir`   | String | `ASC`   | `ASC`, `DESC`                                  | Sort direction                                   |
+| Parameter   | Type   | Default | Constraints                                    | Description                                                   |
+|-------------|--------|---------|------------------------------------------------|---------------------------------------------------------------|
+| `code`      | String | —       | —                                              | Filter by country code (partial, case-insensitive)            |
+| `iso3Code`  | String | —       | —                                              | Filter by ISO 3166-1 alpha-3 code (partial, case-insensitive) |
+| `phoneCode` | String | —       | —                                              | Filter by dialing code (partial, case-insensitive)            |
+| `page`      | int    | `0`     | >= 0                                           | Zero-based page index                                         |
+| `size`      | int    | `10`    | 1 – 50                                         | Number of items per page                                      |
+| `sort_by`   | String | `id`    | `id`, `code`, `name`, `sortOrder`, `createdAt` | Field to sort by                                              |
+| `sort_dir`  | String | `ASC`   | `ASC`, `DESC`                                  | Sort direction                                                |
 
 ### Response `200 OK`
 
@@ -289,6 +292,81 @@ Soft-deletes the country. The record is not removed from the database but will n
 {
   "success": true,
   "id": 1
+}
+```
+
+---
+
+## Get Cities by Country
+
+`GET /api/v1/countries/{country-id}/cities`
+
+Returns a paginated, filterable list of active (non-deleted) cities belonging to the specified country. Each item
+includes all locale translations. The `country` field is not included in city responses.
+
+### Path Parameters
+
+| Parameter    | Type | Description       |
+|--------------|------|-------------------|
+| `country-id` | Long | ID of the country |
+
+### Query Parameters
+
+| Parameter  | Type   | Default | Constraints                            | Description                                     |
+|------------|--------|---------|----------------------------------------|-------------------------------------------------|
+| `code`     | String | —       | —                                      | Filter by city code (partial, case-insensitive) |
+| `page`     | int    | `0`     | >= 0                                   | Zero-based page index                           |
+| `size`     | int    | `10`    | 1 – 50                                 | Number of items per page                        |
+| `sort_by`  | String | `id`    | `id`, `code`, `sortOrder`, `createdAt` | Field to sort by                                |
+| `sort_dir` | String | `ASC`   | `ASC`, `DESC`                          | Sort direction                                  |
+
+### Response `200 OK`
+
+Optional fields (`code`, locale `description`) are omitted when not set.
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "code": "DHK",
+      "sort_order": 1,
+      "locales": [
+        {
+          "id": 1,
+          "locale_id": 1,
+          "name": "Dhaka",
+          "description": "Capital city of Bangladesh.",
+          "sort_order": 1
+        },
+        {
+          "id": 2,
+          "locale_id": 2,
+          "name": "ঢাকা",
+          "sort_order": 2
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "code": "CTG",
+      "sort_order": 2,
+      "locales": [
+        {
+          "id": 3,
+          "locale_id": 1,
+          "name": "Chittagong",
+          "sort_order": 1
+        }
+      ]
+    }
+  ],
+  "current_page": 0,
+  "total_pages": 1,
+  "total_elements": 2,
+  "page_size": 10,
+  "has_next": false,
+  "has_previous": false
 }
 ```
 
@@ -423,8 +501,8 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                                            |
-|-------------|----------------------------|------------------------------------------------------------------|
-| 400         | `INVALID_ARGUMENT`         | Missing required fields or invalid sort field                    |
-| 404         | `ENTITY_NOT_FOUND`         | Country, locale, or country locale not found, or already deleted |
-| 409         | `DATA_INTEGRITY_VIOLATION` | Constraint violation (e.g. duplicate code)                       |
+| HTTP Status | Error Code                 | Cause                                                                  |
+|-------------|----------------------------|------------------------------------------------------------------------|
+| 400         | `INVALID_ARGUMENT`         | Missing required fields or invalid sort field                          |
+| 404         | `ENTITY_NOT_FOUND`         | Country, city, locale, or country locale not found, or already deleted |
+| 409         | `DATA_INTEGRITY_VIOLATION` | Constraint violation (e.g. duplicate code)                             |

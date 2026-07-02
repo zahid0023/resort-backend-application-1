@@ -28,7 +28,7 @@ public class CityLocaleMapper {
 
     private void applyCommonFields(CityLocaleEntity entity, CityLocaleRequest request) {
         entity.setName(request.getName());
-        entity.setDescription(request.getDescription() != null ? request.getDescription() : "");
+        entity.setDescription(request.getDescription());
         entity.setSortOrder(request.getSortOrder());
     }
 

@@ -1,6 +1,7 @@
 package com.example.resortbackendapplication1.locale.model.mapper;
 
 import com.example.resortbackendapplication1.locale.dto.request.locale.CreateLocaleRequest;
+import com.example.resortbackendapplication1.locale.dto.request.locale.LocaleRequest;
 import com.example.resortbackendapplication1.locale.dto.request.locale.UpdateLocaleRequest;
 import com.example.resortbackendapplication1.locale.model.dto.LocaleDto;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
@@ -9,21 +10,23 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class LocaleMapper {
 
-    public static LocaleEntity fromRequest(CreateLocaleRequest request) {
+    public LocaleEntity create(CreateLocaleRequest request) {
         LocaleEntity entity = new LocaleEntity();
-        entity.setCode(request.getCode());
-        entity.setName(request.getName());
-        entity.setSortOrder(request.getSortOrder());
+        applyCommonFields(entity, request);
         return entity;
     }
 
-    public static void update(LocaleEntity entity, UpdateLocaleRequest request) {
+    public void update(LocaleEntity entity, UpdateLocaleRequest request) {
+        applyCommonFields(entity, request);
+    }
+
+    private void applyCommonFields(LocaleEntity entity, LocaleRequest request) {
         entity.setCode(request.getCode());
         entity.setName(request.getName());
         entity.setSortOrder(request.getSortOrder());
     }
 
-    public static LocaleDto toDto(LocaleEntity entity) {
+    public LocaleDto toDto(LocaleEntity entity) {
         return LocaleDto.builder()
                 .id(entity.getId())
                 .code(entity.getCode())

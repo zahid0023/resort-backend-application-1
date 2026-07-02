@@ -1,21 +1,22 @@
 package com.example.resortbackendapplication1.facility.serviceImpl;
 
-import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.commons.utils.EntityValidator;
 import com.example.resortbackendapplication1.commons.utils.Pagination;
 import com.example.resortbackendapplication1.facility.dto.request.facilitygroups.CreateFacilityGroupRequest;
+import com.example.resortbackendapplication1.facility.dto.request.facilitygroups.FacilityGroupFilterRequest;
 import com.example.resortbackendapplication1.facility.dto.request.facilitygroups.UpdateFacilityGroupRequest;
 import com.example.resortbackendapplication1.facility.dto.response.facilitygroups.FacilityGroupResponse;
 import com.example.resortbackendapplication1.facility.model.dto.FacilityGroupDto;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupEntity;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.facility.model.enums.FacilityGroupSearchField;
 import com.example.resortbackendapplication1.facility.model.enums.FacilityGroupSortField;
 import com.example.resortbackendapplication1.facility.model.mapper.FacilityGroupMapper;
-import com.example.resortbackendapplication1.facility.model.projection.FacilityGroupSummary;
 import com.example.resortbackendapplication1.facility.repository.FacilityGroupRepository;
 import com.example.resortbackendapplication1.facility.service.FacilityGroupService;
+import com.example.resortbackendapplication1.facility.specification.FacilityGroupSpecification;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
@@ -32,6 +33,7 @@ import java.util.Set;
 public class FacilityGroupServiceImpl implements FacilityGroupService {
 
     private static final Set<String> ALLOWED_SORT_FIELDS = FacilityGroupSortField.allowedFields();
+    private static final Set<String> ALLOWED_SEARCH_FIELDS = FacilityGroupSearchField.allowedFields();
 
     private final FacilityGroupRepository facilityGroupRepository;
 
@@ -62,11 +64,11 @@ public class FacilityGroupServiceImpl implements FacilityGroupService {
     }
 
     @Override
-    public PaginatedResponse<FacilityGroupSummary> getAll(PaginatedRequest request) {
-        Page<@NonNull FacilityGroupSummary> page = facilityGroupRepository.findAllByIsActiveAndIsDeleted(
-                true, false, request.toPageable(ALLOWED_SORT_FIELDS)
-        );
-        return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, null);
+    public PaginatedResponse<FacilityGroupDto> getAll(FacilityGroupFilterRequest request) {
+        Page<@NonNull FacilityGroupDto> page = facilityGroupRepository
+                .findAll(FacilityGroupSpecification.filter(request), request.toPageable(ALLOWED_SORT_FIELDS))
+                .map(FacilityGroupMapper::toDto);
+        return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
     }
 
     @Transactional

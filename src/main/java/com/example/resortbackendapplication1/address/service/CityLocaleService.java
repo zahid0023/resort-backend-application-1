@@ -12,10 +12,7 @@ public interface CityLocaleService {
                            LocaleEntity localeEntity,
                            CreateCityLocaleRequest request);
 
-    CityLocaleEntity getEntityById(
-            Long countryId,
-            Long cityId,
-            Long id);
+    CityLocaleEntity getEntityById(Long cityId, Long id);
 
     SuccessResponse update(CityLocaleEntity entity,
                            UpdateCityLocaleRequest request);

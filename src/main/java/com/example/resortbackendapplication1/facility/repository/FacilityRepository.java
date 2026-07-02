@@ -1,23 +1,18 @@
 package com.example.resortbackendapplication1.facility.repository;
 
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
-import com.example.resortbackendapplication1.facility.model.projection.FacilitySummary;
 import org.jspecify.annotations.NonNull;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-public interface FacilityRepository extends JpaRepository<@NonNull FacilityEntity, @NonNull Long> {
+public interface FacilityRepository extends JpaRepository<@NonNull FacilityEntity, @NonNull Long>,
+        JpaSpecificationExecutor<@NonNull FacilityEntity> {
 
-    Optional<FacilityEntity> findByFacilityGroupEntity_IdAndIdAndIsActiveAndIsDeleted(
-            Long facilityGroupId, Long id, Boolean isActive, Boolean isDeleted);
-
-    Page<@NonNull FacilitySummary> findAllByFacilityGroupEntity_IdAndIsActiveAndIsDeleted(
-            Long facilityGroupId, Boolean isActive, Boolean isDeleted, Pageable pageable);
+    Optional<FacilityEntity> findByIdAndIsActiveAndIsDeleted(Long id, Boolean isActive, Boolean isDeleted);
 
     List<FacilityEntity> findAllByIdInAndIsActiveAndIsDeleted(Set<Long> ids, Boolean isActive, Boolean isDeleted);
 }

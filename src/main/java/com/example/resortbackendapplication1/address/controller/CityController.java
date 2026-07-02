@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/countries/{country-id}/cities")
+@RequestMapping("/api/v1/cities")
 public class CityController {
 
     private final CityService cityService;
@@ -36,43 +36,35 @@ public class CityController {
     }
 
     @PostMapping
-    public ResponseEntity<?> create(
-            @PathVariable("country-id") Long countryId,
-            @Valid @RequestBody CreateCityRequest request) {
+    public ResponseEntity<?> create(@Valid @RequestBody CreateCityRequest request) {
         Map<Long, LocaleEntity> localeEntityMap = LocaleUtils.resolveLocaleMap(
                 request.getLocales(), CreateCityLocaleRequest::getLocaleId, localeService);
-        CountryEntity countryEntity = countryService.getEntityById(countryId);
+        CountryEntity countryEntity = countryService.getEntityById(request.getCountryId());
         return ResponseEntity.status(HttpStatus.CREATED).body(cityService.create(request, countryEntity, localeEntityMap));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getById(
-            @PathVariable("country-id") Long countryId,
-            @PathVariable Long id) {
-        return ResponseEntity.ok(cityService.getById(countryId, id));
+    public ResponseEntity<?> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(cityService.getById(id));
     }
 
     @GetMapping
-    public ResponseEntity<?> getAll(
-            @PathVariable("country-id") Long countryId,
-            @Valid @ParameterObject CityFilterRequest request) {
-        return ResponseEntity.ok(cityService.getAll(countryId, request));
+    public ResponseEntity<?> getAll(@Valid @ParameterObject CityFilterRequest request,
+                                    @RequestParam(required = false) Long countryId) {
+        return ResponseEntity.ok(cityService.getAll(request, countryId));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> update(
-            @PathVariable("country-id") Long countryId,
             @PathVariable Long id,
             @Valid @RequestBody UpdateCityRequest request) {
-        CityEntity entity = cityService.getEntityById(countryId, id);
+        CityEntity entity = cityService.getEntityById(id);
         return ResponseEntity.ok(cityService.update(entity, request));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(
-            @PathVariable("country-id") Long countryId,
-            @PathVariable Long id) {
-        CityEntity entity = cityService.getEntityById(countryId, id);
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        CityEntity entity = cityService.getEntityById(id);
         return ResponseEntity.ok(cityService.delete(entity));
     }
 }

@@ -56,7 +56,7 @@ public class CityLocaleServiceImpl implements CityLocaleService {
     }
 
     @Override
-    public CityLocaleEntity getEntityById(Long countryId, Long cityId, Long id) {
+    public CityLocaleEntity getEntityById(Long cityId, Long id) {
         return cityLocaleRepository
                 .findByCityEntity_IdAndIdAndIsActiveAndIsDeleted(cityId, id, true, false)
                 .orElseThrow(() -> new EntityNotFoundException("CityLocale not found with id: " + id));

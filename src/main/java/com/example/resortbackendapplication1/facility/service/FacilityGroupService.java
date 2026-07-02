@@ -1,14 +1,14 @@
 package com.example.resortbackendapplication1.facility.service;
 
-import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.facility.dto.request.facilitygroups.CreateFacilityGroupRequest;
+import com.example.resortbackendapplication1.facility.dto.request.facilitygroups.FacilityGroupFilterRequest;
 import com.example.resortbackendapplication1.facility.dto.request.facilitygroups.UpdateFacilityGroupRequest;
 import com.example.resortbackendapplication1.facility.dto.response.facilitygroups.FacilityGroupResponse;
+import com.example.resortbackendapplication1.facility.model.dto.FacilityGroupDto;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupEntity;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
-import com.example.resortbackendapplication1.facility.model.projection.FacilityGroupSummary;
 
 import java.util.List;
 import java.util.Map;
@@ -23,7 +23,7 @@ public interface FacilityGroupService {
 
     FacilityGroupResponse getById(Long id);
 
-    PaginatedResponse<FacilityGroupSummary> getAll(PaginatedRequest request);
+    PaginatedResponse<FacilityGroupDto> getAll(FacilityGroupFilterRequest request);
 
     SuccessResponse update(FacilityGroupEntity entity,
                            UpdateFacilityGroupRequest request);

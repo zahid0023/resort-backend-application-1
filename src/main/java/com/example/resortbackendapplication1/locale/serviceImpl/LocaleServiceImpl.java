@@ -1,23 +1,23 @@
 package com.example.resortbackendapplication1.locale.serviceImpl;
 
-import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.commons.utils.EntityValidator;
 import com.example.resortbackendapplication1.commons.utils.Pagination;
 import com.example.resortbackendapplication1.locale.dto.request.locale.CreateLocaleRequest;
+import com.example.resortbackendapplication1.locale.dto.request.locale.LocaleFilterRequest;
 import com.example.resortbackendapplication1.locale.dto.request.locale.UpdateLocaleRequest;
 import com.example.resortbackendapplication1.locale.dto.response.locales.LocaleResponse;
 import com.example.resortbackendapplication1.locale.model.dto.LocaleDto;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.locale.model.enums.LocaleSearchField;
 import com.example.resortbackendapplication1.locale.model.enums.LocaleSortField;
 import com.example.resortbackendapplication1.locale.model.mapper.LocaleMapper;
-import com.example.resortbackendapplication1.locale.model.projection.LocaleSummary;
 import com.example.resortbackendapplication1.locale.repository.LocaleRepository;
 import com.example.resortbackendapplication1.locale.service.LocaleService;
+import com.example.resortbackendapplication1.locale.specification.LocaleSpecification;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
-import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +30,7 @@ import java.util.Set;
 public class LocaleServiceImpl implements LocaleService {
 
     private static final Set<String> ALLOWED_SORT_FIELDS = LocaleSortField.allowedFields();
+    private static final Set<String> ALLOWED_SEARCH_FIELDS = LocaleSearchField.allowedFields();
 
     private final LocaleRepository localeRepository;
 
@@ -40,7 +41,7 @@ public class LocaleServiceImpl implements LocaleService {
     @Transactional
     @Override
     public SuccessResponse create(CreateLocaleRequest request) {
-        LocaleEntity entity = LocaleMapper.fromRequest(request);
+        LocaleEntity entity = LocaleMapper.create(request);
         localeRepository.save(entity);
         log.info("Locale created with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
@@ -54,11 +55,11 @@ public class LocaleServiceImpl implements LocaleService {
     }
 
     @Override
-    public PaginatedResponse<LocaleSummary> getAll(PaginatedRequest request) {
-        Page<@NonNull LocaleSummary> page = localeRepository.findAllByIsActiveAndIsDeleted(
-                true, false, request.toPageable(ALLOWED_SORT_FIELDS)
-        );
-        return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, null);
+    public PaginatedResponse<LocaleDto> getAll(LocaleFilterRequest request) {
+        Page<LocaleDto> page = localeRepository
+                .findAll(LocaleSpecification.filter(request), request.toPageable(ALLOWED_SORT_FIELDS))
+                .map(LocaleMapper::toDto);
+        return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
     }
 
     @Transactional
@@ -72,8 +73,7 @@ public class LocaleServiceImpl implements LocaleService {
 
     @Transactional
     @Override
-    public SuccessResponse delete(Long id) {
-        LocaleEntity entity = getEntityById(id);
+    public SuccessResponse delete(LocaleEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
         localeRepository.save(entity);

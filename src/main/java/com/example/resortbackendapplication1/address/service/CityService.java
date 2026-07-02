@@ -18,11 +18,11 @@ public interface CityService {
                            CountryEntity countryEntity,
                            Map<Long, LocaleEntity> localeEntityMap);
 
-    CityEntity getEntityById(Long countryId, Long id);
+    CityEntity getEntityById(Long id);
 
-    CityResponse getById(Long countryId, Long id);
+    CityResponse getById(Long id);
 
-    PaginatedResponse<CityDto> getAll(Long countryId, CityFilterRequest request);
+    PaginatedResponse<CityDto> getAll(CityFilterRequest request, Long countryId);
 
     SuccessResponse update(CityEntity entity,
                            UpdateCityRequest request);

@@ -2,31 +2,32 @@
 
 Base URL: `/api/v1/locales`
 
-Locales represent language or regional settings used across the platform (e.g., English, French, Arabic). All records support soft-delete — deleted records are hidden from all responses.
+Locales represent language or regional settings used across the platform (e.g., `en`, `fr`, `bn`). They are referenced
+by country and city locale translations. All records support soft-delete — deleted records are hidden from all
+responses.
 
 ---
 
 ## Endpoints
 
-| Method | Path                      | Description       |
-|--------|---------------------------|-------------------|
-| POST   | `/api/v1/locales`         | Create a locale   |
-| GET    | `/api/v1/locales`         | List all locales  |
-| GET    | `/api/v1/locales/{id}`    | Get a locale      |
-| PUT    | `/api/v1/locales/{id}`    | Update a locale   |
-| DELETE | `/api/v1/locales/{id}`    | Delete a locale   |
+| Method | Path                   | Description           |
+|--------|------------------------|-----------------------|
+| POST   | `/api/v1/locales`      | Create a locale       |
+| GET    | `/api/v1/locales/{id}` | Get a locale          |
+| GET    | `/api/v1/locales`      | List / search locales |
+| PUT    | `/api/v1/locales/{id}` | Update a locale       |
+| DELETE | `/api/v1/locales/{id}` | Delete a locale       |
 
 ---
 
 ## Data Model
 
-| Field         | Type    | Required | Constraints              | Description                              |
-|---------------|---------|----------|--------------------------|------------------------------------------|
-| `id`          | Long    | —        | read-only                | Auto-generated identifier                |
-| `code`        | String  | Yes      | max 50 chars, unique     | Short unique identifier (e.g., `en`, `fr`) |
-| `name`        | String  | Yes      | max 255 chars            | Display name (e.g., `English`, `French`) |
-| `description` | String  | No       | unlimited                | Full description of the locale           |
-| `sort_order`  | Integer | Yes      | not null, default `0`    | Display order                            |
+| Field        | Type    | Required | Constraints           | Description                               |
+|--------------|---------|----------|-----------------------|-------------------------------------------|
+| `id`         | Long    | —        | read-only             | Auto-generated identifier                 |
+| `code`       | String  | Yes      | max 50 chars          | Short identifier (e.g., `en`, `fr`, `bn`) |
+| `name`       | String  | Yes      | max 255 chars         | Display name (e.g., `English`, `French`)  |
+| `sort_order` | Integer | Yes      | not null, default `0` | Display order                             |
 
 ---
 
@@ -40,19 +41,17 @@ Locales represent language or regional settings used across the platform (e.g., 
 {
   "code": "en",
   "name": "English",
-  "description": "English language locale.",
   "sort_order": 1
 }
 ```
 
 ### Request Fields
 
-| Field         | Type    | Required | Validation                  |
-|---------------|---------|----------|-----------------------------|
-| `code`        | String  | Yes      | Not blank, max 50 chars     |
-| `name`        | String  | Yes      | Not blank, max 255 chars    |
-| `description` | String  | No       | —                           |
-| `sort_order`  | Integer | Yes      | Not null                    |
+| Field        | Type    | Required | Validation               |
+|--------------|---------|----------|--------------------------|
+| `code`       | String  | Yes      | Not blank, max 50 chars  |
+| `name`       | String  | Yes      | Not blank, max 255 chars |
+| `sort_order` | Integer | Yes      | Not null                 |
 
 ### Response `201 Created`
 
@@ -71,9 +70,9 @@ Locales represent language or regional settings used across the platform (e.g., 
 
 ### Path Parameters
 
-| Parameter | Type | Description        |
-|-----------|------|--------------------|
-| `id`      | Long | ID of the locale   |
+| Parameter | Type | Description      |
+|-----------|------|------------------|
+| `id`      | Long | ID of the locale |
 
 ### Response `200 OK`
 
@@ -83,7 +82,6 @@ Locales represent language or regional settings used across the platform (e.g., 
     "id": 1,
     "code": "en",
     "name": "English",
-    "description": "English language locale.",
     "sort_order": 1
   }
 }
@@ -91,20 +89,23 @@ Locales represent language or regional settings used across the platform (e.g., 
 
 ---
 
-## List All Locales
+## List / Search Locales
 
 `GET /api/v1/locales`
 
-Returns a paginated list of active (non-deleted) locales.
+Returns a paginated, filterable list of active (non-deleted) locales. All filter parameters are optional. Multiple
+filters are combined with AND. Each filter performs a case-insensitive partial match.
 
 ### Query Parameters
 
-| Parameter  | Type   | Default | Constraints                                    | Description              |
-|------------|--------|---------|------------------------------------------------|--------------------------|
-| `page`     | int    | `0`     | >= 0                                           | Zero-based page index    |
-| `size`     | int    | `10`    | 1 – 50                                         | Number of items per page |
-| `sort_by`  | String | `id`    | `id`, `code`, `name`, `sortOrder`, `createdAt` | Field to sort by         |
-| `sort_dir` | String | `ASC`   | `ASC`, `DESC`                                  | Sort direction           |
+| Parameter  | Type   | Default | Constraints                                    | Description                                |
+|------------|--------|---------|------------------------------------------------|--------------------------------------------|
+| `code`     | String | —       | —                                              | Filter by code (partial, case-insensitive) |
+| `name`     | String | —       | —                                              | Filter by name (partial, case-insensitive) |
+| `page`     | int    | `0`     | >= 0                                           | Zero-based page index                      |
+| `size`     | int    | `10`    | 1 – 50                                         | Number of items per page                   |
+| `sort_by`  | String | `id`    | `id`, `code`, `name`, `sortOrder`, `createdAt` | Field to sort by                           |
+| `sort_dir` | String | `ASC`   | `ASC`, `DESC`                                  | Sort direction                             |
 
 ### Response `200 OK`
 
@@ -115,14 +116,12 @@ Returns a paginated list of active (non-deleted) locales.
       "id": 1,
       "code": "en",
       "name": "English",
-      "description": "English language locale.",
       "sort_order": 1
     },
     {
       "id": 2,
       "code": "fr",
       "name": "French",
-      "description": "French language locale.",
       "sort_order": 2
     }
   ],
@@ -141,13 +140,11 @@ Returns a paginated list of active (non-deleted) locales.
 
 `PUT /api/v1/locales/{id}`
 
-All fields are replaced — provide the full intended state of the resource.
-
 ### Path Parameters
 
-| Parameter | Type | Description        |
-|-----------|------|--------------------|
-| `id`      | Long | ID of the locale   |
+| Parameter | Type | Description      |
+|-----------|------|------------------|
+| `id`      | Long | ID of the locale |
 
 ### Request Body
 
@@ -155,19 +152,17 @@ All fields are replaced — provide the full intended state of the resource.
 {
   "code": "en",
   "name": "English (US)",
-  "description": "English language locale for United States.",
   "sort_order": 1
 }
 ```
 
 ### Request Fields
 
-| Field         | Type    | Required | Validation                  |
-|---------------|---------|----------|-----------------------------|
-| `code`        | String  | Yes      | Not blank, max 50 chars     |
-| `name`        | String  | Yes      | Not blank, max 255 chars    |
-| `description` | String  | No       | —                           |
-| `sort_order`  | Integer | Yes      | Not null                    |
+| Field        | Type    | Required | Validation               |
+|--------------|---------|----------|--------------------------|
+| `code`       | String  | Yes      | Not blank, max 50 chars  |
+| `name`       | String  | Yes      | Not blank, max 255 chars |
+| `sort_order` | Integer | Yes      | Not null                 |
 
 ### Response `200 OK`
 
@@ -188,9 +183,9 @@ Soft-deletes the locale. The record is not removed from the database but will no
 
 ### Path Parameters
 
-| Parameter | Type | Description        |
-|-----------|------|--------------------|
-| `id`      | Long | ID of the locale   |
+| Parameter | Type | Description      |
+|-----------|------|------------------|
+| `id`      | Long | ID of the locale |
 
 ### Response `200 OK`
 
@@ -198,21 +193,6 @@ Soft-deletes the locale. The record is not removed from the database but will no
 {
   "success": true,
   "id": 1
-}
-```
-
----
-
-## Validation Errors
-
-When the request body fails validation, the API returns `400 Bad Request`:
-
-```json
-{
-  "request_id": "abc-123",
-  "status": 400,
-  "error": "INVALID_ARGUMENT",
-  "message": "code must not be blank"
 }
 ```
 
@@ -231,8 +211,8 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                          |
-|-------------|----------------------------|------------------------------------------------|
-| 400         | `INVALID_ARGUMENT`         | Missing required fields or invalid sort field  |
-| 404         | `ENTITY_NOT_FOUND`         | Locale not found or already deleted            |
-| 409         | `DATA_INTEGRITY_VIOLATION` | Constraint violation (e.g. duplicate code)     |
+| HTTP Status | Error Code                 | Cause                                         |
+|-------------|----------------------------|-----------------------------------------------|
+| 400         | `INVALID_ARGUMENT`         | Missing required fields or invalid sort field |
+| 404         | `ENTITY_NOT_FOUND`         | Locale not found or already deleted           |
+| 409         | `DATA_INTEGRITY_VIOLATION` | Constraint violation (e.g. duplicate code)    |

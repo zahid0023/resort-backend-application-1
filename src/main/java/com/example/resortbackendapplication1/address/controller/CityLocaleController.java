@@ -14,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/countries/{country-id}/cities/{city-id}/locales")
+@RequestMapping("/api/v1/cities/{city-id}/locales")
 public class CityLocaleController {
 
     private final CityService cityService;
@@ -31,10 +31,9 @@ public class CityLocaleController {
 
     @PostMapping
     public ResponseEntity<?> create(
-            @PathVariable("country-id") Long countryId,
             @PathVariable("city-id") Long cityId,
             @Valid @RequestBody CreateCityLocaleRequest request) {
-        CityEntity cityEntity = cityService.getEntityById(countryId, cityId);
+        CityEntity cityEntity = cityService.getEntityById(cityId);
         LocaleEntity localeEntity = localeService.getEntityById(request.getLocaleId());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(cityLocaleService.create(cityEntity, localeEntity, request));
@@ -42,20 +41,18 @@ public class CityLocaleController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> update(
-            @PathVariable("country-id") Long countryId,
             @PathVariable("city-id") Long cityId,
             @PathVariable Long id,
             @Valid @RequestBody UpdateCityLocaleRequest request) {
-        CityLocaleEntity entity = cityLocaleService.getEntityById(countryId, cityId, id);
+        CityLocaleEntity entity = cityLocaleService.getEntityById(cityId, id);
         return ResponseEntity.ok(cityLocaleService.update(entity, request));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(
-            @PathVariable("country-id") Long countryId,
             @PathVariable("city-id") Long cityId,
             @PathVariable Long id) {
-        CityLocaleEntity entity = cityLocaleService.getEntityById(countryId, cityId, id);
+        CityLocaleEntity entity = cityLocaleService.getEntityById(cityId, id);
         return ResponseEntity.ok(cityLocaleService.delete(entity));
     }
 }

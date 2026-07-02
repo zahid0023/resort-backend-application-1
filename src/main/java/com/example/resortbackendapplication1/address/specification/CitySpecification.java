@@ -4,13 +4,18 @@ import com.example.resortbackendapplication1.address.dto.request.city.CityFilter
 import com.example.resortbackendapplication1.address.model.entity.CityEntity;
 import com.example.resortbackendapplication1.commons.utils.SpecificationUtils;
 import lombok.experimental.UtilityClass;
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.jpa.domain.Specification;
 
 @UtilityClass
 public class CitySpecification {
 
-    public Specification<CityEntity> filter(Long countryId, CityFilterRequest request) {
-        return SpecificationUtils.<CityEntity>build(request)
-                .and((root, query, cb) -> cb.equal(root.get("countryEntity").get("id"), countryId));
+    public Specification<@NonNull CityEntity> filter(CityFilterRequest request, Long countryId) {
+        Specification<CityEntity> spec = SpecificationUtils.build(request);
+        if (countryId != null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("countryEntity").get("id"), countryId));
+        }
+        return spec;
     }
 }

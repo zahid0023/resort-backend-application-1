@@ -1,7 +1,7 @@
 package com.example.resortbackendapplication1.locale.controller;
 
-import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
 import com.example.resortbackendapplication1.locale.dto.request.locale.CreateLocaleRequest;
+import com.example.resortbackendapplication1.locale.dto.request.locale.LocaleFilterRequest;
 import com.example.resortbackendapplication1.locale.dto.request.locale.UpdateLocaleRequest;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.locale.service.LocaleService;
@@ -32,7 +32,7 @@ public class LocaleController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getAll(@Valid @ParameterObject PaginatedRequest request) {
+    public ResponseEntity<?> getAll(@Valid @ParameterObject LocaleFilterRequest request) {
         return ResponseEntity.ok(localeService.getAll(request));
     }
 
@@ -40,12 +40,13 @@ public class LocaleController {
     public ResponseEntity<?> update(
             @PathVariable Long id,
             @Valid @RequestBody UpdateLocaleRequest request) {
-        LocaleEntity localeEntity = localeService.getEntityById(id);
-        return ResponseEntity.ok(localeService.update(localeEntity, request));
+        LocaleEntity entity = localeService.getEntityById(id);
+        return ResponseEntity.ok(localeService.update(entity, request));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
-        return ResponseEntity.ok(localeService.delete(id));
+        LocaleEntity entity = localeService.getEntityById(id);
+        return ResponseEntity.ok(localeService.delete(entity));
     }
 }

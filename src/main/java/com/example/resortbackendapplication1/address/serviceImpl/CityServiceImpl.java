@@ -19,6 +19,7 @@ import com.example.resortbackendapplication1.address.service.CityService;
 import com.example.resortbackendapplication1.address.specification.CitySpecification;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,16 +52,16 @@ public class CityServiceImpl implements CityService {
     }
 
     @Override
-    public CityResponse getById(Long countryId, Long id) {
-        CityEntity entity = getEntityById(countryId, id);
-        CityDto dto = CityMapper.toDto(entity,false);
+    public CityResponse getById(Long id) {
+        CityEntity entity = getEntityById(id);
+        CityDto dto = CityMapper.toDto(entity, false);
         return new CityResponse(dto);
     }
 
     @Override
-    public PaginatedResponse<CityDto> getAll(Long countryId, CityFilterRequest request) {
-        Page<CityDto> page = cityRepository
-                .findAll(CitySpecification.filter(countryId, request), request.toPageable(ALLOWED_SORT_FIELDS))
+    public PaginatedResponse<CityDto> getAll(CityFilterRequest request, Long countryId) {
+        Page<@NonNull CityDto> page = cityRepository
+                .findAll(CitySpecification.filter(request, countryId), request.toPageable(ALLOWED_SORT_FIELDS))
                 .map(entity -> CityMapper.toDto(entity, false));
         return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
     }
@@ -85,8 +86,8 @@ public class CityServiceImpl implements CityService {
     }
 
     @Override
-    public CityEntity getEntityById(Long countryId, Long id) {
-        return cityRepository.findByCountryEntity_IdAndIdAndIsActiveAndIsDeleted(countryId, id, true, false)
+    public CityEntity getEntityById(Long id) {
+        return cityRepository.findByIdAndIsActiveAndIsDeleted(id, true, false)
                 .orElseThrow(() -> new EntityNotFoundException("City not found with id: " + id));
     }
 }

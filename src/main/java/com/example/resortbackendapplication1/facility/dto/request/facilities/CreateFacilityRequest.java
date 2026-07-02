@@ -2,6 +2,7 @@ package com.example.resortbackendapplication1.facility.dto.request.facilities;
 
 import com.example.resortbackendapplication1.facility.dto.request.facilities.facilitylocale.CreateFacilityLocaleRequest;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -14,6 +15,9 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = false)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class CreateFacilityRequest extends FacilityRequest {
+
+    @NotNull
+    private Long facilityGroupId;
 
     @NotBlank
     @Size(max = 100)
