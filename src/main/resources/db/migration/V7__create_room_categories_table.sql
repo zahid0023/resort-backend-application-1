@@ -50,12 +50,12 @@ INSERT INTO room_categories
  sort_order,
  created_by,
  updated_by)
-VALUES ('STANDARD', 1, 1, 1),
-       ('DELUXE', 2, 1, 1),
-       ('SUITE', 3, 1, 1),
-       ('FAMILY', 4, 1, 1),
-       ('EXECUTIVE', 5, 1, 1),
-       ('PRESIDENTIAL', 6, 1, 1);
+VALUES ('STD', 1, 1, 1),
+       ('DLX', 2, 1, 1),
+       ('STE', 3, 1, 1),
+       ('FAM', 4, 1, 1),
+       ('EXE', 5, 1, 1),
+       ('PRS', 6, 1, 1);
 
 -- =========================================================
 -- Seed: room_category_locales (English)
