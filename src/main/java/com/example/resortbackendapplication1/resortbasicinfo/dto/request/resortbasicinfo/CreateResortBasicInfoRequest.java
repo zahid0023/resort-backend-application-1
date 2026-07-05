@@ -1,0 +1,23 @@
+package com.example.resortbackendapplication1.resortbasicinfo.dto.request.resortbasicinfo;
+
+import com.example.resortbackendapplication1.resortbasicinfo.dto.request.resortbasicinfolocale.CreateResortBasicInfoLocaleRequest;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.annotation.JsonNaming;
+
+import java.util.List;
+
+@Data
+@EqualsAndHashCode(callSuper = false)
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+public class CreateResortBasicInfoRequest extends ResortBasicInfoRequest {
+
+    @NotBlank
+    @Size(max = 50)
+    private String code;
+
+    private List<CreateResortBasicInfoLocaleRequest> locales;
+}

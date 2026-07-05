@@ -7,17 +7,17 @@
 3. [Architecture Layers](#architecture-layers)
 4. [Component Map](#component-map)
 5. [Config Lifecycle](#config-lifecycle)
-   - [Step 1 — Create a Config](#step-1--create-a-config)
-   - [Step 2 — Manage Active Config](#step-2--manage-active-config)
-   - [Step 3 — Upload an Image](#step-3--upload-an-image)
+    - [Step 1 — Create a Config](#step-1--create-a-config)
+    - [Step 2 — Manage Active Config](#step-2--manage-active-config)
+    - [Step 3 — Upload an Image](#step-3--upload-an-image)
 6. [How Strategy Selection Works](#how-strategy-selection-works)
-   - [Config → ImageHostingConfig Object](#config--imaginghostingconfig-object)
-   - [Provider → Strategy Lookup](#provider--strategy-lookup)
+    - [Config → ImageHostingConfig Object](#config--imaginghostingconfig-object)
+    - [Provider → Strategy Lookup](#provider--strategy-lookup)
 7. [Full End-to-End Upload Sequence](#full-end-to-end-upload-sequence)
 8. [Data Flow Diagram](#data-flow-diagram)
 9. [Provider Config Reference](#provider-config-reference)
-   - [S3 Config](#s3-config)
-   - [Cloudinary Config](#cloudinary-config)
+    - [S3 Config](#s3-config)
+    - [Cloudinary Config](#cloudinary-config)
 10. [isActive — The "Active Config" Rule](#isactive--the-active-config-rule)
 11. [Component Reference](#component-reference)
 12. [Error Reference](#error-reference)
@@ -95,30 +95,30 @@ the resort's active config automatically.
 
 ## Component Map
 
-| Component | Package | Role |
-|---|---|---|
-| `ResortImageStorageConfigController` | `controller` | REST API for managing provider configs per resort |
-| `ResortImageStorageConfigService` | `service` | CRUD business logic for configs |
-| `ResortImageStorageConfigServiceImpl` | `serviceImpl` | Implementation: validate → save → soft-delete |
-| `ResortImageStorageConfigEntity` | `model/entity` | DB record: `resort_id`, `provider`, `config (jsonb)` |
-| `ResortImageStorageConfigRepository` | `repository` | JPA queries filtered by `isActive`, `isDeleted` |
-| `ImageHostingProvider` (enum) | `commons/enums` | `S3` / `CLOUDINARY` — each holds its required config keys |
-| `ImageUploadService` | `commons/service` | Single upload method: `upload(file, provider, config)` |
-| `ImageUploadServiceImpl` | `commons/serviceImpl` | Resolves strategy from registry, delegates upload |
-| `ImageHostingStrategyRegistry` | `commons/imagehosting` | `Map<provider, strategy>` — O(1) strategy lookup |
-| `ImageHostingStrategy` | `commons/imagehosting` | Strategy interface: `provider()` + `upload(file, config)` |
-| `CloudinaryHostingStrategy` | `commons/imagehosting` | Uploads to Cloudinary using credentials from config |
-| `S3HostingStrategy` | `commons/imagehosting` | Uploads to S3 using credentials from config |
-| `CloudinaryConfig` | `commons/config` | `ImageHostingConfig` implementation for Cloudinary |
-| `AwsS3Config` | `commons/config` | `ImageHostingConfig` implementation for AWS S3 |
-| `ResortController` | `controller` | Resort CRUD + image upload endpoint |
-| `ResortService` / `ResortServiceImpl` | `service/serviceImpl` | Resort business logic, delegates upload |
-| `ResortImageEntity` | `model/entity` | Persisted image URL + metadata per resort |
-| `ResortImageMapper` | `model/mapper` | `ImageRequest` → `ResortImageEntity` |
-| `ImageEntity` | `commons/model/entity` | `@MappedSuperclass`: imageUrl, publicId, caption, isDefault, sortOrder |
-| `ImageItemRequest` | `commons/dto/request` | Multipart input: image file + caption + isDefault + sortOrder |
-| `ImageRequest` | `commons/dto/request` | Assembled after upload: URL + publicId + metadata |
-| `ImageUploadResponse` | `commons/dto/response` | Raw result from storage: imageUrl + publicId |
+| Component                             | Package                | Role                                                                   |
+|---------------------------------------|------------------------|------------------------------------------------------------------------|
+| `ResortImageStorageConfigController`  | `controller`           | REST API for managing provider configs per resort                      |
+| `ResortImageStorageConfigService`     | `service`              | CRUD business logic for configs                                        |
+| `ResortImageStorageConfigServiceImpl` | `serviceImpl`          | Implementation: validate → save → soft-delete                          |
+| `ResortImageStorageConfigEntity`      | `model/entity`         | DB record: `resort_id`, `provider`, `config (jsonb)`                   |
+| `ResortImageStorageConfigRepository`  | `repository`           | JPA queries filtered by `isActive`, `isDeleted`                        |
+| `ImageHostingProvider` (enum)         | `commons/enums`        | `S3` / `CLOUDINARY` — each holds its required config keys              |
+| `ImageUploadService`                  | `commons/service`      | Single upload method: `upload(file, provider, config)`                 |
+| `ImageUploadServiceImpl`              | `commons/serviceImpl`  | Resolves strategy from registry, delegates upload                      |
+| `ImageHostingStrategyRegistry`        | `commons/imagehosting` | `Map<provider, strategy>` — O(1) strategy lookup                       |
+| `ImageHostingStrategy`                | `commons/imagehosting` | Strategy interface: `provider()` + `upload(file, config)`              |
+| `CloudinaryHostingStrategy`           | `commons/imagehosting` | Uploads to Cloudinary using credentials from config                    |
+| `S3HostingStrategy`                   | `commons/imagehosting` | Uploads to S3 using credentials from config                            |
+| `CloudinaryConfig`                    | `commons/config`       | `ImageHostingConfig` implementation for Cloudinary                     |
+| `AwsS3Config`                         | `commons/config`       | `ImageHostingConfig` implementation for AWS S3                         |
+| `ResortController`                    | `controller`           | Resort CRUD + image upload endpoint                                    |
+| `ResortService` / `ResortServiceImpl` | `service/serviceImpl`  | Resort business logic, delegates upload                                |
+| `ResortImageEntity`                   | `model/entity`         | Persisted image URL + metadata per resort                              |
+| `ResortImageMapper`                   | `model/mapper`         | `ImageRequest` → `ResortImageEntity`                                   |
+| `ImageEntity`                         | `commons/model/entity` | `@MappedSuperclass`: imageUrl, publicId, caption, isDefault, sortOrder |
+| `ImageItemRequest`                    | `commons/dto/request`  | Multipart input: image file + caption + isDefault + sortOrder          |
+| `ImageRequest`                        | `commons/dto/request`  | Assembled after upload: URL + publicId + metadata                      |
+| `ImageUploadResponse`                 | `commons/dto/response` | Raw result from storage: imageUrl + publicId                           |
 
 ---
 
@@ -170,12 +170,15 @@ per resort — enforcing a single-active constraint is the caller's responsibili
 coordinating via the API.
 
 **Deactivating a config:** Call the delete endpoint — this soft-deletes the record:
+
 ```
 DELETE /api/v1/resorts/{resort-id}/resort-image-storage-configs/{id}
 ```
+
 Sets `is_deleted = true`, `is_active = false`. The record is never hard-deleted.
 
 **Updating credentials:** Call the update endpoint with new config values:
+
 ```
 PUT /api/v1/resorts/{resort-id}/resort-image-storage-configs/{id}
 {
@@ -218,6 +221,7 @@ Before calling upload, the stored map values are used to populate the matching
 `ImageHostingConfig` implementation:
 
 **For S3:**
+
 ```
 Map from DB:                        AwsS3Config (ImageHostingConfig):
 {                                   bucket    = config.get("bucket")
@@ -229,6 +233,7 @@ Map from DB:                        AwsS3Config (ImageHostingConfig):
 ```
 
 **For Cloudinary:**
+
 ```
 Map from DB:                        CloudinaryConfig (ImageHostingConfig):
 {                                   cloudName = config.get("cloud_name")
@@ -399,36 +404,38 @@ ResortController
 
 **Required keys** in the `config` map:
 
-| Key | Description | Example |
-|---|---|---|
-| `bucket` | S3 bucket name | `my-resort-images` |
-| `region` | AWS region code | `us-east-1`, `ap-southeast-1` |
-| `access_key` | IAM access key ID | `AKIAIOSFODNN7EXAMPLE` |
-| `secret_key` | IAM secret access key | `wJalrXUtnFEMI/K7MDENG/...` |
+| Key          | Description           | Example                       |
+|--------------|-----------------------|-------------------------------|
+| `bucket`     | S3 bucket name        | `my-resort-images`            |
+| `region`     | AWS region code       | `us-east-1`, `ap-southeast-1` |
+| `access_key` | IAM access key ID     | `AKIAIOSFODNN7EXAMPLE`        |
+| `secret_key` | IAM secret access key | `wJalrXUtnFEMI/K7MDENG/...`   |
 
 **How it is used at upload time:**
 
 ```java
 // S3HostingStrategy.upload()
 S3Client s3 = s3Config.init(bucket, region, accessKey, secretKey);
-    // → validates all non-blank
-    // → builds S3Client with StaticCredentialsProvider
+// → validates all non-blank
+// → builds S3Client with StaticCredentialsProvider
 
 String key = UUID.randomUUID() + "_" + file.getOriginalFilename();
 PutObjectRequest req = PutObjectRequest.builder()
-    .bucket(bucket).key(key).contentType(contentType).build();
-s3.putObject(req, RequestBody.fromBytes(file.getBytes()));
+        .bucket(bucket).key(key).contentType(contentType).build();
+s3.
+
+putObject(req, RequestBody.fromBytes(file.getBytes()));
 
 // Final URL:
-"https://{bucket}.s3.{region}.amazonaws.com/{key}"
+        "https://{bucket}.s3.{region}.amazonaws.com/{key}"
 ```
 
 **Stored image result:**
 
-| Field | Value |
-|---|---|
+| Field      | Value                                                                   |
+|------------|-------------------------------------------------------------------------|
 | `imageUrl` | `https://my-resort-images.s3.us-east-1.amazonaws.com/uuid_filename.jpg` |
-| `publicId` | `uuid_filename.jpg` (the S3 object key) |
+| `publicId` | `uuid_filename.jpg` (the S3 object key)                                 |
 
 ---
 
@@ -436,19 +443,19 @@ s3.putObject(req, RequestBody.fromBytes(file.getBytes()));
 
 **Required keys** in the `config` map:
 
-| Key | Description | Example |
-|---|---|---|
-| `cloud_name` | Cloudinary cloud identifier | `my-resort-cloud` |
-| `api_key` | Cloudinary API key | `123456789012345` |
-| `api_secret` | Cloudinary API secret | `abcDEFghiJKLmnoPQR` |
+| Key          | Description                 | Example              |
+|--------------|-----------------------------|----------------------|
+| `cloud_name` | Cloudinary cloud identifier | `my-resort-cloud`    |
+| `api_key`    | Cloudinary API key          | `123456789012345`    |
+| `api_secret` | Cloudinary API secret       | `abcDEFghiJKLmnoPQR` |
 
 **How it is used at upload time:**
 
 ```java
 // CloudinaryHostingStrategy.upload()
 Cloudinary cloudinary = cloudinaryConfig.init(cloudName, apiKey, apiSecret);
-    // → validates all non-blank
-    // → new Cloudinary({ cloud_name, api_key, api_secret, secure: true })
+// → validates all non-blank
+// → new Cloudinary({ cloud_name, api_key, api_secret, secure: true })
 
 Map result = cloudinary.uploader().upload(file.getBytes(), emptyMap());
 // result contains: secure_url, public_id, width, height, format, ...
@@ -456,10 +463,10 @@ Map result = cloudinary.uploader().upload(file.getBytes(), emptyMap());
 
 **Stored image result:**
 
-| Field | Value |
-|---|---|
+| Field      | Value                                                                |
+|------------|----------------------------------------------------------------------|
 | `imageUrl` | `https://res.cloudinary.com/{cloud}/image/upload/v.../public_id.jpg` |
-| `publicId` | Cloudinary asset identifier (used for transforms and deletion) |
+| `publicId` | Cloudinary asset identifier (used for transforms and deletion)       |
 
 ---
 
@@ -468,18 +475,19 @@ Map result = cloudinary.uploader().upload(file.getBytes(), emptyMap());
 `is_active` and `is_deleted` on `ResortImageStorageConfigEntity` control which config
 is used at upload time.
 
-| `is_active` | `is_deleted` | Visible via API? | Used for upload? |
-|---|---|---|---|
-| `true` | `false` | Yes | **Yes** — this is the active config |
-| `false` | `false` | No | No |
-| `true` | `true` | No | No |
-| `false` | `true` | No | No |
+| `is_active` | `is_deleted` | Visible via API? | Used for upload?                    |
+|-------------|--------------|------------------|-------------------------------------|
+| `true`      | `false`      | Yes              | **Yes** — this is the active config |
+| `false`     | `false`      | No               | No                                  |
+| `true`      | `true`       | No               | No                                  |
+| `false`     | `true`       | No               | No                                  |
 
 **One active config per resort** — the system fetches the first record matching
 `(resort_id, is_active=true, is_deleted=false)`. If a resort has multiple configs,
 ensure only one is active at a time by deactivating the old one before creating a new one.
 
 **What "active" means in practice:**
+
 - A config is created → `is_active = true` automatically
 - A config is soft-deleted → `is_active = false`, `is_deleted = true`
 - A config can be updated in-place (change provider or rotate credentials) without
@@ -494,6 +502,7 @@ ensure only one is active at a time by deactivating the old one before creating 
 ```java
 public interface ImageHostingStrategy {
     ImageHostingProvider provider();
+
     ImageUploadResponse upload(MultipartFile file, ImageHostingConfig config);
 }
 ```
@@ -527,7 +536,7 @@ different buckets/clouds).
 // Built once at application startup
 public ImageHostingStrategyRegistry(List<ImageHostingStrategy> strategies) {
     this.strategies = strategies.stream()
-        .collect(toUnmodifiableMap(ImageHostingStrategy::provider, s -> s));
+            .collect(toUnmodifiableMap(ImageHostingStrategy::provider, s -> s));
 }
 
 public ImageHostingStrategy get(ImageHostingProvider provider) {
@@ -547,9 +556,9 @@ The map is built once and never changes at runtime.
 Both implement `ImageHostingConfig` (marker interface) and are also
 `@ConfigurationProperties` beans. They serve a dual purpose:
 
-| Purpose | How |
-|---|---|
-| Spring Boot config bean | Populated from `application.yaml` env vars at startup |
+| Purpose                      | How                                                      |
+|------------------------------|----------------------------------------------------------|
+| Spring Boot config bean      | Populated from `application.yaml` env vars at startup    |
 | Per-upload credential holder | Populated from the resort's DB config map at upload time |
 
 At upload time, a **new instance** of `AwsS3Config` or `CloudinaryConfig` is created
@@ -560,17 +569,17 @@ and populated with the resort's specific stored credentials — the application-
 
 ## Error Reference
 
-| Scenario | Layer | Exception | HTTP |
-|---|---|---|---|
-| `provider` null in config request | Controller (`@Valid`) | `MethodArgumentNotValidException` | 400 |
-| `config` null in config request | Controller (`@Valid`) | `MethodArgumentNotValidException` | 400 |
-| Required config key missing or blank | Service (`provider.validate()`) | `IllegalArgumentException` | 400 |
-| Resort not found | `ResortService` | `EntityNotFoundException` | 404 |
-| Active config not found for resort | `ResortImageStorageConfigRepository` | `EntityNotFoundException` | 404 |
-| Wrong config type passed to strategy | `S3/CloudinaryHostingStrategy` | `IllegalArgumentException` | 400 |
-| S3 upload SDK failure | `S3HostingStrategy` | `IllegalStateException` | 500 |
-| Cloudinary upload SDK failure | `CloudinaryHostingStrategy` | `IllegalStateException` | 500 |
-| S3 credentials blank at upload time | `AwsS3Config.validate()` | `IllegalStateException` | 500 |
-| Cloudinary credentials blank at upload time | `CloudinaryConfig.validate()` | `IllegalStateException` | 500 |
-| No strategy registered for provider | `ImageHostingStrategyRegistry.get()` | `IllegalArgumentException` | 400 |
-| Concurrent config update | `ResortImageStorageConfigEntity` (`@Version`) | `ObjectOptimisticLockingFailureException` | 409 |
+| Scenario                                    | Layer                                         | Exception                                 | HTTP |
+|---------------------------------------------|-----------------------------------------------|-------------------------------------------|------|
+| `provider` null in config request           | Controller (`@Valid`)                         | `MethodArgumentNotValidException`         | 400  |
+| `config` null in config request             | Controller (`@Valid`)                         | `MethodArgumentNotValidException`         | 400  |
+| Required config key missing or blank        | Service (`provider.validate()`)               | `IllegalArgumentException`                | 400  |
+| Resort not found                            | `ResortService`                               | `EntityNotFoundException`                 | 404  |
+| Active config not found for resort          | `ResortImageStorageConfigRepository`          | `EntityNotFoundException`                 | 404  |
+| Wrong config type passed to strategy        | `S3/CloudinaryHostingStrategy`                | `IllegalArgumentException`                | 400  |
+| S3 upload SDK failure                       | `S3HostingStrategy`                           | `IllegalStateException`                   | 500  |
+| Cloudinary upload SDK failure               | `CloudinaryHostingStrategy`                   | `IllegalStateException`                   | 500  |
+| S3 credentials blank at upload time         | `AwsS3Config.validate()`                      | `IllegalStateException`                   | 500  |
+| Cloudinary credentials blank at upload time | `CloudinaryConfig.validate()`                 | `IllegalStateException`                   | 500  |
+| No strategy registered for provider         | `ImageHostingStrategyRegistry.get()`          | `IllegalArgumentException`                | 400  |
+| Concurrent config update                    | `ResortImageStorageConfigEntity` (`@Version`) | `ObjectOptimisticLockingFailureException` | 409  |
