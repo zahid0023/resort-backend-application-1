@@ -2,7 +2,6 @@ package com.example.resortbackendapplication1.resortbasicinfo.model.entity;
 
 import com.example.resortbackendapplication1.address.model.entity.CityEntity;
 import com.example.resortbackendapplication1.address.model.entity.CountryEntity;
-import com.example.resortbackendapplication1.commons.model.entity.AuditableEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -10,15 +9,26 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 @Getter
 @Setter
 @Entity
+@EntityListeners(AuditingEntityListener.class)
 @Table(name = "resort_basic_info")
-public class ResortBasicInfoEntity extends AuditableEntity {
+public class ResortBasicInfoEntity {
+
+    @Id
+    @Column(name = "id")
+    private Long id;
 
     @NotBlank
     @Size(max = 50)
@@ -44,14 +54,6 @@ public class ResortBasicInfoEntity extends AuditableEntity {
     @JoinColumn(name = "city_id", nullable = false)
     private CityEntity cityEntity;
 
-    @Size(max = 50)
-    @Column(name = "phone", length = 50)
-    private String phone;
-
-    @Size(max = 255)
-    @Column(name = "email", length = 255)
-    private String email;
-
     @Size(max = 500)
     @Column(name = "logo_url", length = 500)
     private String logoUrl;
@@ -64,4 +66,51 @@ public class ResortBasicInfoEntity extends AuditableEntity {
 
     @OneToMany(mappedBy = "resortBasicInfoEntity", cascade = CascadeType.ALL)
     private Set<ResortBasicInfoLocaleEntity> localeEntities = new LinkedHashSet<>();
+
+    @CreatedBy
+    @Column(name = "created_by", nullable = false, updatable = false)
+    private Long createdBy;
+
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @LastModifiedBy
+    @Column(name = "updated_by", nullable = false)
+    private Long updatedBy;
+
+    @LastModifiedDate
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
+
+    @Version
+    @ColumnDefault("0")
+    @Column(name = "version", nullable = false)
+    private Long version;
+
+    @ColumnDefault("true")
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
+
+    @ColumnDefault("false")
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean isDeleted = false;
+
+    @Column(name = "deleted_by")
+    private Long deletedBy;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.id = 1L;
+        if (createdBy == null) createdBy = 1L;
+        if (updatedBy == null) updatedBy = createdBy;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        if (updatedBy == null) updatedBy = createdBy;
+    }
 }

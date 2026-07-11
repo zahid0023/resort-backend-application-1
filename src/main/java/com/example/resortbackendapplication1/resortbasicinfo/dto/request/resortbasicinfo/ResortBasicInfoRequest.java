@@ -21,8 +21,6 @@ public class ResortBasicInfoRequest {
     @NotNull
     private Long cityId;
 
-    private String phone;
-    private String email;
     private String logoUrl;
     private Double lat;
     private Double lon;

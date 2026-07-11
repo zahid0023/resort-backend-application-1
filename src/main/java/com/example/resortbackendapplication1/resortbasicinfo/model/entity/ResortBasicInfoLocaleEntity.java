@@ -36,6 +36,10 @@ public class ResortBasicInfoLocaleEntity extends AuditableEntity {
     @Column(name = "name", nullable = false, length = 255)
     private String name;
 
+    @NotBlank
+    @Column(name = "tagline", nullable = false, length = Integer.MAX_VALUE)
+    private String tagline;
+
     @Size(max = 1024)
     @Column(name = "short_description", length = 1024)
     private String shortDescription;

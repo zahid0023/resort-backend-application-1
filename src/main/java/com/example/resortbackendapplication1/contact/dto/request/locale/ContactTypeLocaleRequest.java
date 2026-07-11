@@ -1,4 +1,4 @@
-package com.example.resortbackendapplication1.resortbasicinfo.dto.request.resortbasicinfolocale;
+package com.example.resortbackendapplication1.contact.dto.request.locale;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -9,19 +9,13 @@ import tools.jackson.databind.annotation.JsonNaming;
 
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class ResortBasicInfoLocaleRequest {
+public class ContactTypeLocaleRequest {
 
     @NotBlank
-    @Size(max = 255)
+    @Size(max = 100)
     private String name;
 
-    @NotBlank
-    private String tagline;
-
-    @Size(max = 1024)
-    private String shortDescription;
-
-    private String address;
+    private String description;
 
     @NotNull
     private Integer sortOrder;

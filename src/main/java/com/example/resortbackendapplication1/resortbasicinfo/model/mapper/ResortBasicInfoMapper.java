@@ -48,8 +48,6 @@ public class ResortBasicInfoMapper {
         entity.setEstd(request.getEstd());
         entity.setCountryEntity(countryEntity);
         entity.setCityEntity(cityEntity);
-        entity.setPhone(request.getPhone());
-        entity.setEmail(request.getEmail());
         entity.setLogoUrl(request.getLogoUrl());
         entity.setLat(request.getLat());
         entity.setLon(request.getLon());
@@ -75,8 +73,6 @@ public class ResortBasicInfoMapper {
                 .estd(entity.getEstd())
                 .countryId(entity.getCountryEntity().getId())
                 .cityId(entity.getCityEntity().getId())
-                .phone(entity.getPhone())
-                .email(entity.getEmail())
                 .logoUrl(entity.getLogoUrl())
                 .lat(entity.getLat())
                 .lon(entity.getLon())

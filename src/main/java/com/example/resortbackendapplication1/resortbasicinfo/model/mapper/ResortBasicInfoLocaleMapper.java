@@ -28,6 +28,7 @@ public class ResortBasicInfoLocaleMapper {
 
     private void applyCommonFields(ResortBasicInfoLocaleEntity entity, ResortBasicInfoLocaleRequest request) {
         entity.setName(request.getName());
+        entity.setTagline(request.getTagline());
         entity.setShortDescription(request.getShortDescription());
         entity.setAddress(request.getAddress());
         entity.setSortOrder(request.getSortOrder());
@@ -39,6 +40,7 @@ public class ResortBasicInfoLocaleMapper {
                 .localeId(entity.getLocaleEntity().getId())
                 .sortOrder(entity.getSortOrder())
                 .name(entity.getName())
+                .tagline(entity.getTagline())
                 .shortDescription(entity.getShortDescription())
                 .address(entity.getAddress())
                 .build();

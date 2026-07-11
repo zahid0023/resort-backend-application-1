@@ -1,5 +1,6 @@
-package com.example.resortbackendapplication1.resortbasicinfo.model.dto;
+package com.example.resortbackendapplication1.contact.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,13 +12,12 @@ import tools.jackson.databind.annotation.JsonNaming;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class ResortBasicInfoLocaleDto {
+public class ContactTypeLocaleDto {
     private Long id;
     private Long localeId;
-    private Integer sortOrder;
     private String name;
-    private String tagline;
-    private String shortDescription;
-    private String address;
+    private String description;
+    private Integer sortOrder;
 }

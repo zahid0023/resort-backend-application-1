@@ -10,9 +10,7 @@ CREATE TABLE IF NOT EXISTS resort_basic_info
     country_id bigint references countries (id) NOT NULL,
     city_id    bigint references cities (id)    NOT NULL,
 
-    phone      varchar(50),
-    email      varchar(255),
-    logo_url   varchar(500),
+    logo_url   text,
 
     lat        float,
     lon        float,
@@ -37,6 +35,7 @@ CREATE TABLE IF NOT EXISTS resort_basic_info_locales
     sort_order           int                          NOT NULL DEFAULT 0,
 
     name                 varchar(255)                 NOT NULL,
+    tagline              text                         NOT NULL,
     short_description    varchar(1024),
     address              text,
 

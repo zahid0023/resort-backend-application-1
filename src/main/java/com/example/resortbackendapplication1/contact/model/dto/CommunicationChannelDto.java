@@ -1,5 +1,6 @@
-package com.example.resortbackendapplication1.resortbasicinfo.model.dto;
+package com.example.resortbackendapplication1.contact.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,16 +14,15 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class ResortBasicInfoDto {
+public class CommunicationChannelDto {
     private Long id;
     private String code;
     private Integer sortOrder;
-    private Short estd;
-    private Long countryId;
-    private Long cityId;
-    private String logoUrl;
-    private Double lat;
-    private Double lon;
-    private List<ResortBasicInfoLocaleDto> locales;
+    private Boolean isUrl;
+    private Boolean isPhone;
+    private Boolean isEmail;
+    private Boolean isClickable;
+    private List<CommunicationChannelLocaleDto> locales;
 }
