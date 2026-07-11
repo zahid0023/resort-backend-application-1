@@ -16,6 +16,7 @@ import java.util.List;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class ResortBasicInfoDto {
     private Long id;
+    private Long resortId;
     private String code;
     private Integer sortOrder;
     private Short estd;

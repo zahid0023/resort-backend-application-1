@@ -3,6 +3,7 @@ package com.example.resortbackendapplication1.resortbasicinfo.model.mapper;
 import com.example.resortbackendapplication1.address.model.entity.CityEntity;
 import com.example.resortbackendapplication1.address.model.entity.CountryEntity;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.resort.model.entity.ResortEntity;
 import com.example.resortbackendapplication1.resortbasicinfo.dto.request.resortbasicinfo.CreateResortBasicInfoRequest;
 import com.example.resortbackendapplication1.resortbasicinfo.dto.request.resortbasicinfo.ResortBasicInfoRequest;
 import com.example.resortbackendapplication1.resortbasicinfo.dto.request.resortbasicinfo.UpdateResortBasicInfoRequest;
@@ -23,10 +24,12 @@ import java.util.stream.Collectors;
 public class ResortBasicInfoMapper {
 
     public ResortBasicInfoEntity create(CreateResortBasicInfoRequest request,
+                                        ResortEntity resortEntity,
                                         CountryEntity countryEntity,
                                         CityEntity cityEntity,
                                         Map<Long, LocaleEntity> localeEntityMap) {
         ResortBasicInfoEntity entity = new ResortBasicInfoEntity();
+        entity.setResortEntity(resortEntity);
         entity.setCode(request.getCode());
         applyCommonFields(entity, request, countryEntity, cityEntity);
         entity.setLocaleEntities(mapLocales(request.getLocales(), entity, localeEntityMap));
@@ -68,6 +71,7 @@ public class ResortBasicInfoMapper {
                 .toList();
         return ResortBasicInfoDto.builder()
                 .id(entity.getId())
+                .resortId(entity.getResortEntity().getId())
                 .code(entity.getCode())
                 .sortOrder(entity.getSortOrder())
                 .estd(entity.getEstd())

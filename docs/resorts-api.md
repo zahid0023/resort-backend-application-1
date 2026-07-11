@@ -3,9 +3,10 @@
 Base URL: `/api/v1/resorts`
 
 Resorts are the top-level entities of the platform. Creating a resort automatically assigns the authenticated user as
-its owner with full permissions. Two list endpoints are provided: one for admins (all resorts) and one for resort users
-(only resorts they have been granted access to). All records support soft-delete — deleted records are hidden from all
-responses.
+its owner with full permissions. Optional `basic_info` and `contacts` can be provided at creation time and will be
+persisted atomically in the same transaction. Two list endpoints are provided: one for admins (all resorts) and one for
+resort users (only resorts they have been granted access to). All records support soft-delete — deleted records are
+hidden from all responses.
 
 ---
 
@@ -26,10 +27,45 @@ responses.
 
 ### Resort
 
-| Field  | Type   | Required | Constraints                      | Description                            |
-|--------|--------|----------|----------------------------------|----------------------------------------|
-| `id`   | Long   | —        | read-only                        | Auto-generated identifier              |
-| `code` | String | Yes      | max 100 chars, unique, immutable | Short unique identifier for the resort |
+| Field        | Type   | Required | Constraints                      | Description                            |
+|--------------|--------|----------|----------------------------------|----------------------------------------|
+| `id`         | Long   | —        | read-only                        | Auto-generated identifier              |
+| `code`       | String | Yes      | max 100 chars, unique, immutable | Short unique identifier for the resort |
+
+### Resort Basic Info (nested in create)
+
+| Field        | Type    | Required | Constraints              | Description                                                   |
+|--------------|---------|----------|--------------------------|---------------------------------------------------------------|
+| `code`       | String  | Yes      | Not blank, max 50 chars  | Short code for the basic info record; not updatable           |
+| `sort_order` | Integer | Yes      | Not null                 | Display order                                                 |
+| `estd`       | Short   | Yes      | Not null                 | Year the resort was established                               |
+| `country_id` | Long    | Yes      | Not null, must exist     | ID of the country where the resort is located                 |
+| `city_id`    | Long    | Yes      | Not null, must exist     | ID of the city where the resort is located                    |
+| `logo_url`   | String  | No       | max 500 chars            | URL of the resort logo                                        |
+| `lat`        | Double  | No       | —                        | Latitude coordinate                                           |
+| `lon`        | Double  | No       | —                        | Longitude coordinate                                          |
+| `locales`    | Array   | No       | See locale fields below  | Locale translations for the basic info                        |
+
+**Basic info locale fields (`basic_info.locales[]`):**
+
+| Field               | Type    | Required | Constraints              | Description                          |
+|---------------------|---------|----------|--------------------------|--------------------------------------|
+| `locale_id`         | Long    | Yes      | Not null, must exist     | ID of an existing active locale      |
+| `sort_order`        | Integer | Yes      | Not null                 | Display order for this locale entry  |
+| `name`              | String  | Yes      | Not blank, max 255 chars | Localized name of the resort         |
+| `tagline`           | String  | Yes      | Not blank                | Localized tagline or slogan          |
+| `short_description` | String  | No       | max 1024 chars           | Localized short description          |
+| `address`           | String  | No       | —                        | Localized address text               |
+
+### Resort Contact (nested in create)
+
+| Field                    | Type    | Required | Constraints          | Description                                        |
+|--------------------------|---------|----------|----------------------|----------------------------------------------------|
+| `contact_type_id`        | Long    | Yes      | Not null, must exist | ID of an existing active contact type              |
+| `communication_channel_id` | Long  | Yes      | Not null, must exist | ID of an existing active communication channel     |
+| `contact_value`          | String  | Yes      | Not blank            | The actual contact value (e.g. phone number, email)|
+| `is_primary`             | Boolean | Yes      | Not null             | Whether this is the primary contact of its type    |
+| `sort_order`             | Integer | Yes      | Not null, >= 0       | Display order                                      |
 
 ---
 
@@ -37,20 +73,59 @@ responses.
 
 `POST /api/v1/resorts`
 
-Creates a new resort. The authenticated user is automatically assigned as owner with all permissions granted.
-The `code` field is set at creation time and cannot be changed.
+Creates a new resort. The authenticated user is automatically assigned as owner with all permissions granted. The
+`code` field is set at creation time and cannot be changed. Optionally, `basic_info` and a list of `contacts` can be
+provided and will be created atomically — if any part fails, the entire operation is rolled back.
 
 ### Request Fields
 
-| Field  | Type   | Required | Validation               |
-|--------|--------|----------|--------------------------|
-| `code` | String | Yes      | Not blank, max 100 chars |
+| Field        | Type   | Required | Validation                        |
+|--------------|--------|----------|-----------------------------------|
+| `code`       | String | Yes      | Not blank, max 100 chars          |
+| `basic_info` | Object | No       | See Resort Basic Info fields above |
+| `contacts`   | Array  | No       | See Resort Contact fields above   |
 
 ### Request Body
 
 ```json
 {
-  "code": "SUNSET-RESORT"
+  "code": "SUNRISE",
+  "basic_info": {
+    "code": "SUNRISE-INFO",
+    "sort_order": 1,
+    "estd": 1998,
+    "country_id": 1,
+    "city_id": 3,
+    "logo_url": "https://cdn.example.com/logo.png",
+    "lat": 21.4272,
+    "lon": 92.0058,
+    "locales": [
+      {
+        "locale_id": 1,
+        "sort_order": 1,
+        "name": "Sunrise Beach Resort",
+        "tagline": "Where the sea meets serenity",
+        "short_description": "A luxury beachfront resort on the coast of Cox's Bazar.",
+        "address": "Marine Drive Road, Cox's Bazar, Bangladesh"
+      }
+    ]
+  },
+  "contacts": [
+    {
+      "contact_type_id": 1,
+      "communication_channel_id": 2,
+      "contact_value": "+8801700000000",
+      "is_primary": true,
+      "sort_order": 1
+    },
+    {
+      "contact_type_id": 2,
+      "communication_channel_id": 3,
+      "contact_value": "info@sunriseresort.com",
+      "is_primary": true,
+      "sort_order": 2
+    }
+  ]
 }
 ```
 
@@ -83,7 +158,7 @@ Returns a single resort by ID.
 {
   "data": {
     "id": 1,
-    "code": "SUNSET-RESORT"
+    "code": "SUNRISE"
   }
 }
 ```
@@ -111,14 +186,8 @@ Returns a paginated, filterable list of all active (non-deleted) resorts across 
 ```json
 {
   "data": [
-    {
-      "id": 1,
-      "code": "SUNSET-RESORT"
-    },
-    {
-      "id": 2,
-      "code": "OCEAN-VIEW"
-    }
+    { "id": 1, "code": "SUNRISE" },
+    { "id": 2, "code": "OCEAN-VIEW" }
   ],
   "current_page": 0,
   "total_pages": 1,
@@ -153,10 +222,7 @@ access to (as owner, staff, or any other access type). Only active, non-deleted 
 ```json
 {
   "data": [
-    {
-      "id": 1,
-      "code": "SUNSET-RESORT"
-    }
+    { "id": 1, "code": "SUNRISE" }
   ],
   "current_page": 0,
   "total_pages": 1,
@@ -173,7 +239,8 @@ access to (as owner, staff, or any other access type). Only active, non-deleted 
 
 `PUT /api/v1/resorts/{id}`
 
-Updates a resort. The `code` field is set at creation time and cannot be changed.
+Updates a resort. The `code` field is set at creation time and cannot be changed. Basic info and contacts are managed
+via their own sub-resource endpoints.
 
 ### Path Parameters
 
@@ -235,9 +302,9 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                         |
-|-------------|----------------------------|-----------------------------------------------|
-| 400         | `INVALID_ARGUMENT`         | Missing required fields or invalid sort field |
-| 403         | `ACCESS_DENIED`            | User is not a member of the resort (delete)   |
-| 404         | `ENTITY_NOT_FOUND`         | Resort not found or already deleted           |
-| 409         | `DATA_INTEGRITY_VIOLATION` | Duplicate `code`                              |
+| HTTP Status | Error Code                 | Cause                                                                                                             |
+|-------------|----------------------------|-------------------------------------------------------------------------------------------------------------------|
+| 400         | `INVALID_ARGUMENT`         | Missing required fields or invalid sort field                                                                     |
+| 403         | `ACCESS_DENIED`            | User is not a member of the resort (delete)                                                                       |
+| 404         | `ENTITY_NOT_FOUND`         | Resort, country, city, locale, contact type, or communication channel not found / deleted                         |
+| 409         | `DATA_INTEGRITY_VIOLATION` | Duplicate resort `code`, duplicate basic info `code`, or basic info already exists for the resort                 |

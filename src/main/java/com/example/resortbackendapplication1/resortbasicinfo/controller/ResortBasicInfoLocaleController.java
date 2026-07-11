@@ -14,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/resort-basic-info/locales")
+@RequestMapping("/api/v1/resorts/{resort-id}/basic-info/locales")
 public class ResortBasicInfoLocaleController {
 
     private final ResortBasicInfoService resortBasicInfoService;
@@ -30,8 +30,10 @@ public class ResortBasicInfoLocaleController {
     }
 
     @PostMapping
-    public ResponseEntity<?> create(@Valid @RequestBody CreateResortBasicInfoLocaleRequest request) {
-        ResortBasicInfoEntity resortBasicInfoEntity = resortBasicInfoService.getEntity();
+    public ResponseEntity<?> create(
+            @PathVariable("resort-id") Long resortId,
+            @Valid @RequestBody CreateResortBasicInfoLocaleRequest request) {
+        ResortBasicInfoEntity resortBasicInfoEntity = resortBasicInfoService.getEntityByResortId(resortId);
         LocaleEntity localeEntity = localeService.getEntityById(request.getLocaleId());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(resortBasicInfoLocaleService.create(resortBasicInfoEntity, localeEntity, request));
@@ -39,16 +41,19 @@ public class ResortBasicInfoLocaleController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> update(
+            @PathVariable("resort-id") Long resortId,
             @PathVariable Long id,
             @Valid @RequestBody UpdateResortBasicInfoLocaleRequest request) {
-        ResortBasicInfoEntity resortBasicInfoEntity = resortBasicInfoService.getEntity();
+        ResortBasicInfoEntity resortBasicInfoEntity = resortBasicInfoService.getEntityByResortId(resortId);
         ResortBasicInfoLocaleEntity entity = resortBasicInfoLocaleService.getEntityById(resortBasicInfoEntity.getId(), id);
         return ResponseEntity.ok(resortBasicInfoLocaleService.update(entity, request));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
-        ResortBasicInfoEntity resortBasicInfoEntity = resortBasicInfoService.getEntity();
+    public ResponseEntity<?> delete(
+            @PathVariable("resort-id") Long resortId,
+            @PathVariable Long id) {
+        ResortBasicInfoEntity resortBasicInfoEntity = resortBasicInfoService.getEntityByResortId(resortId);
         ResortBasicInfoLocaleEntity entity = resortBasicInfoLocaleService.getEntityById(resortBasicInfoEntity.getId(), id);
         return ResponseEntity.ok(resortBasicInfoLocaleService.delete(entity));
     }

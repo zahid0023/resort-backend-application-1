@@ -2,6 +2,7 @@ package com.example.resortbackendapplication1.resortbasicinfo.model.entity;
 
 import com.example.resortbackendapplication1.address.model.entity.CityEntity;
 import com.example.resortbackendapplication1.address.model.entity.CountryEntity;
+import com.example.resortbackendapplication1.resort.model.entity.ResortEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -27,8 +28,14 @@ import java.util.Set;
 public class ResortBasicInfoEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "resort_id", nullable = false, unique = true)
+    private ResortEntity resortEntity;
 
     @NotBlank
     @Size(max = 50)
@@ -104,7 +111,6 @@ public class ResortBasicInfoEntity {
 
     @PrePersist
     protected void onCreate() {
-        this.id = 1L;
         if (createdBy == null) createdBy = 1L;
         if (updatedBy == null) updatedBy = createdBy;
     }

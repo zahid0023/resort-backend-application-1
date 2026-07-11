@@ -8,5 +8,5 @@ import java.util.Optional;
 
 public interface ResortBasicInfoRepository extends JpaRepository<@NonNull ResortBasicInfoEntity, @NonNull Long> {
 
-    Optional<ResortBasicInfoEntity> findByIdAndIsActiveAndIsDeleted(Long id, Boolean isActive, Boolean isDeleted);
+    Optional<ResortBasicInfoEntity> findByResortEntity_IdAndIsActiveAndIsDeleted(Long resortId, Boolean isActive, Boolean isDeleted);
 }

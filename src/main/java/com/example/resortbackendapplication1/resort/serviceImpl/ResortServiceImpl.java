@@ -1,11 +1,22 @@
 package com.example.resortbackendapplication1.resort.serviceImpl;
 
+import com.example.resortbackendapplication1.address.model.entity.CityEntity;
+import com.example.resortbackendapplication1.address.model.entity.CountryEntity;
+import com.example.resortbackendapplication1.address.service.CityService;
+import com.example.resortbackendapplication1.address.service.CountryService;
 import com.example.resortbackendapplication1.auth.model.enitty.UserEntity;
 import com.example.resortbackendapplication1.auth.service.UserService;
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.commons.utils.EntityValidator;
+import com.example.resortbackendapplication1.commons.utils.LocaleUtils;
 import com.example.resortbackendapplication1.commons.utils.Pagination;
+import com.example.resortbackendapplication1.contact.model.entity.CommunicationChannelEntity;
+import com.example.resortbackendapplication1.contact.model.entity.ContactTypeEntity;
+import com.example.resortbackendapplication1.contact.service.CommunicationChannelService;
+import com.example.resortbackendapplication1.contact.service.ContactTypeService;
+import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.locale.service.LocaleService;
 import com.example.resortbackendapplication1.resort.dto.request.CreateResortRequest;
 import com.example.resortbackendapplication1.resort.dto.request.ResortFilterRequest;
 import com.example.resortbackendapplication1.resort.dto.request.UpdateResortRequest;
@@ -24,6 +35,11 @@ import com.example.resortbackendapplication1.resort.service.ResortService;
 import com.example.resortbackendapplication1.resort.specification.ResortSpecification;
 import com.example.resortbackendapplication1.resortaccesstype.model.entity.ResortAccessTypeEntity;
 import com.example.resortbackendapplication1.resortaccesstype.repository.ResortAccessTypeRepository;
+import com.example.resortbackendapplication1.resortbasicinfo.dto.request.resortbasicinfo.CreateResortBasicInfoRequest;
+import com.example.resortbackendapplication1.resortbasicinfo.dto.request.resortbasicinfolocale.CreateResortBasicInfoLocaleRequest;
+import com.example.resortbackendapplication1.resortbasicinfo.service.ResortBasicInfoService;
+import com.example.resortbackendapplication1.resortcontact.dto.request.CreateResortContactRequest;
+import com.example.resortbackendapplication1.resortcontact.service.ResortContactService;
 import com.example.resortbackendapplication1.resortpermissiontype.model.entity.ResortPermissionTypeEntity;
 import com.example.resortbackendapplication1.resortpermissiontype.repository.ResortPermissionTypeRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -35,7 +51,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -50,19 +68,40 @@ public class ResortServiceImpl implements ResortService {
     private final ResortAccessTypeRepository resortAccessTypeRepository;
     private final ResortPermissionTypeRepository resortPermissionTypeRepository;
     private final UserService userService;
+    private final ResortBasicInfoService resortBasicInfoService;
+    private final ResortContactService resortContactService;
+    private final CountryService countryService;
+    private final CityService cityService;
+    private final LocaleService localeService;
+    private final ContactTypeService contactTypeService;
+    private final CommunicationChannelService communicationChannelService;
 
     public ResortServiceImpl(ResortRepository resortRepository,
                              ResortUserRepository resortUserRepository,
                              ResortUserPermissionRepository resortUserPermissionRepository,
                              ResortAccessTypeRepository resortAccessTypeRepository,
                              ResortPermissionTypeRepository resortPermissionTypeRepository,
-                             UserService userService) {
+                             UserService userService,
+                             ResortBasicInfoService resortBasicInfoService,
+                             ResortContactService resortContactService,
+                             CountryService countryService,
+                             CityService cityService,
+                             LocaleService localeService,
+                             ContactTypeService contactTypeService,
+                             CommunicationChannelService communicationChannelService) {
         this.resortRepository = resortRepository;
         this.resortUserRepository = resortUserRepository;
         this.resortUserPermissionRepository = resortUserPermissionRepository;
         this.resortAccessTypeRepository = resortAccessTypeRepository;
         this.resortPermissionTypeRepository = resortPermissionTypeRepository;
         this.userService = userService;
+        this.resortBasicInfoService = resortBasicInfoService;
+        this.resortContactService = resortContactService;
+        this.countryService = countryService;
+        this.cityService = cityService;
+        this.localeService = localeService;
+        this.contactTypeService = contactTypeService;
+        this.communicationChannelService = communicationChannelService;
     }
 
     @Transactional
@@ -97,6 +136,37 @@ public class ResortServiceImpl implements ResortService {
                 }).toList();
 
         resortUserPermissionRepository.saveAll(permissions);
+
+        if (request.getBasicInfo() != null) {
+            CreateResortBasicInfoRequest basicInfo = request.getBasicInfo();
+            CountryEntity countryEntity = countryService.getEntityById(basicInfo.getCountryId());
+            CityEntity cityEntity = cityService.getEntityById(basicInfo.getCityId());
+            Map<Long, LocaleEntity> localeEntityMap = LocaleUtils.resolveLocaleMap(
+                    basicInfo.getLocales(), CreateResortBasicInfoLocaleRequest::getLocaleId, localeService);
+            resortBasicInfoService.create(basicInfo, resort, countryEntity, cityEntity, localeEntityMap);
+        }
+
+        if (request.getContacts() != null && !request.getContacts().isEmpty()) {
+            Set<Long> contactTypeIds = request.getContacts().stream()
+                    .map(CreateResortContactRequest::getContactTypeId)
+                    .collect(Collectors.toSet());
+            Set<Long> channelIds = request.getContacts().stream()
+                    .map(CreateResortContactRequest::getCommunicationChannelId)
+                    .collect(Collectors.toSet());
+
+            Map<Long, ContactTypeEntity> contactTypeMap = contactTypeService.getAll(contactTypeIds).stream()
+                    .collect(Collectors.toMap(ContactTypeEntity::getId, e -> e));
+            Map<Long, CommunicationChannelEntity> channelMap = communicationChannelService.getAll(channelIds).stream()
+                    .collect(Collectors.toMap(CommunicationChannelEntity::getId, e -> e));
+
+            for (CreateResortContactRequest contact : request.getContacts()) {
+                resortContactService.create(
+                        resort,
+                        contactTypeMap.get(contact.getContactTypeId()),
+                        channelMap.get(contact.getCommunicationChannelId()),
+                        contact);
+            }
+        }
 
         log.info("Resort created with id: {}, owner user id: {}", resort.getId(), currentUser.getId());
         return new SuccessResponse(true, resort.getId());
