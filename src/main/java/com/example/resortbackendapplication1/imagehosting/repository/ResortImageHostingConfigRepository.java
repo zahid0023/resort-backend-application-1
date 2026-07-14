@@ -12,9 +12,9 @@ import java.util.Optional;
 public interface ResortImageHostingConfigRepository
         extends JpaRepository<@NonNull ResortImageHostingConfigEntity, @NonNull Long> {
 
-    Optional<ResortImageHostingConfigEntity> findByIdAndIsActiveAndIsDeleted(
-            Long id, Boolean isActive, Boolean isDeleted);
+    Optional<ResortImageHostingConfigEntity> findByResortEntity_IdAndIdAndIsActiveAndIsDeleted(
+            Long resortId, Long id, Boolean isActive, Boolean isDeleted);
 
-    Page<ResortImageHostingConfigSummary> findAllByIsActiveAndIsDeleted(
-            Boolean isActive, Boolean isDeleted, Pageable pageable);
+    Page<ResortImageHostingConfigSummary> findAllByResortEntity_IdAndIsActiveAndIsDeleted(
+            Long resortId, Boolean isActive, Boolean isDeleted, Pageable pageable);
 }

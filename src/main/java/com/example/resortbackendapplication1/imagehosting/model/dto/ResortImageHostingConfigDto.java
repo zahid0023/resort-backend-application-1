@@ -17,6 +17,7 @@ import java.util.Map;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class ResortImageHostingConfigDto {
     private Long id;
+    private Long resortId;
     private String name;
     private ImageHostingProvider provider;
     private Map<String, String> config;

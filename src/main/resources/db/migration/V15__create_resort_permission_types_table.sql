@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS resort_permission_types
         UNIQUE (code),
 
     CONSTRAINT chk_resort_permission_types_sort_order
-        CHECK (sort_order > 0)
+        CHECK (sort_order >= 0)
 );
 
 CREATE INDEX idx_resort_permission_types_sort_order
@@ -70,7 +70,8 @@ $$
         SELECT id INTO sys_id FROM users WHERE username = 'system';
 
         INSERT INTO resort_permission_types (code, sort_order, created_by, updated_by)
-        VALUES ('VIEW_BOOKING',   1, sys_id, sys_id),
+        VALUES ('ALL_PERMISSIONS', 0, sys_id, sys_id),
+               ('VIEW_BOOKING',   1, sys_id, sys_id),
                ('CREATE_BOOKING', 2, sys_id, sys_id),
                ('CANCEL_BOOKING', 3, sys_id, sys_id),
                ('MANAGE_ROOMS',   4, sys_id, sys_id),
@@ -82,7 +83,10 @@ $$
                                                     sort_order, created_by, updated_by)
         SELECT p.id, l.id, v.name, v.description, p.sort_order, sys_id, sys_id
         FROM resort_permission_types p
-                 JOIN (VALUES ('VIEW_BOOKING',
+                 JOIN (VALUES ('ALL_PERMISSIONS',
+                               'All Permissions',
+                               'Grants full access to all resort operations.'),
+                              ('VIEW_BOOKING',
                                'View Bookings',
                                'Can view all reservations and booking details for the resort.'),
                               ('CREATE_BOOKING',

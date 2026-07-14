@@ -33,7 +33,7 @@ public class ResortBasicInfoEntity {
     private Long id;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "resort_id", nullable = false, unique = true)
     private ResortEntity resortEntity;
 

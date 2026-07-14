@@ -57,6 +57,12 @@ public class ResortPermissionTypeServiceImpl implements ResortPermissionTypeServ
     }
 
     @Override
+    public ResortPermissionTypeEntity getEntityByCode(String code) {
+        return resortPermissionTypeRepository.findByCodeAndIsActiveAndIsDeleted(code, true, false)
+                .orElseThrow(() -> new EntityNotFoundException("ResortPermissionType not found with code: " + code));
+    }
+
+    @Override
     public ResortPermissionTypeResponse getById(Long id) {
         ResortPermissionTypeEntity entity = getEntityById(id);
         ResortPermissionTypeDto dto = ResortPermissionTypeMapper.toDto(entity);
@@ -97,5 +103,10 @@ public class ResortPermissionTypeServiceImpl implements ResortPermissionTypeServ
                 .findAllByIdInAndIsActiveAndIsDeleted(ids, true, false);
         EntityValidator.validateAllFound(ids, entities, ResortPermissionTypeEntity::getId, "ResortPermissionType");
         return entities;
+    }
+
+    @Override
+    public List<ResortPermissionTypeEntity> getAllActive() {
+        return resortPermissionTypeRepository.findAllByIsActiveAndIsDeleted(true, false);
     }
 }

@@ -20,6 +20,8 @@ public interface ResortAccessTypeService {
 
     ResortAccessTypeEntity getEntityById(Long id);
 
+    ResortAccessTypeEntity getEntityByCode(String code);
+
     ResortAccessTypeResponse getById(Long id);
 
     PaginatedResponse<ResortAccessTypeDto> getAll(ResortAccessTypeFilterRequest request);

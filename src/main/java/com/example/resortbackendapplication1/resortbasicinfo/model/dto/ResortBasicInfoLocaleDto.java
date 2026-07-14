@@ -1,5 +1,6 @@
 package com.example.resortbackendapplication1.resortbasicinfo.model.dto;
 
+import com.example.resortbackendapplication1.locale.model.dto.LocaleDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,7 +15,7 @@ import tools.jackson.databind.annotation.JsonNaming;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class ResortBasicInfoLocaleDto {
     private Long id;
-    private Long localeId;
+    private LocaleDto locale;
     private Integer sortOrder;
     private String name;
     private String tagline;

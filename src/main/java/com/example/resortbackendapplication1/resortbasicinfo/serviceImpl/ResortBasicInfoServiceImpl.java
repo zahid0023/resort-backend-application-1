@@ -3,9 +3,7 @@ package com.example.resortbackendapplication1.resortbasicinfo.serviceImpl;
 import com.example.resortbackendapplication1.address.model.entity.CityEntity;
 import com.example.resortbackendapplication1.address.model.entity.CountryEntity;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
-import com.example.resortbackendapplication1.resort.model.entity.ResortEntity;
-import com.example.resortbackendapplication1.resortbasicinfo.dto.request.resortbasicinfo.CreateResortBasicInfoRequest;
+import com.example.resortbackendapplication1.imagehosting.dto.response.ImageUploadResponse;
 import com.example.resortbackendapplication1.resortbasicinfo.dto.request.resortbasicinfo.UpdateResortBasicInfoRequest;
 import com.example.resortbackendapplication1.resortbasicinfo.dto.response.ResortBasicInfoResponse;
 import com.example.resortbackendapplication1.resortbasicinfo.model.dto.ResortBasicInfoDto;
@@ -18,8 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
-
 @Service
 @Slf4j
 public class ResortBasicInfoServiceImpl implements ResortBasicInfoService {
@@ -28,19 +24,6 @@ public class ResortBasicInfoServiceImpl implements ResortBasicInfoService {
 
     public ResortBasicInfoServiceImpl(ResortBasicInfoRepository repository) {
         this.repository = repository;
-    }
-
-    @Transactional
-    @Override
-    public SuccessResponse create(CreateResortBasicInfoRequest request,
-                                  ResortEntity resortEntity,
-                                  CountryEntity countryEntity,
-                                  CityEntity cityEntity,
-                                  Map<Long, LocaleEntity> localeEntityMap) {
-        ResortBasicInfoEntity entity = ResortBasicInfoMapper.create(request, resortEntity, countryEntity, cityEntity, localeEntityMap);
-        repository.save(entity);
-        log.info("ResortBasicInfo created with id: {}", entity.getId());
-        return new SuccessResponse(true, entity.getId());
     }
 
     @Override
@@ -65,6 +48,15 @@ public class ResortBasicInfoServiceImpl implements ResortBasicInfoService {
         ResortBasicInfoMapper.update(entity, request, countryEntity, cityEntity);
         repository.save(entity);
         log.info("ResortBasicInfo updated with id: {}", entity.getId());
+        return new SuccessResponse(true, entity.getId());
+    }
+
+    @Transactional
+    @Override
+    public SuccessResponse uploadLogo(ResortBasicInfoEntity entity, ImageUploadResponse imageUploadResponse) {
+        entity.setLogoUrl(imageUploadResponse.getImageUrl());
+        repository.save(entity);
+        log.info("ResortBasicInfo logo uploaded, url: {}", imageUploadResponse.getImageUrl());
         return new SuccessResponse(true, entity.getId());
     }
 }

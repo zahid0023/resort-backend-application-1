@@ -2,6 +2,8 @@ CREATE TABLE IF NOT EXISTS resort_image_hosting_configs
 (
     id         bigserial primary key,
 
+    resort_id  bigint references resorts (id)                     NOT NULL,
+
     name       varchar(100)                                       NOT NULL,
     -- e.g. "Cloudinary Marketing", "Cloudinary Food", "S3 Backup",
 

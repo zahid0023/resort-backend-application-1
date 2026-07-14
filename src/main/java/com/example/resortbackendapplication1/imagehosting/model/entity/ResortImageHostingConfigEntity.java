@@ -2,6 +2,7 @@ package com.example.resortbackendapplication1.imagehosting.model.entity;
 
 import com.example.resortbackendapplication1.commons.model.entity.AuditableEntity;
 import com.example.resortbackendapplication1.imagehosting.enums.ImageHostingProvider;
+import com.example.resortbackendapplication1.resort.model.entity.ResortEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -16,6 +17,11 @@ import java.util.Map;
 @Entity
 @Table(name = "resort_image_hosting_configs")
 public class ResortImageHostingConfigEntity extends AuditableEntity {
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "resort_id", nullable = false)
+    private ResortEntity resortEntity;
 
     @NotNull
     @Column(name = "name", nullable = false, length = 100)

@@ -14,6 +14,8 @@ public interface ResortPermissionTypeRepository extends JpaRepository<@NonNull R
 
     Optional<ResortPermissionTypeEntity> findByIdAndIsActiveAndIsDeleted(Long id, Boolean isActive, Boolean isDeleted);
 
+    Optional<ResortPermissionTypeEntity> findByCodeAndIsActiveAndIsDeleted(String code, Boolean isActive, Boolean isDeleted);
+
     List<ResortPermissionTypeEntity> findAllByIdInAndIsActiveAndIsDeleted(Set<Long> ids, Boolean isActive, Boolean isDeleted);
 
     List<ResortPermissionTypeEntity> findAllByIsActiveAndIsDeleted(Boolean isActive, Boolean isDeleted);

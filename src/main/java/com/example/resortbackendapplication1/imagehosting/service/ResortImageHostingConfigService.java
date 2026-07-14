@@ -8,18 +8,19 @@ import com.example.resortbackendapplication1.imagehosting.dto.request.UpdateReso
 import com.example.resortbackendapplication1.imagehosting.dto.response.ResortImageHostingConfigResponse;
 import com.example.resortbackendapplication1.imagehosting.model.entity.ResortImageHostingConfigEntity;
 import com.example.resortbackendapplication1.imagehosting.model.projection.ResortImageHostingConfigSummary;
+import com.example.resortbackendapplication1.resort.model.entity.ResortEntity;
 
 public interface ResortImageHostingConfigService {
 
-    SuccessResponse create(CreateResortImageHostingConfigRequest request);
+    SuccessResponse create(CreateResortImageHostingConfigRequest request, ResortEntity resortEntity);
 
-    ResortImageHostingConfigEntity getEntityById(Long id);
+    ResortImageHostingConfigEntity getEntityById(Long resortId, Long id);
 
-    ResortImageHostingConfigResponse getById(Long id);
+    ResortImageHostingConfigResponse getById(Long resortId, Long id);
 
-    PaginatedResponse<ResortImageHostingConfigSummary> getAll(PaginatedRequest request);
+    PaginatedResponse<ResortImageHostingConfigSummary> getAll(Long resortId, PaginatedRequest request);
 
     SuccessResponse update(ResortImageHostingConfigEntity entity, UpdateResortImageHostingConfigRequest request);
 
-    SuccessResponse delete(Long id);
+    SuccessResponse delete(Long resortId, Long id);
 }

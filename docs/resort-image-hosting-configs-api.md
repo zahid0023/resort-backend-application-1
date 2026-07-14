@@ -1,24 +1,24 @@
 # Resort Image Hosting Configs API
 
-Base URL: `/api/v1/resort-image-hosting-configs`
+Base URL: `/api/v1/resorts/{resort-id}/resort-image-hosting-configs`
 
 Resort image hosting configs store the credentials and provider settings used to upload and manage resort images.
-Each config targets a specific cloud provider (Cloudinary or Amazon S3) and holds the required connection keys as a
-JSON object. A config's provider and credentials are immutable after creation — only the display name can be updated.
-All records support soft-delete — deleted records are hidden from all responses.
+Each config belongs to a specific resort and targets a cloud provider (Cloudinary or Amazon S3), holding the required
+connection keys as a JSON object. A config's `provider` and `config` are immutable after creation —
+only the display `name` can be updated. All records support soft-delete — deleted records are hidden from all responses.
 
 ---
 
 ## Endpoints
 
-| Method | Path                                             | Description                    |
-|--------|--------------------------------------------------|--------------------------------|
-| POST   | `/api/v1/resort-image-hosting-configs`           | Create an image hosting config |
-| GET    | `/api/v1/resort-image-hosting-configs`           | List image hosting configs     |
-| GET    | `/api/v1/resort-image-hosting-configs/{id}`      | Get an image hosting config    |
-| GET    | `/api/v1/resort-image-hosting-configs/providers` | List supported providers       |
-| PUT    | `/api/v1/resort-image-hosting-configs/{id}`      | Update an image hosting config |
-| DELETE | `/api/v1/resort-image-hosting-configs/{id}`      | Delete an image hosting config |
+| Method | Path                                                                 | Description                    |
+|--------|----------------------------------------------------------------------|--------------------------------|
+| POST   | `/api/v1/resorts/{resort-id}/resort-image-hosting-configs`           | Create an image hosting config |
+| GET    | `/api/v1/resorts/{resort-id}/resort-image-hosting-configs`           | List image hosting configs     |
+| GET    | `/api/v1/resorts/{resort-id}/resort-image-hosting-configs/{id}`      | Get an image hosting config    |
+| GET    | `/api/v1/resorts/{resort-id}/resort-image-hosting-configs/providers` | List supported providers       |
+| PUT    | `/api/v1/resorts/{resort-id}/resort-image-hosting-configs/{id}`      | Update an image hosting config |
+| DELETE | `/api/v1/resorts/{resort-id}/resort-image-hosting-configs/{id}`      | Delete an image hosting config |
 
 ---
 
@@ -26,12 +26,13 @@ All records support soft-delete — deleted records are hidden from all response
 
 ### Resort Image Hosting Config
 
-| Field      | Type   | Required | Constraints                        | Description                                                                |
-|------------|--------|----------|------------------------------------|----------------------------------------------------------------------------|
-| `id`       | Long   | —        | read-only                          | Auto-generated identifier                                                  |
-| `name`     | String | Yes      | max 100 chars                      | Human-readable display name (e.g. `"Cloudinary – Main"`)                   |
-| `provider` | String | Yes      | `S3` or `CLOUDINARY`, immutable    | Cloud provider identifier; cannot be changed after creation                |
-| `config`   | Object | Yes      | see provider keys below, immutable | Provider-specific credentials as a key/value map; immutable after creation |
+| Field       | Type   | Required | Constraints                        | Description                                                                |
+|-------------|--------|----------|------------------------------------|----------------------------------------------------------------------------|
+| `id`        | Long   | —        | read-only                          | Auto-generated identifier                                                  |
+| `resort_id` | Long   | —        | read-only                          | ID of the resort this config belongs to (derived from path)                |
+| `name`      | String | Yes      | max 100 chars                      | Human-readable display name (e.g. `"Cloudinary – Main"`)                   |
+| `provider`  | String | Yes      | `S3` or `CLOUDINARY`, immutable    | Cloud provider identifier; cannot be changed after creation                |
+| `config`    | Object | Yes      | see provider keys below, immutable | Provider-specific credentials as a key/value map; immutable after creation |
 
 ### Provider Config Keys
 
@@ -58,10 +59,16 @@ Each provider requires a specific set of keys inside the `config` object.
 
 ## Create Image Hosting Config
 
-`POST /api/v1/resort-image-hosting-configs`
+`POST /api/v1/resorts/{resort-id}/resort-image-hosting-configs`
 
-Creates a new image hosting config. All required keys for the chosen provider must be present in `config` with
-non-blank values; missing or blank keys are rejected with `400`.
+Creates a new image hosting config for the resort identified by `{resort-id}`. All required keys for the chosen
+provider must be present in `config` with non-blank values; missing or blank keys are rejected with `400`.
+
+### Path Parameters
+
+| Parameter   | Type | Description      |
+|-------------|------|------------------|
+| `resort-id` | Long | ID of the resort |
 
 ### Request Fields
 
@@ -113,15 +120,16 @@ non-blank values; missing or blank keys are rejected with `400`.
 
 ## Get Image Hosting Config
 
-`GET /api/v1/resort-image-hosting-configs/{id}`
+`GET /api/v1/resorts/{resort-id}/resort-image-hosting-configs/{id}`
 
 Returns a single image hosting config with full credentials.
 
 ### Path Parameters
 
-| Parameter | Type | Description                    |
-|-----------|------|--------------------------------|
-| `id`      | Long | ID of the image hosting config |
+| Parameter   | Type | Description                    |
+|-------------|------|--------------------------------|
+| `resort-id` | Long | ID of the resort               |
+| `id`        | Long | ID of the image hosting config |
 
 ### Response `200 OK`
 
@@ -129,6 +137,7 @@ Returns a single image hosting config with full credentials.
 {
   "resort_image_hosting_config": {
     "id": 1,
+    "resort_id": 1,
     "name": "Cloudinary – Main",
     "provider": "CLOUDINARY",
     "config": {
@@ -144,9 +153,15 @@ Returns a single image hosting config with full credentials.
 
 ## List Image Hosting Configs
 
-`GET /api/v1/resort-image-hosting-configs`
+`GET /api/v1/resorts/{resort-id}/resort-image-hosting-configs`
 
-Returns a paginated list of active (non-deleted) image hosting configs.
+Returns a paginated list of active (non-deleted) image hosting configs for the given resort.
+
+### Path Parameters
+
+| Parameter   | Type | Description      |
+|-------------|------|------------------|
+| `resort-id` | Long | ID of the resort |
 
 ### Query Parameters
 
@@ -164,6 +179,7 @@ Returns a paginated list of active (non-deleted) image hosting configs.
   "data": [
     {
       "id": 1,
+      "resort_id": 1,
       "name": "Cloudinary – Main",
       "provider": "CLOUDINARY",
       "config": {
@@ -174,6 +190,7 @@ Returns a paginated list of active (non-deleted) image hosting configs.
     },
     {
       "id": 2,
+      "resort_id": 1,
       "name": "S3 – Resort Assets",
       "provider": "S3",
       "config": {
@@ -197,10 +214,16 @@ Returns a paginated list of active (non-deleted) image hosting configs.
 
 ## List Supported Providers
 
-`GET /api/v1/resort-image-hosting-configs/providers`
+`GET /api/v1/resorts/{resort-id}/resort-image-hosting-configs/providers`
 
 Returns all supported image hosting providers along with their required config keys and display labels. Use this
 endpoint to dynamically build config creation forms.
+
+### Path Parameters
+
+| Parameter   | Type | Description      |
+|-------------|------|------------------|
+| `resort-id` | Long | ID of the resort |
 
 ### Response `200 OK`
 
@@ -253,16 +276,17 @@ endpoint to dynamically build config creation forms.
 
 ## Update Image Hosting Config
 
-`PUT /api/v1/resort-image-hosting-configs/{id}`
+`PUT /api/v1/resorts/{resort-id}/resort-image-hosting-configs/{id}`
 
 Updates the display `name` of an existing config. The `provider` and `config` fields are set at creation time and
 cannot be changed.
 
 ### Path Parameters
 
-| Parameter | Type | Description                    |
-|-----------|------|--------------------------------|
-| `id`      | Long | ID of the image hosting config |
+| Parameter   | Type | Description                    |
+|-------------|------|--------------------------------|
+| `resort-id` | Long | ID of the resort               |
+| `id`        | Long | ID of the image hosting config |
 
 ### Request Fields
 
@@ -291,16 +315,17 @@ cannot be changed.
 
 ## Delete Image Hosting Config
 
-`DELETE /api/v1/resort-image-hosting-configs/{id}`
+`DELETE /api/v1/resorts/{resort-id}/resort-image-hosting-configs/{id}`
 
 Soft-deletes the image hosting config. The record is not removed from the database but will no longer appear in any
 response.
 
 ### Path Parameters
 
-| Parameter | Type | Description                    |
-|-----------|------|--------------------------------|
-| `id`      | Long | ID of the image hosting config |
+| Parameter   | Type | Description                    |
+|-------------|------|--------------------------------|
+| `resort-id` | Long | ID of the resort               |
+| `id`        | Long | ID of the image hosting config |
 
 ### Response `200 OK`
 
@@ -326,8 +351,8 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                                                              |
-|-------------|----------------------------|------------------------------------------------------------------------------------|
-| 400         | `INVALID_ARGUMENT`         | Missing required fields, invalid sort field, or missing/blank provider config keys |
-| 404         | `ENTITY_NOT_FOUND`         | Image hosting config not found or already deleted                                  |
-| 409         | `DATA_INTEGRITY_VIOLATION` | Constraint violation                                                               |
+| HTTP Status | Error Code                 | Cause                                                                                                           |
+|-------------|----------------------------|-----------------------------------------------------------------------------------------------------------------|
+| 400         | `INVALID_ARGUMENT`         | Missing required fields, invalid sort field, or missing/blank provider config keys                              |
+| 404         | `ENTITY_NOT_FOUND`         | Resort not found, or image hosting config not found / already deleted / does not belong to the specified resort |
+| 409         | `DATA_INTEGRITY_VIOLATION` | Constraint violation                                                                                            |

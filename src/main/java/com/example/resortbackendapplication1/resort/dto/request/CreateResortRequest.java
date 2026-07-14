@@ -3,6 +3,7 @@ package com.example.resortbackendapplication1.resort.dto.request;
 import com.example.resortbackendapplication1.resortbasicinfo.dto.request.resortbasicinfo.CreateResortBasicInfoRequest;
 import com.example.resortbackendapplication1.resortcontact.dto.request.CreateResortContactRequest;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -20,7 +21,9 @@ public class CreateResortRequest extends ResortRequest {
     @Size(max = 100)
     private String code;
 
+    @NotNull
     private CreateResortBasicInfoRequest basicInfo;
 
+    @NotNull
     private List<CreateResortContactRequest> contacts;
 }

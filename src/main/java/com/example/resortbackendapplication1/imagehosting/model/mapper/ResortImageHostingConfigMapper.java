@@ -5,13 +5,16 @@ import com.example.resortbackendapplication1.imagehosting.dto.request.ImageHosti
 import com.example.resortbackendapplication1.imagehosting.dto.request.UpdateResortImageHostingConfigRequest;
 import com.example.resortbackendapplication1.imagehosting.model.dto.ResortImageHostingConfigDto;
 import com.example.resortbackendapplication1.imagehosting.model.entity.ResortImageHostingConfigEntity;
+import com.example.resortbackendapplication1.resort.model.entity.ResortEntity;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class ResortImageHostingConfigMapper {
 
-    public ResortImageHostingConfigEntity create(CreateResortImageHostingConfigRequest request) {
+    public ResortImageHostingConfigEntity create(CreateResortImageHostingConfigRequest request,
+                                                 ResortEntity resortEntity) {
         ResortImageHostingConfigEntity entity = new ResortImageHostingConfigEntity();
+        entity.setResortEntity(resortEntity);
         applyCommonFields(entity, request);
         return entity;
     }
@@ -31,6 +34,7 @@ public class ResortImageHostingConfigMapper {
     public ResortImageHostingConfigDto toDto(ResortImageHostingConfigEntity entity) {
         return ResortImageHostingConfigDto.builder()
                 .id(entity.getId())
+                .resortId(entity.getResortEntity().getId())
                 .name(entity.getName())
                 .provider(entity.getProvider())
                 .config(entity.getConfig())

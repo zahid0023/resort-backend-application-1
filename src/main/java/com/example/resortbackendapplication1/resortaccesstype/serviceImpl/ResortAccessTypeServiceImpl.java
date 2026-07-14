@@ -57,6 +57,12 @@ public class ResortAccessTypeServiceImpl implements ResortAccessTypeService {
     }
 
     @Override
+    public ResortAccessTypeEntity getEntityByCode(String code) {
+        return resortAccessTypeRepository.findByCodeAndIsActiveAndIsDeleted(code, true, false)
+                .orElseThrow(() -> new EntityNotFoundException("ResortAccessType not found with code: " + code));
+    }
+
+    @Override
     public ResortAccessTypeResponse getById(Long id) {
         ResortAccessTypeEntity entity = getEntityById(id);
         ResortAccessTypeDto dto = ResortAccessTypeMapper.toDto(entity);

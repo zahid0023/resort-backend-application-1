@@ -1,6 +1,8 @@
 CREATE TABLE IF NOT EXISTS resort_basic_info
 (
-    id         bigint PRIMARY KEY CHECK ( id = 1 ),
+    id         bigserial PRIMARY KEY,
+
+    resort_id  bigint references resorts (id)   NOT NULL,
 
     code       varchar(50)                      NOT NULL UNIQUE,
     sort_order integer                          NOT NULL DEFAULT 0,

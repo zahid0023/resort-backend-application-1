@@ -2,24 +2,24 @@ CREATE TABLE IF NOT EXISTS resort_images
 (
     id          bigserial PRIMARY KEY,
 
-    config_id   bigint      NOT NULL
+    resort_id   bigint references resorts (id) NOT NULL,
+    config_id   bigint                         NOT NULL
         REFERENCES resort_image_hosting_configs (id),
 
     external_id varchar(255),
     -- cloudinary public_id / s3 key
-    url         text        NOT NULL UNIQUE,
+    url         text                           NOT NULL UNIQUE,
     caption     varchar(255),
 
-    sort_order  int         NOT NULL DEFAULT 0,
+    sort_order  int                            NOT NULL DEFAULT 0,
 
-    created_by  bigint      not null references users (id),
-    created_at  timestamptz not null default current_timestamp,
-    updated_by  bigint      not null references users (id),
-    updated_at  timestamptz not null default current_timestamp,
-    version     bigint      not null default 0,
-
-    is_active   boolean     not null default true,
-    is_deleted  boolean     not null default false,
+    created_by  bigint                         not null references users (id),
+    created_at  timestamptz                    not null default current_timestamp,
+    updated_by  bigint                         not null references users (id),
+    updated_at  timestamptz                    not null default current_timestamp,
+    version     bigint                         not null default 0,
+    is_active   boolean                        not null default true,
+    is_deleted  boolean                        not null default false,
     deleted_by  bigint,
     deleted_at  timestamptz
 );

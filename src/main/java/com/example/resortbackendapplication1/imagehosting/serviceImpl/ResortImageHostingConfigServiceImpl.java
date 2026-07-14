@@ -14,6 +14,7 @@ import com.example.resortbackendapplication1.imagehosting.model.mapper.ResortIma
 import com.example.resortbackendapplication1.imagehosting.model.projection.ResortImageHostingConfigSummary;
 import com.example.resortbackendapplication1.imagehosting.repository.ResortImageHostingConfigRepository;
 import com.example.resortbackendapplication1.imagehosting.service.ResortImageHostingConfigService;
+import com.example.resortbackendapplication1.resort.model.entity.ResortEntity;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
@@ -37,31 +38,31 @@ public class ResortImageHostingConfigServiceImpl implements ResortImageHostingCo
 
     @Transactional
     @Override
-    public SuccessResponse create(CreateResortImageHostingConfigRequest request) {
+    public SuccessResponse create(CreateResortImageHostingConfigRequest request, ResortEntity resortEntity) {
         request.getProvider().validate(request.getConfig());
-        ResortImageHostingConfigEntity entity = ResortImageHostingConfigMapper.create(request);
+        ResortImageHostingConfigEntity entity = ResortImageHostingConfigMapper.create(request, resortEntity);
         repository.save(entity);
         log.info("ResortImageHostingConfig created with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
     }
 
     @Override
-    public ResortImageHostingConfigEntity getEntityById(Long id) {
-        return repository.findByIdAndIsActiveAndIsDeleted(id, true, false)
+    public ResortImageHostingConfigEntity getEntityById(Long resortId, Long id) {
+        return repository.findByResortEntity_IdAndIdAndIsActiveAndIsDeleted(resortId, id, true, false)
                 .orElseThrow(() -> new EntityNotFoundException("ResortImageHostingConfig not found with id: " + id));
     }
 
     @Override
-    public ResortImageHostingConfigResponse getById(Long id) {
-        ResortImageHostingConfigEntity entity = getEntityById(id);
+    public ResortImageHostingConfigResponse getById(Long resortId, Long id) {
+        ResortImageHostingConfigEntity entity = getEntityById(resortId, id);
         ResortImageHostingConfigDto dto = ResortImageHostingConfigMapper.toDto(entity);
         return new ResortImageHostingConfigResponse(dto);
     }
 
     @Override
-    public PaginatedResponse<ResortImageHostingConfigSummary> getAll(PaginatedRequest request) {
-        Page<@NonNull ResortImageHostingConfigSummary> page = repository.findAllByIsActiveAndIsDeleted(
-                true, false, request.toPageable(ALLOWED_SORT_FIELDS)
+    public PaginatedResponse<ResortImageHostingConfigSummary> getAll(Long resortId, PaginatedRequest request) {
+        Page<@NonNull ResortImageHostingConfigSummary> page = repository.findAllByResortEntity_IdAndIsActiveAndIsDeleted(
+                resortId, true, false, request.toPageable(ALLOWED_SORT_FIELDS)
         );
         return Pagination.buildPaginatedResponse(page);
     }
@@ -78,8 +79,8 @@ public class ResortImageHostingConfigServiceImpl implements ResortImageHostingCo
 
     @Transactional
     @Override
-    public SuccessResponse delete(Long id) {
-        ResortImageHostingConfigEntity entity = getEntityById(id);
+    public SuccessResponse delete(Long resortId, Long id) {
+        ResortImageHostingConfigEntity entity = getEntityById(resortId, id);
         entity.setIsDeleted(true);
         entity.setIsActive(false);
         repository.save(entity);

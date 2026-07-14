@@ -2,6 +2,8 @@ package com.example.resortbackendapplication1.resortbasicinfo.model.mapper;
 
 import com.example.resortbackendapplication1.address.model.entity.CityEntity;
 import com.example.resortbackendapplication1.address.model.entity.CountryEntity;
+import com.example.resortbackendapplication1.address.model.mapper.CityMapper;
+import com.example.resortbackendapplication1.address.model.mapper.CountryMapper;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortEntity;
 import com.example.resortbackendapplication1.resortbasicinfo.dto.request.resortbasicinfo.CreateResortBasicInfoRequest;
@@ -71,12 +73,11 @@ public class ResortBasicInfoMapper {
                 .toList();
         return ResortBasicInfoDto.builder()
                 .id(entity.getId())
-                .resortId(entity.getResortEntity().getId())
                 .code(entity.getCode())
                 .sortOrder(entity.getSortOrder())
                 .estd(entity.getEstd())
-                .countryId(entity.getCountryEntity().getId())
-                .cityId(entity.getCityEntity().getId())
+                .country(CountryMapper.toDto(entity.getCountryEntity(), false))
+                .city(CityMapper.toDto(entity.getCityEntity(), false))
                 .logoUrl(entity.getLogoUrl())
                 .lat(entity.getLat())
                 .lon(entity.getLon())

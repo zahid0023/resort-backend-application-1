@@ -20,6 +20,8 @@ public interface ResortPermissionTypeService {
 
     ResortPermissionTypeEntity getEntityById(Long id);
 
+    ResortPermissionTypeEntity getEntityByCode(String code);
+
     ResortPermissionTypeResponse getById(Long id);
 
     PaginatedResponse<ResortPermissionTypeDto> getAll(ResortPermissionTypeFilterRequest request);
@@ -29,4 +31,6 @@ public interface ResortPermissionTypeService {
     SuccessResponse delete(Long id);
 
     List<ResortPermissionTypeEntity> getAll(Set<Long> ids);
+
+    List<ResortPermissionTypeEntity> getAllActive();
 }

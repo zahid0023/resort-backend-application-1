@@ -1,6 +1,7 @@
 package com.example.resortbackendapplication1.resortbasicinfo.model.mapper;
 
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.locale.model.mapper.LocaleMapper;
 import com.example.resortbackendapplication1.resortbasicinfo.dto.request.resortbasicinfolocale.CreateResortBasicInfoLocaleRequest;
 import com.example.resortbackendapplication1.resortbasicinfo.dto.request.resortbasicinfolocale.ResortBasicInfoLocaleRequest;
 import com.example.resortbackendapplication1.resortbasicinfo.dto.request.resortbasicinfolocale.UpdateResortBasicInfoLocaleRequest;
@@ -37,7 +38,7 @@ public class ResortBasicInfoLocaleMapper {
     public ResortBasicInfoLocaleDto toDto(ResortBasicInfoLocaleEntity entity) {
         return ResortBasicInfoLocaleDto.builder()
                 .id(entity.getId())
-                .localeId(entity.getLocaleEntity().getId())
+                .locale(LocaleMapper.toDto(entity.getLocaleEntity()))
                 .sortOrder(entity.getSortOrder())
                 .name(entity.getName())
                 .tagline(entity.getTagline())

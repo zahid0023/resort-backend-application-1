@@ -30,15 +30,15 @@ All records support soft-delete — deleted records are hidden from all response
 
 ### Resort Contact
 
-| Field                   | Type    | Required | Constraints               | Description                                                                                      |
-|-------------------------|---------|----------|---------------------------|--------------------------------------------------------------------------------------------------|
-| `id`                    | Long    | —        | read-only                 | Auto-generated identifier                                                                        |
-| `resort_id`             | Long    | —        | read-only                 | ID of the owning resort                                                                          |
-| `contact_type`          | Object  | —        | read-only                 | Full contact type object (id, code, sort_order, locales); set on create, not updatable           |
-| `communication_channel` | Object  | —        | read-only                 | Full communication channel object (id, code, flags, locales); set on create, not updatable       |
-| `contact_value`         | String  | Yes      | not blank, unlimited      | The actual contact value — a phone number, email address, URL, username, etc.                    |
-| `is_primary`            | Boolean | Yes      | not null, default `false` | `true` if this is the preferred contact for the same resort + contact type + channel combination |
-| `sort_order`            | Integer | Yes      | >= 0, default `0`         | Display order                                                                                    |
+| Field                   | Type    | Required | Constraints                 | Description                                                                                      |
+|-------------------------|---------|----------|-----------------------------|--------------------------------------------------------------------------------------------------|
+| `id`                    | Long    | —        | read-only                   | Auto-generated identifier                                                                        |
+| `resort_id`             | Long    | —        | read-only                   | ID of the owning resort                                                                          |
+| `contact_type`          | Object  | —        | read-only                   | Full contact type object (id, code, sort_order, locales); set on create, not updatable           |
+| `communication_channel` | Object  | —        | read-only                   | Full communication channel object (id, code, flags, locales); set on create, not updatable       |
+| `contact_value`         | String  | Yes      | not blank, unlimited        | The actual contact value — a phone number, email address, URL, username, etc.                    |
+| `is_primary`            | Boolean | Yes      | not null, default `false`   | `true` if this is the preferred contact for the same resort + contact type + channel combination |
+| `sort_order`            | Integer | Yes      | not null, >= 0, default `0` | Display order                                                                                    |
 
 ### Embedded: Contact Type
 
@@ -93,19 +93,19 @@ channel, delete the entry and create a new one.
 
 ### Path Parameters
 
-| Parameter   | Type | Description      |
-|-------------|------|------------------|
-| `resort-id` | Long | ID of the resort |
+| Parameter   | Type | Required | Description      |
+|-------------|------|----------|------------------|
+| `resort-id` | Long | Yes      | ID of the resort |
 
 ### Request Fields
 
-| Field                      | Type    | Required | Validation           |
-|----------------------------|---------|----------|----------------------|
-| `contact_type_id`          | Long    | Yes      | Not null, must exist |
-| `communication_channel_id` | Long    | Yes      | Not null, must exist |
-| `contact_value`            | String  | Yes      | Not blank            |
-| `is_primary`               | Boolean | Yes      | Not null             |
-| `sort_order`               | Integer | Yes      | Not null, >= 0       |
+| Field                      | Type    | Required | Validation           | Description                                                      |
+|----------------------------|---------|----------|----------------------|------------------------------------------------------------------|
+| `contact_type_id`          | Long    | Yes      | Not null, must exist | ID of the contact type (purpose) for this contact entry          |
+| `communication_channel_id` | Long    | Yes      | Not null, must exist | ID of the communication channel (medium) for this contact entry  |
+| `contact_value`            | String  | Yes      | Not blank            | The actual contact value (phone number, email, URL, etc.)        |
+| `is_primary`               | Boolean | Yes      | Not null             | Whether this is the primary contact for this type + channel pair |
+| `sort_order`               | Integer | Yes      | Not null, >= 0       | Display order                                                    |
 
 ### Request Body
 
@@ -139,10 +139,10 @@ Returns a single active (non-deleted) contact entry belonging to the specified r
 
 ### Path Parameters
 
-| Parameter   | Type | Description       |
-|-------------|------|-------------------|
-| `resort-id` | Long | ID of the resort  |
-| `id`        | Long | ID of the contact |
+| Parameter   | Type | Required | Description       |
+|-------------|------|----------|-------------------|
+| `resort-id` | Long | Yes      | ID of the resort  |
+| `id`        | Long | Yes      | ID of the contact |
 
 ### Response `200 OK`
 
@@ -198,15 +198,15 @@ Returns a single active (non-deleted) contact entry belonging to the specified r
 
 Returns a paginated, filterable list of active (non-deleted) contacts for the specified resort. All filter parameters
 are optional; omitting them returns all contacts for the resort. Multiple filters are combined with AND. The
-`contact_value` filter performs a case-insensitive partial match; the remaining filters perform exact matches.
+`contactValue` filter performs a case-insensitive partial match; the remaining filters perform exact matches.
 
 If the resort does not exist or is deleted, a `404` is returned before executing the query.
 
 ### Path Parameters
 
-| Parameter   | Type | Description      |
-|-------------|------|------------------|
-| `resort-id` | Long | ID of the resort |
+| Parameter   | Type | Required | Description      |
+|-------------|------|----------|------------------|
+| `resort-id` | Long | Yes      | ID of the resort |
 
 ### Query Parameters
 
@@ -329,18 +329,21 @@ creation time and cannot be changed. To change the contact type or channel, dele
 
 ### Path Parameters
 
-| Parameter   | Type | Description       |
-|-------------|------|-------------------|
-| `resort-id` | Long | ID of the resort  |
-| `id`        | Long | ID of the contact |
+| Parameter   | Type | Required | Description       |
+|-------------|------|----------|-------------------|
+| `resort-id` | Long | Yes      | ID of the resort  |
+| `id`        | Long | Yes      | ID of the contact |
 
 ### Request Fields
 
-| Field           | Type    | Required | Validation     |
-|-----------------|---------|----------|----------------|
-| `contact_value` | String  | Yes      | Not blank      |
-| `is_primary`    | Boolean | Yes      | Not null       |
-| `sort_order`    | Integer | Yes      | Not null, >= 0 |
+The `contact_type` and `communication_channel` are not updatable. To change them, delete this entry and create a new
+one.
+
+| Field           | Type    | Required | Validation     | Description                                                      |
+|-----------------|---------|----------|----------------|------------------------------------------------------------------|
+| `contact_value` | String  | Yes      | Not blank      | The actual contact value (phone number, email, URL, etc.)        |
+| `is_primary`    | Boolean | Yes      | Not null       | Whether this is the primary contact for this type + channel pair |
+| `sort_order`    | Integer | Yes      | Not null, >= 0 | Display order                                                    |
 
 ### Request Body
 
@@ -373,10 +376,10 @@ explicitly designated via an update.
 
 ### Path Parameters
 
-| Parameter   | Type | Description       |
-|-------------|------|-------------------|
-| `resort-id` | Long | ID of the resort  |
-| `id`        | Long | ID of the contact |
+| Parameter   | Type | Required | Description       |
+|-------------|------|----------|-------------------|
+| `resort-id` | Long | Yes      | ID of the resort  |
+| `id`        | Long | Yes      | ID of the contact |
 
 ### Response `200 OK`
 
