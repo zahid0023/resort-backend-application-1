@@ -24,6 +24,7 @@ public class ResortFacilityDto {
     private Long resortFacilityGroupId;
     private Long facilityId;
     private Integer sortOrder;
+    private Boolean isHighlighted;
     private IconType iconType;
     private String iconValue;
     private Map<String, Object> iconMeta;

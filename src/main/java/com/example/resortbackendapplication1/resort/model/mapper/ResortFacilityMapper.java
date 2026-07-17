@@ -49,6 +49,7 @@ public class ResortFacilityMapper {
         entity.setIconType(request.getIconType());
         entity.setIconValue(request.getIconValue());
         entity.setIconMeta(request.getIconMeta());
+        entity.setIsHighlighted(request.getIsHighlighted() != null && request.getIsHighlighted());
     }
 
     private Set<ResortFacilityLocaleEntity> mapLocales(List<CreateResortFacilityLocaleRequest> locales,
@@ -71,6 +72,7 @@ public class ResortFacilityMapper {
                 .resortFacilityGroupId(entity.getResortFacilityGroupEntity().getId())
                 .facilityId(entity.getFacilityEntity() != null ? entity.getFacilityEntity().getId() : null)
                 .sortOrder(entity.getSortOrder())
+                .isHighlighted(entity.getIsHighlighted())
                 .iconType(entity.getIconType())
                 .iconValue(entity.getIconValue())
                 .iconMeta(entity.getIconMeta())

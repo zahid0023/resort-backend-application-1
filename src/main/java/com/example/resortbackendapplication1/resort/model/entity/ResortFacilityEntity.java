@@ -40,6 +40,11 @@ public class ResortFacilityEntity extends AuditableEntity {
     @Column(name = "sort_order", nullable = false)
     private Integer sortOrder = 1;
 
+    @NotNull
+    @ColumnDefault("false")
+    @Column(name = "is_highlighted", nullable = false)
+    private Boolean isHighlighted = false;
+
     @Column(name = "icon_type", length = 100)
     @Enumerated(EnumType.STRING)
     private IconType iconType;

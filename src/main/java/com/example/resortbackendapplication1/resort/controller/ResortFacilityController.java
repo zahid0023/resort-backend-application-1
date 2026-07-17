@@ -7,6 +7,7 @@ import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.locale.service.LocaleService;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.CreateResortFacilityRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.ResortFacilityFilterRequest;
+import com.example.resortbackendapplication1.resort.dto.request.resortfacility.SetResortFacilityHighlightsRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.UpdateResortFacilityRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.resortfacilitylocale.CreateResortFacilityLocaleRequest;
 import com.example.resortbackendapplication1.resort.model.entity.ResortEntity;
@@ -92,5 +93,13 @@ public class ResortFacilityController {
             @PathVariable("resort-id") Long resortId,
             @PathVariable Long id) {
         return ResponseEntity.ok(resortFacilityService.delete(id));
+    }
+
+    @PutMapping("/highlights")
+    public ResponseEntity<?> setHighlights(
+            @PathVariable("resort-id") Long resortId,
+            @Valid @RequestBody SetResortFacilityHighlightsRequest request) {
+        resortService.getEntityById(resortId);
+        return ResponseEntity.ok(resortFacilityService.setHighlights(resortId, request));
     }
 }

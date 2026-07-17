@@ -6,6 +6,7 @@ import com.example.resortbackendapplication1.facility.model.entity.FacilityEntit
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.CreateResortFacilityRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.ResortFacilityFilterRequest;
+import com.example.resortbackendapplication1.resort.dto.request.resortfacility.SetResortFacilityHighlightsRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.UpdateResortFacilityRequest;
 import com.example.resortbackendapplication1.resort.dto.response.ResortFacilityResponse;
 import com.example.resortbackendapplication1.resort.model.dto.ResortFacilityDto;
@@ -38,4 +39,6 @@ public interface ResortFacilityService {
     SuccessResponse delete(Long id);
 
     List<ResortFacilityEntity> getAll(Set<Long> ids);
+
+    SuccessResponse setHighlights(Long resortId, SetResortFacilityHighlightsRequest request);
 }

@@ -8,6 +8,7 @@ import com.example.resortbackendapplication1.facility.model.entity.FacilityEntit
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.CreateResortFacilityRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.ResortFacilityFilterRequest;
+import com.example.resortbackendapplication1.resort.dto.request.resortfacility.SetResortFacilityHighlightsRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.UpdateResortFacilityRequest;
 import com.example.resortbackendapplication1.resort.dto.response.ResortFacilityResponse;
 import com.example.resortbackendapplication1.resort.model.dto.ResortFacilityDto;
@@ -20,6 +21,7 @@ import com.example.resortbackendapplication1.resort.repository.ResortFacilityRep
 import com.example.resortbackendapplication1.resort.service.ResortFacilityService;
 import com.example.resortbackendapplication1.resort.specification.ResortFacilitySpecification;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
@@ -104,5 +106,34 @@ public class ResortFacilityServiceImpl implements ResortFacilityService {
                 .findAllByIdInAndIsActiveAndIsDeleted(ids, true, false);
         EntityValidator.validateAllFound(ids, entities, ResortFacilityEntity::getId, "ResortFacility");
         return entities;
+    }
+
+    @Transactional
+    @Override
+    public SuccessResponse setHighlights(Long resortId, SetResortFacilityHighlightsRequest request) {
+        Set<Long> requestedIds = request.getFacilityIds();
+
+        List<ResortFacilityEntity> allFacilities = resortFacilityRepository
+                .findAllByResortEntity_IdAndIsActiveAndIsDeleted(resortId, true, false);
+
+        Set<Long> allFacilityIds = allFacilities.stream()
+                .map(ResortFacilityEntity::getId)
+                .collect(java.util.stream.Collectors.toSet());
+
+        Set<Long> invalidIds = requestedIds.stream()
+                .filter(id -> !allFacilityIds.contains(id))
+                .collect(java.util.stream.Collectors.toSet());
+
+        if (!invalidIds.isEmpty()) {
+            throw new ValidationException("The following facility IDs do not belong to resort " + resortId + ": " + invalidIds);
+        }
+
+        for (ResortFacilityEntity facility : allFacilities) {
+            facility.setIsHighlighted(requestedIds.contains(facility.getId()));
+        }
+
+        resortFacilityRepository.saveAll(allFacilities);
+        log.info("Resort {} highlights updated: {} facilities highlighted", resortId, requestedIds.size());
+        return new SuccessResponse(true, resortId);
     }
 }

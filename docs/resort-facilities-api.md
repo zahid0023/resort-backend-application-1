@@ -12,16 +12,17 @@ records are hidden from all responses.
 
 ## Endpoints
 
-| Method | Path                                                                       | Description                 |
-|--------|----------------------------------------------------------------------------|-----------------------------|
-| POST   | `/api/v1/resorts/{resort-id}/facilities`                                   | Create a resort facility    |
-| GET    | `/api/v1/resorts/{resort-id}/facilities`                                   | List resort facilities      |
-| GET    | `/api/v1/resorts/{resort-id}/facilities/{id}`                              | Get a resort facility       |
-| PUT    | `/api/v1/resorts/{resort-id}/facilities/{id}`                              | Update a resort facility    |
-| DELETE | `/api/v1/resorts/{resort-id}/facilities/{id}`                              | Delete a resort facility    |
-| POST   | `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/locales`      | Create a locale translation |
-| PUT    | `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/locales/{id}` | Update a locale translation |
-| DELETE | `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/locales/{id}` | Delete a locale translation |
+| Method | Path                                                                       | Description                       |
+|--------|----------------------------------------------------------------------------|-----------------------------------|
+| POST   | `/api/v1/resorts/{resort-id}/facilities`                                   | Create a resort facility          |
+| GET    | `/api/v1/resorts/{resort-id}/facilities`                                   | List resort facilities            |
+| GET    | `/api/v1/resorts/{resort-id}/facilities/{id}`                              | Get a resort facility             |
+| PUT    | `/api/v1/resorts/{resort-id}/facilities/{id}`                              | Update a resort facility          |
+| DELETE | `/api/v1/resorts/{resort-id}/facilities/{id}`                              | Delete a resort facility          |
+| PUT    | `/api/v1/resorts/{resort-id}/facilities/highlights`                        | Set highlighted resort facilities |
+| POST   | `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/locales`      | Create a locale translation       |
+| PUT    | `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/locales/{id}` | Update a locale translation       |
+| DELETE | `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/locales/{id}` | Delete a locale translation       |
 
 ---
 
@@ -29,17 +30,18 @@ records are hidden from all responses.
 
 ### Resort Facility
 
-| Field                      | Type    | Required     | Constraints          | Description                                                                                              |
-|----------------------------|---------|--------------|----------------------|----------------------------------------------------------------------------------------------------------|
-| `id`                       | Long    | —            | read-only            | Auto-generated identifier                                                                                |
-| `resort_id`                | Long    | —            | read-only            | ID of the parent resort                                                                                  |
-| `resort_facility_group_id` | Long    | Yes (create) | not null, must exist | ID of the resort facility group this facility belongs to. Set at creation time, not updatable.           |
-| `facility_id`              | Long    | No           | must exist if given  | ID of the platform facility to link. Omit for a fully custom resort-defined facility.                    |
-| `sort_order`               | Integer | Yes          | not null, >= 0       | Display order of this facility within its group                                                          |
-| `icon_type`                | String  | No           | enum                 | Icon type override. Allowed values: `LUCIDE`, `IMAGE`, `SVG`, `EXTERNAL`. Omitted from response if null. |
-| `icon_value`               | String  | No           | max 2000 chars       | Icon value override — icon name, URL, or SVG markup. Omitted from response if null.                      |
-| `icon_meta`                | Object  | No           | any JSON object      | Optional rendering hints (e.g. `size`, `color`, `alt`). Omitted from response if null.                   |
-| `locales`                  | Array   | —            | read-only here       | All locale translations for this resort facility                                                         |
+| Field                      | Type    | Required     | Constraints          | Description                                                                                                                                              |
+|----------------------------|---------|--------------|----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `id`                       | Long    | —            | read-only            | Auto-generated identifier                                                                                                                                |
+| `resort_id`                | Long    | —            | read-only            | ID of the parent resort                                                                                                                                  |
+| `resort_facility_group_id` | Long    | Yes (create) | not null, must exist | ID of the resort facility group this facility belongs to. Set at creation time, not updatable.                                                           |
+| `facility_id`              | Long    | No           | must exist if given  | ID of the platform facility to link. Omit for a fully custom resort-defined facility.                                                                    |
+| `sort_order`               | Integer | Yes          | not null, >= 0       | Display order of this facility within its group                                                                                                          |
+| `is_highlighted`           | Boolean | No           | default `false`      | Whether this facility is featured as a highlight. Must have 4–9 highlighted facilities per resort. Use the dedicated highlights endpoint to manage this. |
+| `icon_type`                | String  | No           | enum                 | Icon type override. Allowed values: `LUCIDE`, `IMAGE`, `SVG`, `EXTERNAL`. Omitted from response if null.                                                 |
+| `icon_value`               | String  | No           | max 2000 chars       | Icon value override — icon name, URL, or SVG markup. Omitted from response if null.                                                                      |
+| `icon_meta`                | Object  | No           | any JSON object      | Optional rendering hints (e.g. `size`, `color`, `alt`). Omitted from response if null.                                                                   |
+| `locales`                  | Array   | —            | read-only here       | All locale translations for this resort facility                                                                                                         |
 
 > When `facility_id` is provided, `icon_type`, `icon_value`, and `icon_meta` act as overrides for the platform
 > facility's icon. When omitted (custom facility), these fields become the primary icon source.
@@ -78,6 +80,7 @@ the same request. All provided `locale_id` values must reference existing, activ
   "resort_facility_group_id": 12,
   "facility_id": 7,
   "sort_order": 1,
+  "is_highlighted": true,
   "icon_type": "LUCIDE",
   "icon_value": "Waves",
   "icon_meta": {
@@ -107,6 +110,7 @@ the same request. All provided `locale_id` values must reference existing, activ
 {
   "resort_facility_group_id": 12,
   "sort_order": 4,
+  "is_highlighted": false,
   "icon_type": "IMAGE",
   "icon_value": "https://cdn.example.com/icons/private-beach.png",
   "locales": [
@@ -121,15 +125,16 @@ the same request. All provided `locale_id` values must reference existing, activ
 
 ### Request Fields
 
-| Field                      | Type    | Required | Validation                                        |
-|----------------------------|---------|----------|---------------------------------------------------|
-| `resort_facility_group_id` | Long    | Yes      | Not null, must reference an existing active group |
-| `facility_id`              | Long    | No       | Must reference an existing active facility        |
-| `sort_order`               | Integer | Yes      | Not null, >= 0                                    |
-| `icon_type`                | String  | No       | One of: `LUCIDE`, `IMAGE`, `SVG`, `EXTERNAL`      |
-| `icon_value`               | String  | No       | Max 2000 chars                                    |
-| `icon_meta`                | Object  | No       | Any JSON object                                   |
-| `locales`                  | Array   | No       | See locale fields below                           |
+| Field                      | Type    | Required | Validation                                                                     |
+|----------------------------|---------|----------|--------------------------------------------------------------------------------|
+| `resort_facility_group_id` | Long    | Yes      | Not null, must reference an existing active group                              |
+| `facility_id`              | Long    | No       | Must reference an existing active facility                                     |
+| `sort_order`               | Integer | Yes      | Not null, >= 0                                                                 |
+| `is_highlighted`           | Boolean | No       | Defaults to `false`. Prefer the dedicated highlights endpoint for bulk control |
+| `icon_type`                | String  | No       | One of: `LUCIDE`, `IMAGE`, `SVG`, `EXTERNAL`                                   |
+| `icon_value`               | String  | No       | Max 2000 chars                                                                 |
+| `icon_meta`                | Object  | No       | Any JSON object                                                                |
+| `locales`                  | Array   | No       | See locale fields below                                                        |
 
 **Locale fields (`locales[]`):**
 
@@ -176,6 +181,7 @@ Null-valued optional fields (`facility_id`, `icon_type`, `icon_value`, `icon_met
     "resort_facility_group_id": 12,
     "facility_id": 7,
     "sort_order": 1,
+    "is_highlighted": true,
     "icon_type": "LUCIDE",
     "icon_value": "Waves",
     "icon_meta": {
@@ -211,6 +217,7 @@ Null-valued optional fields (`facility_id`, `icon_type`, `icon_value`, `icon_met
     "resort_id": 1,
     "resort_facility_group_id": 12,
     "sort_order": 4,
+    "is_highlighted": false,
     "icon_type": "IMAGE",
     "icon_value": "https://cdn.example.com/icons/private-beach.png",
     "locales": [
@@ -269,6 +276,7 @@ Null-valued optional fields are omitted per item. Example shows results filtered
       "resort_facility_group_id": 12,
       "facility_id": 7,
       "sort_order": 1,
+      "is_highlighted": true,
       "icon_type": "LUCIDE",
       "icon_value": "Waves",
       "icon_meta": {
@@ -298,6 +306,7 @@ Null-valued optional fields are omitted per item. Example shows results filtered
       "resort_facility_group_id": 12,
       "facility_id": 9,
       "sort_order": 2,
+      "is_highlighted": true,
       "locales": [
         {
           "id": 57,
@@ -313,6 +322,7 @@ Null-valued optional fields are omitted per item. Example shows results filtered
       "resort_id": 1,
       "resort_facility_group_id": 12,
       "sort_order": 4,
+      "is_highlighted": false,
       "icon_type": "IMAGE",
       "icon_value": "https://cdn.example.com/icons/private-beach.png",
       "locales": [
@@ -358,6 +368,7 @@ facility. `resort_facility_group_id` is set at creation time and cannot be chang
 {
   "facility_id": 8,
   "sort_order": 2,
+  "is_highlighted": true,
   "icon_type": "LUCIDE",
   "icon_value": "Droplets",
   "icon_meta": {
@@ -373,6 +384,7 @@ facility. `resort_facility_group_id` is set at creation time and cannot be chang
 {
   "facility_id": null,
   "sort_order": 2,
+  "is_highlighted": false,
   "icon_type": null,
   "icon_value": null,
   "icon_meta": null
@@ -381,13 +393,14 @@ facility. `resort_facility_group_id` is set at creation time and cannot be chang
 
 ### Request Fields
 
-| Field         | Type    | Required | Validation                                   |
-|---------------|---------|----------|----------------------------------------------|
-| `facility_id` | Long    | No       | Must reference an existing active facility   |
-| `sort_order`  | Integer | Yes      | Not null, >= 0                               |
-| `icon_type`   | String  | No       | One of: `LUCIDE`, `IMAGE`, `SVG`, `EXTERNAL` |
-| `icon_value`  | String  | No       | Max 2000 chars                               |
-| `icon_meta`   | Object  | No       | Any JSON object                              |
+| Field            | Type    | Required | Validation                                                                     |
+|------------------|---------|----------|--------------------------------------------------------------------------------|
+| `facility_id`    | Long    | No       | Must reference an existing active facility                                     |
+| `sort_order`     | Integer | Yes      | Not null, >= 0                                                                 |
+| `is_highlighted` | Boolean | No       | Defaults to `false`. Prefer the dedicated highlights endpoint for bulk control |
+| `icon_type`      | String  | No       | One of: `LUCIDE`, `IMAGE`, `SVG`, `EXTERNAL`                                   |
+| `icon_value`     | String  | No       | Max 2000 chars                                                                 |
+| `icon_meta`      | Object  | No       | Any JSON object                                                                |
 
 ### Response `200 OK`
 
@@ -422,6 +435,59 @@ longer appear in any response.
   "id": 31
 }
 ```
+
+---
+
+## Set Resort Facility Highlights
+
+`PUT /api/v1/resorts/{resort-id}/facilities/highlights`
+
+Replaces the full set of highlighted facilities for a resort in a single operation. The owner provides 4 to 9 resort
+facility IDs to highlight; all other active facilities for that resort are automatically unhighlighted. This is the
+preferred way to manage `is_highlighted` — it guarantees the min/max constraint is always met and avoids partial state.
+
+### Path Parameters
+
+| Parameter   | Type | Description      |
+|-------------|------|------------------|
+| `resort-id` | Long | ID of the resort |
+
+### Request Body
+
+```json
+{
+  "facility_ids": [
+    31,
+    32,
+    33,
+    34
+  ]
+}
+```
+
+### Request Fields
+
+| Field          | Type          | Required | Validation                                                         |
+|----------------|---------------|----------|--------------------------------------------------------------------|
+| `facility_ids` | Array\<Long\> | Yes      | Not null, between 4 and 9 IDs, all must belong to the given resort |
+
+### Response `200 OK`
+
+```json
+{
+  "success": true,
+  "id": 1
+}
+```
+
+> The `id` in the response is the resort ID.
+
+### Behavior
+
+- All active facilities for the resort that are **not** in `facility_ids` will have `is_highlighted` set to `false`.
+- All facilities **in** `facility_ids` will have `is_highlighted` set to `true`.
+- If any ID in `facility_ids` does not belong to the given resort, the entire request is rejected with
+  `400 VALIDATION_ERROR`.
 
 ---
 
@@ -563,6 +629,8 @@ All errors follow a common structure:
 | HTTP Status | Error Code                 | Cause                                                                                             |
 |-------------|----------------------------|---------------------------------------------------------------------------------------------------|
 | 400         | `VALIDATION_ERROR`         | Missing required fields or constraint violations (e.g. `sort_order` missing, `name` blank)        |
+| 400         | `VALIDATION_ERROR`         | `facility_ids` has fewer than 4 or more than 9 entries on the highlights endpoint                 |
+| 400         | `VALIDATION_ERROR`         | One or more IDs in `facility_ids` do not belong to the given resort                               |
 | 400         | `INVALID_ARGUMENT`         | Invalid `sort_by` field, invalid `icon_type` enum value, or malformed request                     |
 | 404         | `ENTITY_NOT_FOUND`         | Resort, resort facility group, facility, resort facility, locale, or locale translation not found |
 | 409         | `DATA_INTEGRITY_VIOLATION` | Duplicate `locale_id` for the same resort facility                                                |

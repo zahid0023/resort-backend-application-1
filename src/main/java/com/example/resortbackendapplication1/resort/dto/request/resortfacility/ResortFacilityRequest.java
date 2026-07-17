@@ -20,6 +20,8 @@ public class ResortFacilityRequest {
     @Min(value = 0, message = "sort_order must be 0 or greater")
     private Integer sortOrder;
 
+    private Boolean isHighlighted = false;
+
     private IconType iconType;
 
     @Size(max = 2000, message = "icon_value must not exceed 2000 characters")
