@@ -29,16 +29,16 @@ deleted records are hidden from all responses.
 
 ### Resort Facility Group
 
-| Field               | Type    | Required | Constraints         | Description                                                                                              |
-|---------------------|---------|----------|---------------------|----------------------------------------------------------------------------------------------------------|
-| `id`                | Long    | —        | read-only           | Auto-generated identifier                                                                                |
-| `resort_id`         | Long    | —        | read-only           | ID of the parent resort                                                                                  |
-| `facility_group_id` | Long    | No       | must exist if given | ID of the platform facility group to link. Omit for a fully custom resort-defined group.                 |
-| `sort_order`        | Integer | Yes      | not null, >= 0      | Display order of this group within the resort                                                            |
-| `icon_type`         | String  | No       | enum                | Icon type override. Allowed values: `LUCIDE`, `IMAGE`, `SVG`, `EXTERNAL`. Omitted from response if null. |
-| `icon_value`        | String  | No       | max 2000 chars      | Icon value override — icon name, URL, or SVG markup. Omitted from response if null.                      |
-| `icon_meta`         | Object  | No       | any JSON object     | Optional rendering hints (e.g. `size`, `color`, `alt`). Omitted from response if null.                   |
-| `locales`           | Array   | —        | read-only here      | All locale translations for this resort facility group                                                   |
+| Field               | Type    | Required | Constraints                                                  | Description                                                                                                                                                                                     |
+|---------------------|---------|----------|--------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `id`                | Long    | —        | read-only                                                    | Auto-generated identifier                                                                                                                                                                       |
+| `resort_id`         | Long    | —        | read-only                                                    | ID of the parent resort                                                                                                                                                                         |
+| `facility_group_id` | Long    | No       | must exist if given; unique per resort (active records only) | ID of the platform facility group to link. Omit for a fully custom resort-defined group. Only one active, non-deleted record may link the same `facility_group_id` to a given resort at a time. |
+| `sort_order`        | Integer | Yes      | not null, >= 0                                               | Display order of this group within the resort                                                                                                                                                   |
+| `icon_type`         | String  | No       | enum                                                         | Icon type override. Allowed values: `LUCIDE`, `IMAGE`, `SVG`, `EXTERNAL`. Omitted from response if null.                                                                                        |
+| `icon_value`        | String  | No       | max 2000 chars                                               | Icon value override — icon name, URL, or SVG markup. Omitted from response if null.                                                                                                             |
+| `icon_meta`         | Object  | No       | any JSON object                                              | Optional rendering hints (e.g. `size`, `color`, `alt`). Omitted from response if null.                                                                                                          |
+| `locales`           | Array   | —        | read-only here                                               | All locale translations for this resort facility group                                                                                                                                          |
 
 > When `facility_group_id` is provided, `icon_type`, `icon_value`, and `icon_meta` act as overrides for the platform
 > group's icon. When omitted (custom group), these fields become the primary icon source.
@@ -118,14 +118,14 @@ translations in the same request. All provided `locale_id` values must reference
 
 ### Request Fields
 
-| Field               | Type    | Required | Validation                                       |
-|---------------------|---------|----------|--------------------------------------------------|
-| `facility_group_id` | Long    | No       | Must reference an existing active facility group |
-| `sort_order`        | Integer | Yes      | Not null, >= 0                                   |
-| `icon_type`         | String  | No       | One of: `LUCIDE`, `IMAGE`, `SVG`, `EXTERNAL`     |
-| `icon_value`        | String  | No       | Max 2000 chars                                   |
-| `icon_meta`         | Object  | No       | Any JSON object                                  |
-| `locales`           | Array   | No       | See locale fields below                          |
+| Field               | Type    | Required | Validation                                                                                                          |
+|---------------------|---------|----------|---------------------------------------------------------------------------------------------------------------------|
+| `facility_group_id` | Long    | No       | Must reference an existing active facility group; must not already be assigned to this resort (active records only) |
+| `sort_order`        | Integer | Yes      | Not null, >= 0                                                                                                      |
+| `icon_type`         | String  | No       | One of: `LUCIDE`, `IMAGE`, `SVG`, `EXTERNAL`                                                                        |
+| `icon_value`        | String  | No       | Max 2000 chars                                                                                                      |
+| `icon_meta`         | Object  | No       | Any JSON object                                                                                                     |
+| `locales`           | Array   | No       | See locale fields below                                                                                             |
 
 **Locale fields (`locales[]`):**
 
@@ -365,13 +365,13 @@ sub-resource endpoints.
 
 ### Request Fields
 
-| Field               | Type    | Required | Validation                                       |
-|---------------------|---------|----------|--------------------------------------------------|
-| `facility_group_id` | Long    | No       | Must reference an existing active facility group |
-| `sort_order`        | Integer | Yes      | Not null, >= 0                                   |
-| `icon_type`         | String  | No       | One of: `LUCIDE`, `IMAGE`, `SVG`, `EXTERNAL`     |
-| `icon_value`        | String  | No       | Max 2000 chars                                   |
-| `icon_meta`         | Object  | No       | Any JSON object                                  |
+| Field               | Type    | Required | Validation                                                                                                          |
+|---------------------|---------|----------|---------------------------------------------------------------------------------------------------------------------|
+| `facility_group_id` | Long    | No       | Must reference an existing active facility group; must not already be assigned to this resort (active records only) |
+| `sort_order`        | Integer | Yes      | Not null, >= 0                                                                                                      |
+| `icon_type`         | String  | No       | One of: `LUCIDE`, `IMAGE`, `SVG`, `EXTERNAL`                                                                        |
+| `icon_value`        | String  | No       | Max 2000 chars                                                                                                      |
+| `icon_meta`         | Object  | No       | Any JSON object                                                                                                     |
 
 ### Response `200 OK`
 
@@ -544,10 +544,10 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                                                                      |
-|-------------|----------------------------|--------------------------------------------------------------------------------------------|
-| 400         | `VALIDATION_ERROR`         | Missing required fields or constraint violations (e.g. `sort_order` missing, `name` blank) |
-| 400         | `INVALID_ARGUMENT`         | Invalid `sort_by` field, invalid `icon_type` enum value, or malformed request              |
-| 404         | `ENTITY_NOT_FOUND`         | Resort, facility group, resort facility group, locale, or locale translation not found     |
-| 409         | `DATA_INTEGRITY_VIOLATION` | Duplicate `locale_id` for the same resort facility group                                   |
-| 500         | `INTERNAL_SERVER_ERROR`    | Unexpected server error                                                                    |
+| HTTP Status | Error Code                 | Cause                                                                                                                                                                                   |
+|-------------|----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 400         | `VALIDATION_ERROR`         | Missing required fields or constraint violations (e.g. `sort_order` missing, `name` blank)                                                                                              |
+| 400         | `INVALID_ARGUMENT`         | Invalid `sort_by` field, invalid `icon_type` enum value, malformed request, or `facility_group_id` is already assigned to this resort (message: "This facility group is already assigned to the resort.") |
+| 404         | `ENTITY_NOT_FOUND`         | Resort, facility group, resort facility group, locale, or locale translation not found                                                                                                                    |
+| 409         | `DATA_INTEGRITY_VIOLATION` | Duplicate `locale_id` for the same resort facility group                                                                                                                                                  |
+| 500         | `INTERNAL_SERVER_ERROR`    | Unexpected server error                                                                                                                                                                 |

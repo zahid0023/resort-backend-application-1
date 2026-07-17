@@ -18,7 +18,14 @@ import java.util.Set;
 @Getter
 @Setter
 @Entity
-@Table(name = "resort_facility_groups")
+@Table(
+        name = "resort_facility_groups",
+        indexes = @Index(
+                name = "uk_resort_facility_groups_resort_platform",
+                columnList = "resort_id, facility_group_id",
+                unique = true
+        )
+)
 public class ResortFacilityGroupEntity extends AuditableEntity {
 
     @NotNull

@@ -46,6 +46,6 @@ public class FacilityGroupEntity extends AuditableEntity {
     @OneToMany(mappedBy = "facilityGroupEntity", cascade = CascadeType.ALL)
     private Set<FacilityGroupLocaleEntity> facilityGroupLocaleEntities = new LinkedHashSet<>();
 
-    @OneToMany(mappedBy = "facilityGroupEntity")
+    @OneToMany(mappedBy = "facilityGroupEntity", cascade = CascadeType.ALL)
     private Set<FacilityEntity> facilityEntities = new LinkedHashSet<>();
 }

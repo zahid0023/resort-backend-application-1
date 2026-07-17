@@ -30,14 +30,24 @@ public class GlobalExceptionHandler {
 
         log.warn("Data integrity violation: {}", rootMessage);
 
+        String userMessage = resolveConstraintMessage(rootMessage);
+
         ApiErrorResponse response = new ApiErrorResponse(
                 request.getHeader("X-Request-Id"),
                 HttpStatus.CONFLICT.value(),
                 "DATA_INTEGRITY_VIOLATION",
-                rootMessage
+                userMessage
         );
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    private String resolveConstraintMessage(String rootMessage) {
+        if (rootMessage == null) return "A data integrity constraint was violated.";
+        if (rootMessage.contains("uk_resort_facility_groups_resort_platform")) {
+            return "This facility group is already assigned to the resort.";
+        }
+        return rootMessage;
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

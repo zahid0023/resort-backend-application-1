@@ -77,7 +77,7 @@ public class ResortFacilityController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> update(
-            @PathVariable("resort-id") Long resortId,
+            @PathVariable("resort-id") Long resortId,   
             @PathVariable Long id,
             @Valid @RequestBody UpdateResortFacilityRequest request) {
         ResortFacilityEntity entity = resortFacilityService.getEntityById(id);

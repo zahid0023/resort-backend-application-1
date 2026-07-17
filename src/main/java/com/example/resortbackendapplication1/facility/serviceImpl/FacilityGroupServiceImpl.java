@@ -84,6 +84,12 @@ public class FacilityGroupServiceImpl implements FacilityGroupService {
     @Override
     public SuccessResponse delete(Long id) {
         FacilityGroupEntity entity = getEntityById(id);
+        entity.getFacilityEntities().stream()
+                .filter(f -> Boolean.TRUE.equals(f.getIsActive()) && Boolean.FALSE.equals(f.getIsDeleted()))
+                .forEach(f -> {
+                    f.setIsDeleted(true);
+                    f.setIsActive(false);
+                });
         entity.setIsDeleted(true);
         entity.setIsActive(false);
         facilityGroupRepository.save(entity);

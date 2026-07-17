@@ -232,28 +232,33 @@ Null-valued optional fields (`facility_id`, `icon_type`, `icon_value`, `icon_met
 
 `GET /api/v1/resorts/{resort-id}/facilities`
 
-Returns a paginated list of active (non-deleted) facilities for the given resort. Each item includes all locale
-translations. Optionally filter by `resort_facility_group_id` to retrieve only facilities belonging to a specific group.
+Returns a paginated list of active (non-deleted) resort facilities. Each item includes all locale translations. Use
+`resortFacilityGroupId` to scope results to a specific group; without it, all active facilities are returned regardless
+of group or resort.
+
+> **Note:** The `{resort-id}` path parameter is required by the URL structure but is not used to scope the list query.
+> To retrieve facilities for a specific group (and by extension a specific resort), always provide
+`resortFacilityGroupId`.
 
 ### Path Parameters
 
-| Parameter   | Type | Description      |
-|-------------|------|------------------|
-| `resort-id` | Long | ID of the resort |
+| Parameter   | Type | Description                                                 |
+|-------------|------|-------------------------------------------------------------|
+| `resort-id` | Long | ID of the resort (required in path; not used for filtering) |
 
 ### Query Parameters
 
-| Parameter                  | Type   | Default | Constraints                    | Description                                        |
-|----------------------------|--------|---------|--------------------------------|----------------------------------------------------|
-| `resort_facility_group_id` | Long   | —       | optional                       | Filter results to a specific resort facility group |
-| `page`                     | int    | `0`     | >= 0                           | Zero-based page index                              |
-| `size`                     | int    | `10`    | 1 – 50                         | Number of items per page                           |
-| `sort_by`                  | String | `id`    | `id`, `sortOrder`, `createdAt` | Field to sort by                                   |
-| `sort_dir`                 | String | `ASC`   | `ASC`, `DESC`                  | Sort direction                                     |
+| Parameter               | Type   | Default | Constraints                    | Description                                                                  |
+|-------------------------|--------|---------|--------------------------------|------------------------------------------------------------------------------|
+| `resortFacilityGroupId` | Long   | —       | optional                       | Scope results to this resort facility group. Recommended for all list calls. |
+| `page`                  | int    | `0`     | >= 0                           | Zero-based page index                                                        |
+| `size`                  | int    | `10`    | 1 – 50                         | Number of items per page                                                     |
+| `sort_by`               | String | `id`    | `id`, `sortOrder`, `createdAt` | Field to sort by                                                             |
+| `sort_dir`              | String | `ASC`   | `ASC`, `DESC`                  | Sort direction                                                               |
 
 ### Response `200 OK`
 
-Null-valued optional fields are omitted per item.
+Null-valued optional fields are omitted per item. Example shows results filtered by `resortFacilityGroupId=12`.
 
 ```json
 {

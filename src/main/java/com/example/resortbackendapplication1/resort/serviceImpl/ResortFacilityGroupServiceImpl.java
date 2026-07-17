@@ -52,7 +52,7 @@ public class ResortFacilityGroupServiceImpl implements ResortFacilityGroupServic
                 resortFacilityGroupRepository.existsByResortEntity_IdAndFacilityGroupEntity_IdAndIsDeleted(
                         resortEntity.getId(), facilityGroupEntity.getId(), false)) {
             throw new IllegalArgumentException(
-                    "Resort " + resortEntity.getId() + " already has a mapping for facility group " + facilityGroupEntity.getId());
+                    "The facility group is already assigned to the resort.");
         }
         ResortFacilityGroupEntity entity = ResortFacilityGroupMapper.create(request, resortEntity, facilityGroupEntity, localeEntityMap);
         resortFacilityGroupRepository.save(entity);
@@ -89,7 +89,7 @@ public class ResortFacilityGroupServiceImpl implements ResortFacilityGroupServic
                 resortFacilityGroupRepository.existsByResortEntity_IdAndFacilityGroupEntity_IdAndIdNotAndIsDeleted(
                         entity.getResortEntity().getId(), facilityGroupEntity.getId(), entity.getId(), false)) {
             throw new IllegalArgumentException(
-                    "Resort " + entity.getResortEntity().getId() + " already has a mapping for facility group " + facilityGroupEntity.getId());
+                    "This facility group is already assigned to the resort.");
         }
         ResortFacilityGroupMapper.update(entity, request, facilityGroupEntity);
         resortFacilityGroupRepository.save(entity);
@@ -101,6 +101,12 @@ public class ResortFacilityGroupServiceImpl implements ResortFacilityGroupServic
     @Override
     public SuccessResponse delete(Long id) {
         ResortFacilityGroupEntity entity = getEntityById(id);
+        entity.getResortFacilityEntities().stream()
+                .filter(f -> Boolean.TRUE.equals(f.getIsActive()) && Boolean.FALSE.equals(f.getIsDeleted()))
+                .forEach(f -> {
+                    f.setIsDeleted(true);
+                    f.setIsActive(false);
+                });
         entity.setIsDeleted(true);
         entity.setIsActive(false);
         resortFacilityGroupRepository.save(entity);
