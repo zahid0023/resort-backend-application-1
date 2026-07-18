@@ -32,19 +32,20 @@ the `locales` array. All records support soft-delete — deleted records are hid
 | `id`         | Long    | —        | read-only             | Auto-generated identifier                      |
 | `code`       | String  | Yes      | max 50 chars, unique  | Stable business code (e.g., `BASE`, `WEEKEND`) |
 | `sort_order` | Integer | Yes      | not null, default `0` | Display order in administrative interfaces     |
-| `locales`    | Array   | —        | read-only             | All locale translations for this price type    |
+| `locales`    | Array   | —        | read-only here        | All locale translations for this price type    |
 
 ### Price Type Locale
 
-| Field           | Type    | Required | Constraints   | Description                                      |
-|-----------------|---------|----------|---------------|--------------------------------------------------|
-| `id`            | Long    | —        | read-only     | Auto-generated identifier                        |
-| `locale_id`     | Long    | Yes      | must exist    | ID of an existing active locale                  |
-| `name`          | String  | Yes      | max 100 chars | Localized display name (e.g., `"Weekend Price"`) |
-| `description`   | String  | No       | unlimited     | Short explanation shown in the UI                |
-| `sort_order`    | Integer | Yes      | not null      | Display order for this locale entry              |
-| `purpose`       | String  | No       | unlimited     | Business purpose of this price type              |
-| `usage_example` | String  | No       | unlimited     | Example scenario shown to administrators         |
+| Field           | Type    | Required | Constraints           | Description                                                 |
+|-----------------|---------|----------|-----------------------|-------------------------------------------------------------|
+| `id`            | Long    | —        | read-only             | Auto-generated identifier                                   |
+| `locale`        | Object  | —        | read-only in response | Embedded locale object (`id`, `code`, `name`, `sort_order`) |
+| `locale_id`     | Long    | Yes      | not null, must exist  | ID of an existing active locale (request only)              |
+| `name`          | String  | Yes      | max 100 chars         | Localized display name (e.g., `"Weekend Price"`)            |
+| `description`   | String  | No       | unlimited             | Short explanation shown in the UI                           |
+| `sort_order`    | Integer | Yes      | not null              | Display order for this locale entry                         |
+| `purpose`       | String  | No       | unlimited             | Business purpose of this price type                         |
+| `usage_example` | String  | No       | unlimited             | Example scenario shown to administrators                    |
 
 ---
 
@@ -53,26 +54,7 @@ the `locales` array. All records support soft-delete — deleted records are hid
 `POST /api/v1/price-types`
 
 Creates a price type along with its locale-specific translations in one request. All provided `locale_id` values must
-reference existing, active locales.
-
-### Request Body
-
-```json
-{
-  "code": "WEEKEND",
-  "sort_order": 3,
-  "locales": [
-    {
-      "locale_id": 1,
-      "name": "Weekend Price",
-      "description": "Premium rate applied on Saturdays and Sundays.",
-      "sort_order": 1,
-      "purpose": "Captures higher demand during weekend stays.",
-      "usage_example": "A Deluxe Room priced at $100/night on weekdays rises to $150/night under the WEEKEND rate."
-    }
-  ]
-}
-```
+reference existing, active locales. The `code` is set at creation time and cannot be changed.
 
 ### Request Fields
 
@@ -93,6 +75,25 @@ reference existing, active locales.
 | `purpose`       | String  | No       | —                        |
 | `usage_example` | String  | No       | —                        |
 
+### Request Body
+
+```json
+{
+  "code": "WEEKEND",
+  "sort_order": 3,
+  "locales": [
+    {
+      "locale_id": 1,
+      "name": "Weekend Price",
+      "description": "Premium rate applied on Saturdays and Sundays.",
+      "sort_order": 1,
+      "purpose": "Captures higher demand during weekend stays.",
+      "usage_example": "A Deluxe Room priced at $100/night on weekdays rises to $150/night under the WEEKEND rate."
+    }
+  ]
+}
+```
+
 ### Response `201 Created`
 
 ```json
@@ -108,17 +109,16 @@ reference existing, active locales.
 
 `GET /api/v1/price-types/{id}`
 
-Returns a single price type with all its locale translations.
+Returns a single price type with all its locale translations. Each locale entry embeds the full locale object.
+Optional locale fields (`description`, `purpose`, `usage_example`) are omitted from the response when not set.
 
 ### Path Parameters
 
-| Parameter | Type | Description          |
-|-----------|------|----------------------|
-| `id`      | Long | ID of the price type |
+| Parameter | Type | Required | Description          |
+|-----------|------|----------|----------------------|
+| `id`      | Long | Yes      | ID of the price type |
 
 ### Response `200 OK`
-
-Optional locale fields (`description`, `purpose`, `usage_example`) are omitted from the response when not set.
 
 ```json
 {
@@ -129,7 +129,12 @@ Optional locale fields (`description`, `purpose`, `usage_example`) are omitted f
     "locales": [
       {
         "id": 3,
-        "locale_id": 1,
+        "locale": {
+          "id": 1,
+          "code": "en",
+          "name": "English",
+          "sort_order": 1
+        },
         "name": "Weekend Price",
         "description": "Premium rate applied on Saturdays and Sundays.",
         "sort_order": 1,
@@ -175,7 +180,12 @@ Optional locale fields (`description`, `purpose`, `usage_example`) are omitted w
       "locales": [
         {
           "id": 1,
-          "locale_id": 1,
+          "locale": {
+            "id": 1,
+            "code": "en",
+            "name": "English",
+            "sort_order": 1
+          },
           "name": "Base Price",
           "description": "Standard rack rate applied by default when no other pricing rule is active.",
           "sort_order": 1,
@@ -191,7 +201,12 @@ Optional locale fields (`description`, `purpose`, `usage_example`) are omitted w
       "locales": [
         {
           "id": 2,
-          "locale_id": 1,
+          "locale": {
+            "id": 1,
+            "code": "en",
+            "name": "English",
+            "sort_order": 1
+          },
           "name": "Weekday Price",
           "description": "Rate applied on Monday through Friday.",
           "sort_order": 1,
@@ -221,9 +236,15 @@ via the price type locale endpoints.
 
 ### Path Parameters
 
-| Parameter | Type | Description          |
-|-----------|------|----------------------|
-| `id`      | Long | ID of the price type |
+| Parameter | Type | Required | Description          |
+|-----------|------|----------|----------------------|
+| `id`      | Long | Yes      | ID of the price type |
+
+### Request Fields
+
+| Field        | Type    | Required | Validation |
+|--------------|---------|----------|------------|
+| `sort_order` | Integer | Yes      | Not null   |
 
 ### Request Body
 
@@ -232,12 +253,6 @@ via the price type locale endpoints.
   "sort_order": 2
 }
 ```
-
-### Request Fields
-
-| Field        | Type    | Required | Validation |
-|--------------|---------|----------|------------|
-| `sort_order` | Integer | Yes      | Not null   |
 
 ### Response `200 OK`
 
@@ -258,9 +273,9 @@ Soft-deletes the price type. The record is not removed from the database but wil
 
 ### Path Parameters
 
-| Parameter | Type | Description          |
-|-----------|------|----------------------|
-| `id`      | Long | ID of the price type |
+| Parameter | Type | Required | Description          |
+|-----------|------|----------|----------------------|
+| `id`      | Long | Yes      | ID of the price type |
 
 ### Response `200 OK`
 
@@ -284,13 +299,24 @@ reference an existing, active price type.
 
 `POST /api/v1/price-types/{price-type-id}/locales`
 
-Adds a new locale translation to an existing price type.
+Adds a new locale translation to an existing price type. Each `locale_id` may only be used once per price type.
 
 #### Path Parameters
 
-| Parameter       | Type | Description          |
-|-----------------|------|----------------------|
-| `price-type-id` | Long | ID of the price type |
+| Parameter       | Type | Required | Description          |
+|-----------------|------|----------|----------------------|
+| `price-type-id` | Long | Yes      | ID of the price type |
+
+#### Request Fields
+
+| Field           | Type    | Required | Validation               |
+|-----------------|---------|----------|--------------------------|
+| `locale_id`     | Long    | Yes      | Not null, must exist     |
+| `name`          | String  | Yes      | Not blank, max 100 chars |
+| `description`   | String  | No       | —                        |
+| `sort_order`    | Integer | Yes      | Not null                 |
+| `purpose`       | String  | No       | —                        |
+| `usage_example` | String  | No       | —                        |
 
 #### Request Body
 
@@ -304,17 +330,6 @@ Adds a new locale translation to an existing price type.
   "usage_example": "During the New Year period, a Suite is priced at $250/night under the HOLIDAY rate instead of the regular $180/night."
 }
 ```
-
-#### Request Fields
-
-| Field           | Type    | Required | Validation               |
-|-----------------|---------|----------|--------------------------|
-| `locale_id`     | Long    | Yes      | Not null, must exist     |
-| `name`          | String  | Yes      | Not blank, max 100 chars |
-| `description`   | String  | No       | —                        |
-| `sort_order`    | Integer | Yes      | Not null                 |
-| `purpose`       | String  | No       | —                        |
-| `usage_example` | String  | No       | —                        |
 
 #### Response `201 Created`
 
@@ -331,14 +346,24 @@ Adds a new locale translation to an existing price type.
 
 `PUT /api/v1/price-types/{price-type-id}/locales/{id}`
 
-Updates an existing locale translation for a price type.
+Updates an existing locale translation for a price type. `locale_id` is set at creation time and cannot be changed.
 
 #### Path Parameters
 
-| Parameter       | Type | Description                 |
-|-----------------|------|-----------------------------|
-| `price-type-id` | Long | ID of the price type        |
-| `id`            | Long | ID of the price type locale |
+| Parameter       | Type | Required | Description                 |
+|-----------------|------|----------|-----------------------------|
+| `price-type-id` | Long | Yes      | ID of the price type        |
+| `id`            | Long | Yes      | ID of the price type locale |
+
+#### Request Fields
+
+| Field           | Type    | Required | Validation               |
+|-----------------|---------|----------|--------------------------|
+| `name`          | String  | Yes      | Not blank, max 100 chars |
+| `description`   | String  | No       | —                        |
+| `sort_order`    | Integer | Yes      | Not null                 |
+| `purpose`       | String  | No       | —                        |
+| `usage_example` | String  | No       | —                        |
 
 #### Request Body
 
@@ -351,16 +376,6 @@ Updates an existing locale translation for a price type.
   "usage_example": "Updated usage example."
 }
 ```
-
-#### Request Fields
-
-| Field           | Type    | Required | Validation               |
-|-----------------|---------|----------|--------------------------|
-| `name`          | String  | Yes      | Not blank, max 100 chars |
-| `description`   | String  | No       | —                        |
-| `sort_order`    | Integer | Yes      | Not null                 |
-| `purpose`       | String  | No       | —                        |
-| `usage_example` | String  | No       | —                        |
 
 #### Response `200 OK`
 
@@ -381,10 +396,10 @@ Soft-deletes a price type locale. The record is not removed from the database bu
 
 #### Path Parameters
 
-| Parameter       | Type | Description                 |
-|-----------------|------|-----------------------------|
-| `price-type-id` | Long | ID of the price type        |
-| `id`            | Long | ID of the price type locale |
+| Parameter       | Type | Required | Description                 |
+|-----------------|------|----------|-----------------------------|
+| `price-type-id` | Long | Yes      | ID of the price type        |
+| `id`            | Long | Yes      | ID of the price type locale |
 
 #### Response `200 OK`
 
@@ -410,8 +425,9 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                                                         |
-|-------------|----------------------------|-------------------------------------------------------------------------------|
-| 400         | `INVALID_ARGUMENT`         | Missing required fields or invalid sort field                                 |
-| 404         | `ENTITY_NOT_FOUND`         | Price type, locale, or price type locale not found, or already deleted        |
-| 409         | `DATA_INTEGRITY_VIOLATION` | Constraint violation (e.g. duplicate code or duplicate locale for price type) |
+| HTTP Status | Error Code                 | Cause                                                                                   |
+|-------------|----------------------------|-----------------------------------------------------------------------------------------|
+| 400         | `VALIDATION_ERROR`         | Missing required fields or constraint violations (e.g. `name` blank, `sort_order` null) |
+| 400         | `INVALID_ARGUMENT`         | Invalid `sort_by` field                                                                 |
+| 404         | `ENTITY_NOT_FOUND`         | Price type, locale, or price type locale not found, or already deleted                  |
+| 409         | `DATA_INTEGRITY_VIOLATION` | Duplicate `code` or duplicate `locale_id` for the same price type                       |

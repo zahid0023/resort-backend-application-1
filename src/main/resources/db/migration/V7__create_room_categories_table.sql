@@ -76,32 +76,32 @@ SELECT rc.id,
        t.sort_order,
        1,
        1
-FROM (VALUES ('STANDARD',
+FROM (VALUES ('STD',
               'Standard Room',
               'Comfortable room with essential amenities for everyday stays.',
               1),
 
-             ('DELUXE',
+             ('DLX',
               'Deluxe Room',
               'Spacious room with upgraded interior and additional facilities.',
               2),
 
-             ('SUITE',
+             ('STE',
               'Suite',
               'Luxury suite featuring separate living and sleeping areas.',
               3),
 
-             ('FAMILY',
+             ('FAM',
               'Family Room',
               'Large room designed for families and group accommodations.',
               4),
 
-             ('EXECUTIVE',
+             ('EXE',
               'Executive Room',
               'Premium room designed for business and executive travelers.',
               5),
 
-             ('PRESIDENTIAL',
+             ('PRS',
               'Presidential Suite',
               'Top-tier luxury suite with exclusive premium services.',
               6)) AS t(code, name_en, description_en, sort_order)

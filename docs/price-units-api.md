@@ -32,19 +32,20 @@ response via the `locales` array. All records support soft-delete — deleted re
 | `id`         | Long    | —        | read-only             | Auto-generated identifier                              |
 | `code`       | String  | Yes      | max 50 chars, unique  | Stable business code (e.g., `PER_NIGHT`, `PER_PERSON`) |
 | `sort_order` | Integer | Yes      | not null, default `0` | Display order in administrative interfaces             |
-| `locales`    | Array   | —        | read-only             | All locale translations for this price unit            |
+| `locales`    | Array   | —        | read-only here        | All locale translations for this price unit            |
 
 ### Price Unit Locale
 
-| Field                | Type    | Required | Constraints   | Description                                      |
-|----------------------|---------|----------|---------------|--------------------------------------------------|
-| `id`                 | Long    | —        | read-only     | Auto-generated identifier                        |
-| `locale_id`          | Long    | Yes      | must exist    | ID of an existing active locale                  |
-| `name`               | String  | Yes      | max 100 chars | Localized display name (e.g., `"Per Night"`)     |
-| `description`        | String  | No       | unlimited     | Short explanation shown in the UI                |
-| `sort_order`         | Integer | Yes      | not null      | Display order for this locale entry              |
-| `calculation_method` | String  | No       | unlimited     | How the unit is applied when calculating a price |
-| `usage_example`      | String  | No       | unlimited     | Example scenario shown to administrators         |
+| Field                | Type    | Required | Constraints           | Description                                                  |
+|----------------------|---------|----------|-----------------------|--------------------------------------------------------------|
+| `id`                 | Long    | —        | read-only             | Auto-generated identifier                                    |
+| `locale`             | Object  | —        | read-only in response | Embedded locale object (`id`, `code`, `name`, `sort_order`)  |
+| `locale_id`          | Long    | Yes      | not null, must exist  | ID of an existing active locale (request only)               |
+| `name`               | String  | Yes      | max 100 chars         | Localized display name (e.g., `"Per Night"`)                 |
+| `description`        | String  | No       | unlimited             | Short explanation shown in the UI                            |
+| `sort_order`         | Integer | Yes      | not null              | Display order for this locale entry                          |
+| `calculation_method` | String  | No       | unlimited             | How the unit is applied when calculating a price             |
+| `usage_example`      | String  | No       | unlimited             | Example scenario shown to administrators                     |
 
 ---
 
@@ -53,26 +54,7 @@ response via the `locales` array. All records support soft-delete — deleted re
 `POST /api/v1/price-units`
 
 Creates a price unit along with its locale-specific translations in one request. All provided `locale_id` values must
-reference existing, active locales.
-
-### Request Body
-
-```json
-{
-  "code": "PER_NIGHT",
-  "sort_order": 1,
-  "locales": [
-    {
-      "locale_id": 1,
-      "name": "Per Night",
-      "description": "Price charged once for each night of the stay.",
-      "sort_order": 1,
-      "calculation_method": "Multiply the nightly rate by the number of nights.",
-      "usage_example": "A room priced at $100 PER_NIGHT for a 3-night stay totals $300."
-    }
-  ]
-}
-```
+reference existing, active locales. The `code` is set at creation time and cannot be changed.
 
 ### Request Fields
 
@@ -93,6 +75,25 @@ reference existing, active locales.
 | `calculation_method` | String  | No       | —                        |
 | `usage_example`      | String  | No       | —                        |
 
+### Request Body
+
+```json
+{
+  "code": "PER_NIGHT",
+  "sort_order": 1,
+  "locales": [
+    {
+      "locale_id": 1,
+      "name": "Per Night",
+      "description": "Price charged once for each night of the stay.",
+      "sort_order": 1,
+      "calculation_method": "Multiply the nightly rate by the number of nights.",
+      "usage_example": "A room priced at $100 PER_NIGHT for a 3-night stay totals $300."
+    }
+  ]
+}
+```
+
 ### Response `201 Created`
 
 ```json
@@ -108,18 +109,17 @@ reference existing, active locales.
 
 `GET /api/v1/price-units/{id}`
 
-Returns a single price unit with all its locale translations.
+Returns a single price unit with all its locale translations. Each locale entry embeds the full locale object.
+Optional locale fields (`description`, `calculation_method`, `usage_example`) are omitted from the response when not
+set.
 
 ### Path Parameters
 
-| Parameter | Type | Description          |
-|-----------|------|----------------------|
-| `id`      | Long | ID of the price unit |
+| Parameter | Type | Required | Description          |
+|-----------|------|----------|----------------------|
+| `id`      | Long | Yes      | ID of the price unit |
 
 ### Response `200 OK`
-
-Optional locale fields (`description`, `calculation_method`, `usage_example`) are omitted from the response when not
-set.
 
 ```json
 {
@@ -130,7 +130,12 @@ set.
     "locales": [
       {
         "id": 1,
-        "locale_id": 1,
+        "locale": {
+          "id": 1,
+          "code": "en",
+          "name": "English",
+          "sort_order": 1
+        },
         "name": "Per Night",
         "description": "Price charged once for each night of the stay.",
         "sort_order": 1,
@@ -176,7 +181,12 @@ Optional locale fields (`description`, `calculation_method`, `usage_example`) ar
       "locales": [
         {
           "id": 1,
-          "locale_id": 1,
+          "locale": {
+            "id": 1,
+            "code": "en",
+            "name": "English",
+            "sort_order": 1
+          },
           "name": "Per Night",
           "description": "Price charged once for each night of the stay.",
           "sort_order": 1,
@@ -192,7 +202,12 @@ Optional locale fields (`description`, `calculation_method`, `usage_example`) ar
       "locales": [
         {
           "id": 2,
-          "locale_id": 1,
+          "locale": {
+            "id": 1,
+            "code": "en",
+            "name": "English",
+            "sort_order": 1
+          },
           "name": "Per Person",
           "description": "Price charged per guest per night.",
           "sort_order": 1,
@@ -222,9 +237,15 @@ via the price unit locale endpoints.
 
 ### Path Parameters
 
-| Parameter | Type | Description          |
-|-----------|------|----------------------|
-| `id`      | Long | ID of the price unit |
+| Parameter | Type | Required | Description          |
+|-----------|------|----------|----------------------|
+| `id`      | Long | Yes      | ID of the price unit |
+
+### Request Fields
+
+| Field        | Type    | Required | Validation |
+|--------------|---------|----------|------------|
+| `sort_order` | Integer | Yes      | Not null   |
 
 ### Request Body
 
@@ -233,12 +254,6 @@ via the price unit locale endpoints.
   "sort_order": 2
 }
 ```
-
-### Request Fields
-
-| Field        | Type    | Required | Validation |
-|--------------|---------|----------|------------|
-| `sort_order` | Integer | Yes      | Not null   |
 
 ### Response `200 OK`
 
@@ -259,9 +274,9 @@ Soft-deletes the price unit. The record is not removed from the database but wil
 
 ### Path Parameters
 
-| Parameter | Type | Description          |
-|-----------|------|----------------------|
-| `id`      | Long | ID of the price unit |
+| Parameter | Type | Required | Description          |
+|-----------|------|----------|----------------------|
+| `id`      | Long | Yes      | ID of the price unit |
 
 ### Response `200 OK`
 
@@ -285,13 +300,24 @@ reference an existing, active price unit.
 
 `POST /api/v1/price-units/{price-unit-id}/locales`
 
-Adds a new locale translation to an existing price unit.
+Adds a new locale translation to an existing price unit. Each `locale_id` may only be used once per price unit.
 
 #### Path Parameters
 
-| Parameter       | Type | Description          |
-|-----------------|------|----------------------|
-| `price-unit-id` | Long | ID of the price unit |
+| Parameter       | Type | Required | Description          |
+|-----------------|------|----------|----------------------|
+| `price-unit-id` | Long | Yes      | ID of the price unit |
+
+#### Request Fields
+
+| Field                | Type    | Required | Validation               |
+|----------------------|---------|----------|--------------------------|
+| `locale_id`          | Long    | Yes      | Not null, must exist     |
+| `name`               | String  | Yes      | Not blank, max 100 chars |
+| `description`        | String  | No       | —                        |
+| `sort_order`         | Integer | Yes      | Not null                 |
+| `calculation_method` | String  | No       | —                        |
+| `usage_example`      | String  | No       | —                        |
 
 #### Request Body
 
@@ -305,17 +331,6 @@ Adds a new locale translation to an existing price unit.
   "usage_example": "Una habitación a $100 POR_NOCHE durante 3 noches totaliza $300."
 }
 ```
-
-#### Request Fields
-
-| Field                | Type    | Required | Validation               |
-|----------------------|---------|----------|--------------------------|
-| `locale_id`          | Long    | Yes      | Not null, must exist     |
-| `name`               | String  | Yes      | Not blank, max 100 chars |
-| `description`        | String  | No       | —                        |
-| `sort_order`         | Integer | Yes      | Not null                 |
-| `calculation_method` | String  | No       | —                        |
-| `usage_example`      | String  | No       | —                        |
 
 #### Response `201 Created`
 
@@ -332,14 +347,24 @@ Adds a new locale translation to an existing price unit.
 
 `PUT /api/v1/price-units/{price-unit-id}/locales/{id}`
 
-Updates an existing locale translation for a price unit. The `locale_id` is set at creation time and cannot be changed.
+Updates an existing locale translation for a price unit. `locale_id` is set at creation time and cannot be changed.
 
 #### Path Parameters
 
-| Parameter       | Type | Description                 |
-|-----------------|------|-----------------------------|
-| `price-unit-id` | Long | ID of the price unit        |
-| `id`            | Long | ID of the price unit locale |
+| Parameter       | Type | Required | Description                 |
+|-----------------|------|----------|-----------------------------|
+| `price-unit-id` | Long | Yes      | ID of the price unit        |
+| `id`            | Long | Yes      | ID of the price unit locale |
+
+#### Request Fields
+
+| Field                | Type    | Required | Validation               |
+|----------------------|---------|----------|--------------------------|
+| `name`               | String  | Yes      | Not blank, max 100 chars |
+| `description`        | String  | No       | —                        |
+| `sort_order`         | Integer | Yes      | Not null                 |
+| `calculation_method` | String  | No       | —                        |
+| `usage_example`      | String  | No       | —                        |
 
 #### Request Body
 
@@ -352,16 +377,6 @@ Updates an existing locale translation for a price unit. The `locale_id` is set 
   "usage_example": "Updated usage example."
 }
 ```
-
-#### Request Fields
-
-| Field                | Type    | Required | Validation               |
-|----------------------|---------|----------|--------------------------|
-| `name`               | String  | Yes      | Not blank, max 100 chars |
-| `description`        | String  | No       | —                        |
-| `sort_order`         | Integer | Yes      | Not null                 |
-| `calculation_method` | String  | No       | —                        |
-| `usage_example`      | String  | No       | —                        |
 
 #### Response `200 OK`
 
@@ -382,10 +397,10 @@ Soft-deletes a price unit locale. The record is not removed from the database bu
 
 #### Path Parameters
 
-| Parameter       | Type | Description                 |
-|-----------------|------|-----------------------------|
-| `price-unit-id` | Long | ID of the price unit        |
-| `id`            | Long | ID of the price unit locale |
+| Parameter       | Type | Required | Description                 |
+|-----------------|------|----------|-----------------------------|
+| `price-unit-id` | Long | Yes      | ID of the price unit        |
+| `id`            | Long | Yes      | ID of the price unit locale |
 
 #### Response `200 OK`
 
@@ -411,8 +426,9 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                                                         |
-|-------------|----------------------------|-------------------------------------------------------------------------------|
-| 400         | `INVALID_ARGUMENT`         | Missing required fields or invalid sort field                                 |
-| 404         | `ENTITY_NOT_FOUND`         | Price unit, locale, or price unit locale not found, or already deleted        |
-| 409         | `DATA_INTEGRITY_VIOLATION` | Constraint violation (e.g. duplicate code or duplicate locale for price unit) |
+| HTTP Status | Error Code                 | Cause                                                                                   |
+|-------------|----------------------------|-----------------------------------------------------------------------------------------|
+| 400         | `VALIDATION_ERROR`         | Missing required fields or constraint violations (e.g. `name` blank, `sort_order` null) |
+| 400         | `INVALID_ARGUMENT`         | Invalid `sort_by` field                                                                 |
+| 404         | `ENTITY_NOT_FOUND`         | Price unit, locale, or price unit locale not found, or already deleted                  |
+| 409         | `DATA_INTEGRITY_VIOLATION` | Duplicate `code` or duplicate `locale_id` for the same price unit                       |

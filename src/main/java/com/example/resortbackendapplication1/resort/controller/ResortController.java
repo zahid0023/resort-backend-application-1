@@ -72,7 +72,7 @@ public class ResortController {
         this.cityService = cityService;
         this.localeService = localeService;
         this.contactTypeService = contactTypeService;
-        this.communicationChannelService = communicationChannelService;
+        this.communicationChannelService = communicationChannelService; 
     }
 
     @PostMapping

@@ -1,6 +1,7 @@
 package com.example.resortbackendapplication1.price.model.mapper;
 
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.locale.model.mapper.LocaleMapper;
 import com.example.resortbackendapplication1.price.dto.request.pricetype.pricetypelocale.CreatePriceTypeLocaleRequest;
 import com.example.resortbackendapplication1.price.dto.request.pricetype.pricetypelocale.PriceTypeLocaleRequest;
 import com.example.resortbackendapplication1.price.dto.request.pricetype.pricetypelocale.UpdatePriceTypeLocaleRequest;
@@ -37,7 +38,7 @@ public class PriceTypeLocaleMapper {
     public PriceTypeLocaleDto toDto(PriceTypeLocaleEntity entity) {
         return PriceTypeLocaleDto.builder()
                 .id(entity.getId())
-                .localeId(entity.getLocaleEntity().getId())
+                .locale(LocaleMapper.toDto(entity.getLocaleEntity()))
                 .name(entity.getName())
                 .description(entity.getDescription())
                 .sortOrder(entity.getSortOrder())
