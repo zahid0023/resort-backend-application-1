@@ -3,6 +3,7 @@ package com.example.resortbackendapplication1.resort.model.entity;
 import com.example.resortbackendapplication1.commons.model.entity.AuditableEntity;
 import com.example.resortbackendapplication1.commons.model.enums.IconType;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
+import com.example.resortbackendapplication1.facilitypricetype.model.entity.FacilityPriceTypeEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -34,6 +35,11 @@ public class ResortFacilityEntity extends AuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "facility_id")
     private FacilityEntity facilityEntity;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "facility_price_type_id", nullable = false)
+    private FacilityPriceTypeEntity facilityPriceTypeEntity;
 
     @NotNull
     @ColumnDefault("1")

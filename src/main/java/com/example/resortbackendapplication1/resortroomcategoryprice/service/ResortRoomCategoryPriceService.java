@@ -2,6 +2,8 @@ package com.example.resortbackendapplication1.resortroomcategoryprice.service;
 
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
+import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
+import com.example.resortbackendapplication1.dayofweek.model.entity.DayOfWeekEntity;
 import com.example.resortbackendapplication1.price.model.entity.PriceTypeEntity;
 import com.example.resortbackendapplication1.price.model.entity.PriceUnitEntity;
 import com.example.resortbackendapplication1.resortroomcategory.model.entity.ResortRoomCategoryEntity;
@@ -12,12 +14,16 @@ import com.example.resortbackendapplication1.resortroomcategoryprice.dto.respons
 import com.example.resortbackendapplication1.resortroomcategoryprice.model.dto.ResortRoomCategoryPriceDto;
 import com.example.resortbackendapplication1.resortroomcategoryprice.model.entity.ResortRoomCategoryPriceEntity;
 
+import java.util.List;
+
 public interface ResortRoomCategoryPriceService {
 
     SuccessResponse create(CreateResortRoomCategoryPriceRequest request,
                            ResortRoomCategoryEntity resortRoomCategoryEntity,
                            PriceTypeEntity priceTypeEntity,
-                           PriceUnitEntity priceUnitEntity);
+                           PriceUnitEntity priceUnitEntity,
+                           CurrencyEntity currencyEntity,
+                           List<DayOfWeekEntity> dayEntities);
 
     ResortRoomCategoryPriceEntity getEntityById(Long resortRoomCategoryId, Long id);
 
@@ -28,8 +34,8 @@ public interface ResortRoomCategoryPriceService {
 
     SuccessResponse update(ResortRoomCategoryPriceEntity entity,
                            UpdateResortRoomCategoryPriceRequest request,
-                           PriceTypeEntity priceTypeEntity,
-                           PriceUnitEntity priceUnitEntity);
+                           PriceUnitEntity priceUnitEntity,
+                           List<DayOfWeekEntity> dayEntities);
 
     SuccessResponse delete(ResortRoomCategoryPriceEntity entity);
 }

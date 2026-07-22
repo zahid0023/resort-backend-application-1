@@ -6,6 +6,7 @@ import com.example.resortbackendapplication1.facility.dto.request.facilities.Upd
 import com.example.resortbackendapplication1.facility.dto.request.facilities.facilitylocale.CreateFacilityLocaleRequest;
 import com.example.resortbackendapplication1.facility.model.dto.FacilityDto;
 import com.example.resortbackendapplication1.facility.model.dto.FacilityLocaleDto;
+import com.example.resortbackendapplication1.facility.model.dto.FacilityScopeAssignmentDto;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityLocaleEntity;
@@ -57,6 +58,11 @@ public class FacilityMapper {
                 .map(FacilityLocaleMapper::toDto)
                 .toList();
 
+        List<FacilityScopeAssignmentDto> scopeAssignments = entity.getFacilityScopeAssignmentEntities().stream()
+                .filter(a -> Boolean.TRUE.equals(a.getIsActive()) && Boolean.FALSE.equals(a.getIsDeleted()))
+                .map(FacilityScopeAssignmentMapper::toDto)
+                .toList();
+
         return FacilityDto.builder()
                 .id(entity.getId())
                 .facilityGroupId(entity.getFacilityGroupEntity().getId())
@@ -66,6 +72,7 @@ public class FacilityMapper {
                 .iconValue(entity.getIconValue())
                 .iconMeta(entity.getIconMeta())
                 .locales(locales)
+                .scopeAssignments(scopeAssignments)
                 .build();
     }
 }

@@ -1,5 +1,6 @@
 package com.example.resortbackendapplication1.resortroomcategory.model.dto;
 
+import com.example.resortbackendapplication1.roomcategory.model.dto.RoomCategoryDto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,7 +9,6 @@ import lombok.NoArgsConstructor;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
 
-import java.time.LocalTime;
 import java.util.List;
 
 @Data
@@ -20,17 +20,10 @@ import java.util.List;
 public class ResortRoomCategoryDto {
     private Long id;
     private Long resortId;
-    private Long roomCategoryId;
+    private RoomCategoryDto roomCategory;
     private String code;
     private Integer sortOrder;
-    private Integer maxAdults;
-    private Integer maxChildren;
-    private Integer maxOccupancy;
-    private LocalTime defaultCheckInTime;
-    private LocalTime defaultCheckOutTime;
-    private Boolean isExtraBedAllowed;
-    private Integer maxExtraBeds;
-    private Boolean isSmokingAllowed;
-    private Boolean isPetsAllowed;
+    private ResortRoomCategoryMetaDto meta;
+    private List<ResortRoomCategoryBedDto> beds;
     private List<ResortRoomCategoryLocaleDto> locales;
 }

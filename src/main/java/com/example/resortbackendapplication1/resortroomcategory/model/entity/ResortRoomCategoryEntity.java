@@ -11,7 +11,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
-import java.time.LocalTime;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -41,46 +40,11 @@ public class ResortRoomCategoryEntity extends AuditableEntity {
     @Column(name = "sort_order", nullable = false)
     private Integer sortOrder = 0;
 
-    @NotNull
-    @ColumnDefault("2")
-    @Column(name = "max_adults", nullable = false)
-    private Integer maxAdults = 2;
+    @OneToOne(mappedBy = "resortRoomCategoryEntity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private ResortRoomCategoryMetaEntity meta;
 
-    @NotNull
-    @ColumnDefault("0")
-    @Column(name = "max_children", nullable = false)
-    private Integer maxChildren = 0;
-
-    @NotNull
-    @ColumnDefault("2")
-    @Column(name = "max_occupancy", nullable = false)
-    private Integer maxOccupancy = 2;
-
-    @Column(name = "default_check_in_time")
-    private LocalTime defaultCheckInTime;
-
-    @Column(name = "default_check_out_time")
-    private LocalTime defaultCheckOutTime;
-
-    @NotNull
-    @ColumnDefault("false")
-    @Column(name = "is_extra_bed_allowed", nullable = false)
-    private Boolean isExtraBedAllowed = false;
-
-    @NotNull
-    @ColumnDefault("0")
-    @Column(name = "max_extra_beds", nullable = false)
-    private Integer maxExtraBeds = 0;
-
-    @NotNull
-    @ColumnDefault("false")
-    @Column(name = "is_smoking_allowed", nullable = false)
-    private Boolean isSmokingAllowed = false;
-
-    @NotNull
-    @ColumnDefault("false")
-    @Column(name = "is_pets_allowed", nullable = false)
-    private Boolean isPetsAllowed = false;
+    @OneToMany(mappedBy = "resortRoomCategoryEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ResortRoomCategoryBedEntity> beds = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "resortRoomCategoryEntity", cascade = CascadeType.ALL)
     private Set<ResortRoomCategoryLocaleEntity> resortRoomCategoryLocaleEntities = new LinkedHashSet<>();

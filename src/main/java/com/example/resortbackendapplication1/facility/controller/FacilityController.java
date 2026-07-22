@@ -7,9 +7,11 @@ import com.example.resortbackendapplication1.facility.dto.request.facilities.Upd
 import com.example.resortbackendapplication1.facility.dto.request.facilities.facilitylocale.CreateFacilityLocaleRequest;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupEntity;
+import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeEntity;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.facility.service.FacilityGroupService;
 import com.example.resortbackendapplication1.facility.service.FacilityService;
+import com.example.resortbackendapplication1.facility.service.FacilityScopeService;
 import com.example.resortbackendapplication1.locale.service.LocaleService;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
@@ -17,6 +19,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -25,13 +29,16 @@ public class FacilityController {
 
     private final FacilityService facilityService;
     private final FacilityGroupService facilityGroupService;
+    private final FacilityScopeService facilityScopeService;
     private final LocaleService localeService;
 
     public FacilityController(FacilityService facilityService,
                               FacilityGroupService facilityGroupService,
+                              FacilityScopeService facilityScopeService,
                               LocaleService localeService) {
         this.facilityService = facilityService;
         this.facilityGroupService = facilityGroupService;
+        this.facilityScopeService = facilityScopeService;
         this.localeService = localeService;
     }
 
@@ -40,8 +47,9 @@ public class FacilityController {
         FacilityGroupEntity facilityGroupEntity = facilityGroupService.getEntityById(request.getFacilityGroupId());
         Map<Long, LocaleEntity> localeEntityMap = LocaleUtils.resolveLocaleMap(
                 request.getLocales(), CreateFacilityLocaleRequest::getLocaleId, localeService);
+        List<FacilityScopeEntity> scopeEntities = facilityScopeService.getAll(new HashSet<>(request.getScopeIds()));
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(facilityService.create(request, localeEntityMap, facilityGroupEntity));
+                .body(facilityService.create(request, localeEntityMap, facilityGroupEntity, scopeEntities));
     }
 
     @GetMapping("/{id}")

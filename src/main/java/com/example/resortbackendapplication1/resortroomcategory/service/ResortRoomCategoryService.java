@@ -1,9 +1,11 @@
 package com.example.resortbackendapplication1.resortroomcategory.service;
 
+import com.example.resortbackendapplication1.bedtype.model.entity.BedTypeEntity;
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortEntity;
+import com.example.resortbackendapplication1.unit.model.entity.UnitEntity;
 import com.example.resortbackendapplication1.resortroomcategory.dto.request.CreateResortRoomCategoryRequest;
 import com.example.resortbackendapplication1.resortroomcategory.dto.request.ResortRoomCategoryFilterRequest;
 import com.example.resortbackendapplication1.resortroomcategory.dto.request.UpdateResortRoomCategoryRequest;
@@ -19,7 +21,9 @@ public interface ResortRoomCategoryService {
     SuccessResponse create(CreateResortRoomCategoryRequest request,
                            ResortEntity resortEntity,
                            RoomCategoryEntity roomCategoryEntity,
-                           Map<Long, LocaleEntity> localeEntityMap);
+                           Map<Long, LocaleEntity> localeEntityMap,
+                           Map<Long, BedTypeEntity> bedTypeEntityMap,
+                           UnitEntity roomSizeUnit);
 
     ResortRoomCategoryEntity getEntityById(Long resortId, Long id);
 

@@ -47,7 +47,26 @@ public class GlobalExceptionHandler {
         if (rootMessage.contains("uk_resort_facility_groups_resort_platform")) {
             return "This facility group is already assigned to the resort.";
         }
+        if (rootMessage.contains("facility_group_scope_assignments_pkey")) {
+            return "This facility scope is already assigned to the facility group.";
+        }
+        if (rootMessage.contains("facility_scope_assignments_pkey")) {
+            return "This facility scope is already assigned to the facility.";
+        }
         return rootMessage;
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<@NonNull ApiErrorResponse> handleIllegalState(
+            IllegalStateException ex,
+            HttpServletRequest request
+    ) {
+        return build(
+                ex,
+                HttpStatus.CONFLICT,
+                "CONFLICT",
+                request
+        );
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

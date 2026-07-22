@@ -36,6 +36,7 @@ records are hidden from all responses.
 | `resort_id`                | Long    | —            | read-only            | ID of the parent resort                                                                                                                                  |
 | `resort_facility_group_id` | Long    | Yes (create) | not null, must exist | ID of the resort facility group this facility belongs to. Set at creation time, not updatable.                                                           |
 | `facility_id`              | Long    | No           | must exist if given  | ID of the platform facility to link. Omit for a fully custom resort-defined facility.                                                                    |
+| `facility_price_type_id`   | Long    | Yes          | not null, must exist | ID of the facility price type (e.g. `FREE`, `PAID`). Required on create and update.                                                                      |
 | `sort_order`               | Integer | Yes          | not null, >= 0       | Display order of this facility within its group                                                                                                          |
 | `is_highlighted`           | Boolean | No           | default `false`      | Whether this facility is featured as a highlight. Must have 4–9 highlighted facilities per resort. Use the dedicated highlights endpoint to manage this. |
 | `icon_type`                | String  | No           | enum                 | Icon type override. Allowed values: `LUCIDE`, `IMAGE`, `SVG`, `EXTERNAL`. Omitted from response if null.                                                 |
@@ -79,6 +80,7 @@ the same request. All provided `locale_id` values must reference existing, activ
 {
   "resort_facility_group_id": 12,
   "facility_id": 7,
+  "facility_price_type_id": 3,
   "sort_order": 1,
   "is_highlighted": true,
   "icon_type": "LUCIDE",
@@ -109,6 +111,7 @@ the same request. All provided `locale_id` values must reference existing, activ
 ```json
 {
   "resort_facility_group_id": 12,
+  "facility_price_type_id": 1,
   "sort_order": 4,
   "is_highlighted": false,
   "icon_type": "IMAGE",
@@ -129,6 +132,7 @@ the same request. All provided `locale_id` values must reference existing, activ
 |----------------------------|---------|----------|--------------------------------------------------------------------------------|
 | `resort_facility_group_id` | Long    | Yes      | Not null, must reference an existing active group                              |
 | `facility_id`              | Long    | No       | Must reference an existing active facility                                     |
+| `facility_price_type_id`   | Long    | Yes      | Not null, must reference an existing active facility price type                |
 | `sort_order`               | Integer | Yes      | Not null, >= 0                                                                 |
 | `is_highlighted`           | Boolean | No       | Defaults to `false`. Prefer the dedicated highlights endpoint for bulk control |
 | `icon_type`                | String  | No       | One of: `LUCIDE`, `IMAGE`, `SVG`, `EXTERNAL`                                   |
@@ -180,6 +184,7 @@ Null-valued optional fields (`facility_id`, `icon_type`, `icon_value`, `icon_met
     "resort_id": 1,
     "resort_facility_group_id": 12,
     "facility_id": 7,
+    "facility_price_type_id": 3,
     "sort_order": 1,
     "is_highlighted": true,
     "icon_type": "LUCIDE",
@@ -216,6 +221,7 @@ Null-valued optional fields (`facility_id`, `icon_type`, `icon_value`, `icon_met
     "id": 34,
     "resort_id": 1,
     "resort_facility_group_id": 12,
+    "facility_price_type_id": 1,
     "sort_order": 4,
     "is_highlighted": false,
     "icon_type": "IMAGE",
@@ -275,6 +281,7 @@ Null-valued optional fields are omitted per item. Example shows results filtered
       "resort_id": 1,
       "resort_facility_group_id": 12,
       "facility_id": 7,
+      "facility_price_type_id": 3,
       "sort_order": 1,
       "is_highlighted": true,
       "icon_type": "LUCIDE",
@@ -305,6 +312,7 @@ Null-valued optional fields are omitted per item. Example shows results filtered
       "resort_id": 1,
       "resort_facility_group_id": 12,
       "facility_id": 9,
+      "facility_price_type_id": 2,
       "sort_order": 2,
       "is_highlighted": true,
       "locales": [
@@ -321,6 +329,7 @@ Null-valued optional fields are omitted per item. Example shows results filtered
       "id": 34,
       "resort_id": 1,
       "resort_facility_group_id": 12,
+      "facility_price_type_id": 1,
       "sort_order": 4,
       "is_highlighted": false,
       "icon_type": "IMAGE",
@@ -367,6 +376,7 @@ facility. `resort_facility_group_id` is set at creation time and cannot be chang
 ```json
 {
   "facility_id": 8,
+  "facility_price_type_id": 3,
   "sort_order": 2,
   "is_highlighted": true,
   "icon_type": "LUCIDE",
@@ -383,6 +393,7 @@ facility. `resort_facility_group_id` is set at creation time and cannot be chang
 ```json
 {
   "facility_id": null,
+  "facility_price_type_id": 1,
   "sort_order": 2,
   "is_highlighted": false,
   "icon_type": null,
@@ -393,10 +404,11 @@ facility. `resort_facility_group_id` is set at creation time and cannot be chang
 
 ### Request Fields
 
-| Field            | Type    | Required | Validation                                                                     |
-|------------------|---------|----------|--------------------------------------------------------------------------------|
-| `facility_id`    | Long    | No       | Must reference an existing active facility                                     |
-| `sort_order`     | Integer | Yes      | Not null, >= 0                                                                 |
+| Field                    | Type    | Required | Validation                                                                     |
+|--------------------------|---------|----------|--------------------------------------------------------------------------------|
+| `facility_id`            | Long    | No       | Must reference an existing active facility                                     |
+| `facility_price_type_id` | Long    | Yes      | Not null, must reference an existing active facility price type                |
+| `sort_order`             | Integer | Yes      | Not null, >= 0                                                                 |
 | `is_highlighted` | Boolean | No       | Defaults to `false`. Prefer the dedicated highlights endpoint for bulk control |
 | `icon_type`      | String  | No       | One of: `LUCIDE`, `IMAGE`, `SVG`, `EXTERNAL`                                   |
 | `icon_value`     | String  | No       | Max 2000 chars                                                                 |
@@ -632,6 +644,6 @@ All errors follow a common structure:
 | 400         | `VALIDATION_ERROR`         | `facility_ids` has fewer than 4 or more than 9 entries on the highlights endpoint                 |
 | 400         | `VALIDATION_ERROR`         | One or more IDs in `facility_ids` do not belong to the given resort                               |
 | 400         | `INVALID_ARGUMENT`         | Invalid `sort_by` field, invalid `icon_type` enum value, or malformed request                     |
-| 404         | `ENTITY_NOT_FOUND`         | Resort, resort facility group, facility, resort facility, locale, or locale translation not found |
+| 404         | `ENTITY_NOT_FOUND`         | Resort, resort facility group, facility, facility price type, resort facility, locale, or locale translation not found |
 | 409         | `DATA_INTEGRITY_VIOLATION` | Duplicate `locale_id` for the same resort facility                                                |
 | 500         | `INTERNAL_SERVER_ERROR`    | Unexpected server error                                                                           |

@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 
 public enum ResortRoomCategoryPriceSortField {
     ID("id"),
-    AMOUNT("amount"),
+    PRICE("price"),
     PRIORITY("priority"),
     VALID_FROM("validFrom"),
     VALID_TO("validTo"),

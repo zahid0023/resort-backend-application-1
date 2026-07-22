@@ -1,6 +1,7 @@
 package com.example.resortbackendapplication1.resort.model.mapper;
 
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
+import com.example.resortbackendapplication1.facilitypricetype.model.entity.FacilityPriceTypeEntity;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.CreateResortFacilityRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.ResortFacilityRequest;
@@ -27,11 +28,13 @@ public class ResortFacilityMapper {
                                        ResortEntity resortEntity,
                                        ResortFacilityGroupEntity resortFacilityGroupEntity,
                                        FacilityEntity facilityEntity,
+                                       FacilityPriceTypeEntity facilityPriceTypeEntity,
                                        Map<Long, LocaleEntity> localeEntityMap) {
         ResortFacilityEntity entity = new ResortFacilityEntity();
         entity.setResortEntity(resortEntity);
         entity.setResortFacilityGroupEntity(resortFacilityGroupEntity);
         entity.setFacilityEntity(facilityEntity);
+        entity.setFacilityPriceTypeEntity(facilityPriceTypeEntity);
         applyCommonFields(entity, request);
         entity.setResortFacilityLocaleEntities(mapLocales(request.getLocales(), entity, localeEntityMap));
         return entity;
@@ -39,8 +42,10 @@ public class ResortFacilityMapper {
 
     public void update(ResortFacilityEntity entity,
                        UpdateResortFacilityRequest request,
-                       FacilityEntity facilityEntity) {
+                       FacilityEntity facilityEntity,
+                       FacilityPriceTypeEntity facilityPriceTypeEntity) {
         entity.setFacilityEntity(facilityEntity);
+        entity.setFacilityPriceTypeEntity(facilityPriceTypeEntity);
         applyCommonFields(entity, request);
     }
 
@@ -71,6 +76,7 @@ public class ResortFacilityMapper {
                 .resortId(entity.getResortEntity().getId())
                 .resortFacilityGroupId(entity.getResortFacilityGroupEntity().getId())
                 .facilityId(entity.getFacilityEntity() != null ? entity.getFacilityEntity().getId() : null)
+                .facilityPriceTypeId(entity.getFacilityPriceTypeEntity() != null ? entity.getFacilityPriceTypeEntity().getId() : null)
                 .sortOrder(entity.getSortOrder())
                 .isHighlighted(entity.getIsHighlighted())
                 .iconType(entity.getIconType())

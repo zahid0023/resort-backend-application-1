@@ -1,6 +1,8 @@
 spring:
   jackson:
     default-property-inclusion: non_null
+  flyway:
+    out-of-order: true
 
   datasource:
     url: ${DATABASE_URL}

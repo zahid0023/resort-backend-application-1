@@ -92,6 +92,12 @@ public class PriceTypeServiceImpl implements PriceTypeService {
     }
 
     @Override
+    public PriceTypeEntity getEntityByCode(String code) {
+        return priceTypeRepository.findByCodeAndIsActiveAndIsDeleted(code, true, false)
+                .orElseThrow(() -> new EntityNotFoundException("PriceType not found with code: " + code));
+    }
+
+    @Override
     public List<PriceTypeEntity> getAll(Set<Long> ids) {
         List<PriceTypeEntity> entities = priceTypeRepository.findAllByIdInAndIsActiveAndIsDeleted(ids, true, false);
         EntityValidator.validateAllFound(ids, entities, PriceTypeEntity::getId, "PriceType");

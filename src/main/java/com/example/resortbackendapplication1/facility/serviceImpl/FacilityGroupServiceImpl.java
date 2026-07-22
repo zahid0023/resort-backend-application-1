@@ -13,8 +13,13 @@ import com.example.resortbackendapplication1.facility.model.entity.FacilityGroup
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.facility.model.enums.FacilityGroupSearchField;
 import com.example.resortbackendapplication1.facility.model.enums.FacilityGroupSortField;
+import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupScopeAssignmentEntity;
+import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeEntity;
+import com.example.resortbackendapplication1.facility.model.enums.FacilityScopeCode;
 import com.example.resortbackendapplication1.facility.model.mapper.FacilityGroupMapper;
+import com.example.resortbackendapplication1.facility.model.mapper.FacilityGroupScopeAssignmentMapper;
 import com.example.resortbackendapplication1.facility.repository.FacilityGroupRepository;
+import com.example.resortbackendapplication1.facility.repository.FacilityGroupScopeAssignmentRepository;
 import com.example.resortbackendapplication1.facility.service.FacilityGroupService;
 import com.example.resortbackendapplication1.facility.specification.FacilityGroupSpecification;
 import jakarta.persistence.EntityNotFoundException;
@@ -36,16 +41,27 @@ public class FacilityGroupServiceImpl implements FacilityGroupService {
     private static final Set<String> ALLOWED_SEARCH_FIELDS = FacilityGroupSearchField.allowedFields();
 
     private final FacilityGroupRepository facilityGroupRepository;
+    private final FacilityGroupScopeAssignmentRepository scopeAssignmentRepository;
 
-    public FacilityGroupServiceImpl(FacilityGroupRepository facilityGroupRepository) {
+    public FacilityGroupServiceImpl(FacilityGroupRepository facilityGroupRepository,
+                                    FacilityGroupScopeAssignmentRepository scopeAssignmentRepository) {
         this.facilityGroupRepository = facilityGroupRepository;
+        this.scopeAssignmentRepository = scopeAssignmentRepository;
     }
 
     @Transactional
     @Override
-    public SuccessResponse create(CreateFacilityGroupRequest request, Map<Long, LocaleEntity> localeEntityMap) {
+    public SuccessResponse create(CreateFacilityGroupRequest request,
+                                  Map<Long, LocaleEntity> localeEntityMap,
+                                  List<FacilityScopeEntity> scopeEntities) {
         FacilityGroupEntity entity = FacilityGroupMapper.create(request, localeEntityMap);
         facilityGroupRepository.save(entity);
+
+        List<FacilityGroupScopeAssignmentEntity> assignments = scopeEntities.stream()
+                .map(scope -> FacilityGroupScopeAssignmentMapper.create(entity, scope))
+                .toList();
+        scopeAssignmentRepository.saveAll(assignments);
+
         log.info("FacilityGroup created with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
     }
@@ -64,9 +80,9 @@ public class FacilityGroupServiceImpl implements FacilityGroupService {
     }
 
     @Override
-    public PaginatedResponse<FacilityGroupDto> getAll(FacilityGroupFilterRequest request) {
+    public PaginatedResponse<FacilityGroupDto> getAll(FacilityGroupFilterRequest request, FacilityScopeCode scopeCode) {
         Page<@NonNull FacilityGroupDto> page = facilityGroupRepository
-                .findAll(FacilityGroupSpecification.filter(request), request.toPageable(ALLOWED_SORT_FIELDS))
+                .findAll(FacilityGroupSpecification.filter(request, scopeCode), request.toPageable(ALLOWED_SORT_FIELDS))
                 .map(FacilityGroupMapper::toDto);
         return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
     }

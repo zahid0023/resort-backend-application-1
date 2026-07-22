@@ -3,6 +3,7 @@ package com.example.resortbackendapplication1.resort.service;
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
+import com.example.resortbackendapplication1.facilitypricetype.model.entity.FacilityPriceTypeEntity;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.CreateResortFacilityRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.ResortFacilityFilterRequest;
@@ -24,6 +25,7 @@ public interface ResortFacilityService {
                            ResortEntity resortEntity,
                            ResortFacilityGroupEntity resortFacilityGroupEntity,
                            FacilityEntity facilityEntity,
+                           FacilityPriceTypeEntity facilityPriceTypeEntity,
                            Map<Long, LocaleEntity> localeEntityMap);
 
     ResortFacilityEntity getEntityById(Long id);
@@ -34,7 +36,8 @@ public interface ResortFacilityService {
 
     SuccessResponse update(ResortFacilityEntity entity,
                            UpdateResortFacilityRequest request,
-                           FacilityEntity facilityEntity);
+                           FacilityEntity facilityEntity,
+                           FacilityPriceTypeEntity facilityPriceTypeEntity);
 
     SuccessResponse delete(Long id);
 

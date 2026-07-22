@@ -26,4 +26,5 @@ public class FacilityGroupDto {
     private String iconValue;
     private Map<String, Object> iconMeta;
     private List<FacilityGroupLocaleDto> locales;
+    private List<FacilityGroupScopeAssignmentDto> scopeAssignments;
 }

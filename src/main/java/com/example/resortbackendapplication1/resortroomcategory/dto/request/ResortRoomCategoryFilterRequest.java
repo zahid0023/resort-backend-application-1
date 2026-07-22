@@ -5,6 +5,7 @@ import com.example.resortbackendapplication1.commons.utils.Filterable;
 import com.example.resortbackendapplication1.commons.utils.SpecificationUtils;
 import com.example.resortbackendapplication1.resortroomcategory.model.enums.ResortRoomCategorySearchField;
 import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import lombok.Data;
@@ -33,14 +34,17 @@ public class ResortRoomCategoryFilterRequest extends PaginatedRequest implements
         if (roomCategoryId != null) {
             predicates.add(cb.equal(root.get("roomCategoryEntity").get("id"), roomCategoryId));
         }
-        if (isExtraBedAllowed != null) {
-            predicates.add(cb.equal(root.get("isExtraBedAllowed"), isExtraBedAllowed));
-        }
-        if (isSmokingAllowed != null) {
-            predicates.add(cb.equal(root.get("isSmokingAllowed"), isSmokingAllowed));
-        }
-        if (isPetsAllowed != null) {
-            predicates.add(cb.equal(root.get("isPetsAllowed"), isPetsAllowed));
+        if (isExtraBedAllowed != null || isSmokingAllowed != null || isPetsAllowed != null) {
+            var meta = root.join("meta", JoinType.LEFT);
+            if (isExtraBedAllowed != null) {
+                predicates.add(cb.equal(meta.get("isExtraBedAllowed"), isExtraBedAllowed));
+            }
+            if (isSmokingAllowed != null) {
+                predicates.add(cb.equal(meta.get("isSmokingAllowed"), isSmokingAllowed));
+            }
+            if (isPetsAllowed != null) {
+                predicates.add(cb.equal(meta.get("isPetsAllowed"), isPetsAllowed));
+            }
         }
         return predicates;
     }

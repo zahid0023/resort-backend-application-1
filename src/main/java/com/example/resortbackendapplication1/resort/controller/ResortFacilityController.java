@@ -3,6 +3,8 @@ package com.example.resortbackendapplication1.resort.controller;
 import com.example.resortbackendapplication1.commons.utils.LocaleUtils;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
 import com.example.resortbackendapplication1.facility.service.FacilityService;
+import com.example.resortbackendapplication1.facilitypricetype.model.entity.FacilityPriceTypeEntity;
+import com.example.resortbackendapplication1.facilitypricetype.service.FacilityPriceTypeService;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.locale.service.LocaleService;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.CreateResortFacilityRequest;
@@ -32,17 +34,20 @@ public class ResortFacilityController {
     private final ResortFacilityGroupService resortFacilityGroupService;
     private final ResortFacilityService resortFacilityService;
     private final FacilityService facilityService;
+    private final FacilityPriceTypeService facilityPriceTypeService;
     private final LocaleService localeService;
 
     public ResortFacilityController(ResortService resortService,
                                     ResortFacilityGroupService resortFacilityGroupService,
                                     ResortFacilityService resortFacilityService,
                                     FacilityService facilityService,
+                                    FacilityPriceTypeService facilityPriceTypeService,
                                     LocaleService localeService) {
         this.resortService = resortService;
         this.resortFacilityGroupService = resortFacilityGroupService;
         this.resortFacilityService = resortFacilityService;
         this.facilityService = facilityService;
+        this.facilityPriceTypeService = facilityPriceTypeService;
         this.localeService = localeService;
     }
 
@@ -55,10 +60,13 @@ public class ResortFacilityController {
         FacilityEntity facilityEntity = request.getFacilityId() != null
                 ? facilityService.getEntityById(request.getFacilityId())
                 : null;
+        FacilityPriceTypeEntity facilityPriceTypeEntity = request.getFacilityPriceTypeId() != null
+                ? facilityPriceTypeService.getEntityById(request.getFacilityPriceTypeId())
+                : null;
         Map<Long, LocaleEntity> localeEntityMap = LocaleUtils.resolveLocaleMap(
                 request.getLocales(), CreateResortFacilityLocaleRequest::getLocaleId, localeService);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(resortFacilityService.create(request, resortEntity, resortFacilityGroupEntity, facilityEntity, localeEntityMap));
+                .body(resortFacilityService.create(request, resortEntity, resortFacilityGroupEntity, facilityEntity, facilityPriceTypeEntity, localeEntityMap));
     }
 
     @GetMapping("/{id}")
@@ -85,7 +93,10 @@ public class ResortFacilityController {
         FacilityEntity facilityEntity = request.getFacilityId() != null
                 ? facilityService.getEntityById(request.getFacilityId())
                 : null;
-        return ResponseEntity.ok(resortFacilityService.update(entity, request, facilityEntity));
+        FacilityPriceTypeEntity facilityPriceTypeEntity = request.getFacilityPriceTypeId() != null
+                ? facilityPriceTypeService.getEntityById(request.getFacilityPriceTypeId())
+                : null;
+        return ResponseEntity.ok(resortFacilityService.update(entity, request, facilityEntity, facilityPriceTypeEntity));
     }
 
     @DeleteMapping("/{id}")

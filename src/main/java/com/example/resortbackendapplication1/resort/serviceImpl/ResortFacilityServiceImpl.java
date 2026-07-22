@@ -5,6 +5,7 @@ import com.example.resortbackendapplication1.commons.dto.response.SuccessRespons
 import com.example.resortbackendapplication1.commons.utils.EntityValidator;
 import com.example.resortbackendapplication1.commons.utils.Pagination;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
+import com.example.resortbackendapplication1.facilitypricetype.model.entity.FacilityPriceTypeEntity;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.CreateResortFacilityRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.ResortFacilityFilterRequest;
@@ -51,8 +52,9 @@ public class ResortFacilityServiceImpl implements ResortFacilityService {
                                   ResortEntity resortEntity,
                                   ResortFacilityGroupEntity resortFacilityGroupEntity,
                                   FacilityEntity facilityEntity,
+                                  FacilityPriceTypeEntity facilityPriceTypeEntity,
                                   Map<Long, LocaleEntity> localeEntityMap) {
-        ResortFacilityEntity entity = ResortFacilityMapper.create(request, resortEntity, resortFacilityGroupEntity, facilityEntity, localeEntityMap);
+        ResortFacilityEntity entity = ResortFacilityMapper.create(request, resortEntity, resortFacilityGroupEntity, facilityEntity, facilityPriceTypeEntity, localeEntityMap);
         resortFacilityRepository.save(entity);
         log.info("ResortFacility created with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
@@ -82,8 +84,9 @@ public class ResortFacilityServiceImpl implements ResortFacilityService {
     @Override
     public SuccessResponse update(ResortFacilityEntity entity,
                                   UpdateResortFacilityRequest request,
-                                  FacilityEntity facilityEntity) {
-        ResortFacilityMapper.update(entity, request, facilityEntity);
+                                  FacilityEntity facilityEntity,
+                                  FacilityPriceTypeEntity facilityPriceTypeEntity) {
+        ResortFacilityMapper.update(entity, request, facilityEntity, facilityPriceTypeEntity);
         resortFacilityRepository.save(entity);
         log.info("ResortFacility updated with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());

@@ -17,6 +17,9 @@ public class ResortFacilityRequest {
     private Long facilityId;
 
     @NotNull
+    private Long facilityPriceTypeId;
+
+    @NotNull
     @Min(value = 0, message = "sort_order must be 0 or greater")
     private Integer sortOrder;
 

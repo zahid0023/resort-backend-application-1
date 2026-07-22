@@ -36,16 +36,16 @@ response via the `locales` array. All records support soft-delete — deleted re
 
 ### Price Unit Locale
 
-| Field                | Type    | Required | Constraints           | Description                                                  |
-|----------------------|---------|----------|-----------------------|--------------------------------------------------------------|
-| `id`                 | Long    | —        | read-only             | Auto-generated identifier                                    |
-| `locale`             | Object  | —        | read-only in response | Embedded locale object (`id`, `code`, `name`, `sort_order`)  |
-| `locale_id`          | Long    | Yes      | not null, must exist  | ID of an existing active locale (request only)               |
-| `name`               | String  | Yes      | max 100 chars         | Localized display name (e.g., `"Per Night"`)                 |
-| `description`        | String  | No       | unlimited             | Short explanation shown in the UI                            |
-| `sort_order`         | Integer | Yes      | not null              | Display order for this locale entry                          |
-| `calculation_method` | String  | No       | unlimited             | How the unit is applied when calculating a price             |
-| `usage_example`      | String  | No       | unlimited             | Example scenario shown to administrators                     |
+| Field                | Type    | Required | Constraints           | Description                                                 |
+|----------------------|---------|----------|-----------------------|-------------------------------------------------------------|
+| `id`                 | Long    | —        | read-only             | Auto-generated identifier                                   |
+| `locale`             | Object  | —        | read-only in response | Embedded locale object (`id`, `code`, `name`, `sort_order`) |
+| `locale_id`          | Long    | Yes      | not null, must exist  | ID of an existing active locale (request only)              |
+| `name`               | String  | Yes      | max 100 chars         | Localized display name (e.g., `"Per Night"`)                |
+| `description`        | String  | No       | unlimited             | Short explanation shown in the UI                           |
+| `sort_order`         | Integer | Yes      | not null              | Display order for this locale entry                         |
+| `calculation_method` | String  | No       | unlimited             | How the unit is applied when calculating a price            |
+| `usage_example`      | String  | No       | unlimited             | Example scenario shown to administrators                    |
 
 ---
 

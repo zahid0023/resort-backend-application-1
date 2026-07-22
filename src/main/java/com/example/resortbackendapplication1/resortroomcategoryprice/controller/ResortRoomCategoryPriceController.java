@@ -1,10 +1,14 @@
 package com.example.resortbackendapplication1.resortroomcategoryprice.controller;
 
+import com.example.resortbackendapplication1.commons.utils.EntityValidator;
+import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
+import com.example.resortbackendapplication1.currency.service.CurrencyService;
+import com.example.resortbackendapplication1.dayofweek.model.entity.DayOfWeekEntity;
+import com.example.resortbackendapplication1.dayofweek.service.DayOfWeekService;
 import com.example.resortbackendapplication1.price.model.entity.PriceTypeEntity;
 import com.example.resortbackendapplication1.price.model.entity.PriceUnitEntity;
 import com.example.resortbackendapplication1.price.service.PriceTypeService;
 import com.example.resortbackendapplication1.price.service.PriceUnitService;
-import com.example.resortbackendapplication1.resort.service.ResortService;
 import com.example.resortbackendapplication1.resortroomcategory.model.entity.ResortRoomCategoryEntity;
 import com.example.resortbackendapplication1.resortroomcategory.service.ResortRoomCategoryService;
 import com.example.resortbackendapplication1.resortroomcategoryprice.dto.request.CreateResortRoomCategoryPriceRequest;
@@ -18,26 +22,33 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
 @RestController
 @RequestMapping("/api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/prices")
 public class ResortRoomCategoryPriceController {
 
     private final ResortRoomCategoryPriceService resortRoomCategoryPriceService;
-    private final ResortService resortService;
     private final ResortRoomCategoryService resortRoomCategoryService;
     private final PriceTypeService priceTypeService;
     private final PriceUnitService priceUnitService;
+    private final CurrencyService currencyService;
+    private final DayOfWeekService dayOfWeekService;
 
     public ResortRoomCategoryPriceController(ResortRoomCategoryPriceService resortRoomCategoryPriceService,
-                                              ResortService resortService,
-                                              ResortRoomCategoryService resortRoomCategoryService,
-                                              PriceTypeService priceTypeService,
-                                              PriceUnitService priceUnitService) {
+                                             ResortRoomCategoryService resortRoomCategoryService,
+                                             PriceTypeService priceTypeService,
+                                             PriceUnitService priceUnitService,
+                                             CurrencyService currencyService,
+                                             DayOfWeekService dayOfWeekService) {
         this.resortRoomCategoryPriceService = resortRoomCategoryPriceService;
-        this.resortService = resortService;
         this.resortRoomCategoryService = resortRoomCategoryService;
         this.priceTypeService = priceTypeService;
         this.priceUnitService = priceUnitService;
+        this.currencyService = currencyService;
+        this.dayOfWeekService = dayOfWeekService;
     }
 
     @PostMapping
@@ -48,8 +59,11 @@ public class ResortRoomCategoryPriceController {
         ResortRoomCategoryEntity resortRoomCategory = resortRoomCategoryService.getEntityById(resortId, resortRoomCategoryId);
         PriceTypeEntity priceType = priceTypeService.getEntityById(request.getPriceTypeId());
         PriceUnitEntity priceUnit = priceUnitService.getEntityById(request.getPriceUnitId());
+        CurrencyEntity currency = currencyService.getEntityById(request.getCurrencyId());
+        List<DayOfWeekEntity> dayEntities = resolveDayEntities(request.getDayOfWeekIds());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(resortRoomCategoryPriceService.create(request, resortRoomCategory, priceType, priceUnit));
+                .body(resortRoomCategoryPriceService.create(
+                        request, resortRoomCategory, priceType, priceUnit, currency, dayEntities));
     }
 
     @GetMapping("/{id}")
@@ -76,11 +90,11 @@ public class ResortRoomCategoryPriceController {
             @PathVariable("resort-room-category-id") Long resortRoomCategoryId,
             @PathVariable Long id,
             @Valid @RequestBody UpdateResortRoomCategoryPriceRequest request) {
-        ResortRoomCategoryPriceEntity entity = resortRoomCategoryPriceService.getEntityById(resortRoomCategoryId, id);
         resortRoomCategoryService.getEntityById(resortId, resortRoomCategoryId);
-        PriceTypeEntity priceType = priceTypeService.getEntityById(request.getPriceTypeId());
+        ResortRoomCategoryPriceEntity entity = resortRoomCategoryPriceService.getEntityById(resortRoomCategoryId, id);
         PriceUnitEntity priceUnit = priceUnitService.getEntityById(request.getPriceUnitId());
-        return ResponseEntity.ok(resortRoomCategoryPriceService.update(entity, request, priceType, priceUnit));
+        List<DayOfWeekEntity> dayEntities = resolveDayEntities(request.getDayOfWeekIds());
+        return ResponseEntity.ok(resortRoomCategoryPriceService.update(entity, request, priceUnit, dayEntities));
     }
 
     @DeleteMapping("/{id}")
@@ -91,5 +105,14 @@ public class ResortRoomCategoryPriceController {
         resortRoomCategoryService.getEntityById(resortId, resortRoomCategoryId);
         ResortRoomCategoryPriceEntity entity = resortRoomCategoryPriceService.getEntityById(resortRoomCategoryId, id);
         return ResponseEntity.ok(resortRoomCategoryPriceService.delete(entity));
+    }
+
+    private List<DayOfWeekEntity> resolveDayEntities(Set<Long> dayOfWeekIds) {
+        if (dayOfWeekIds == null || dayOfWeekIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<DayOfWeekEntity> entities = dayOfWeekService.getAll(dayOfWeekIds);
+        EntityValidator.validateAllFound(dayOfWeekIds, entities, DayOfWeekEntity::getId, "DayOfWeek");
+        return entities;
     }
 }

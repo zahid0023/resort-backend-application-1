@@ -23,6 +23,7 @@ public class ResortFacilityDto {
     private Long resortId;
     private Long resortFacilityGroupId;
     private Long facilityId;
+    private Long facilityPriceTypeId;
     private Integer sortOrder;
     private Boolean isHighlighted;
     private IconType iconType;

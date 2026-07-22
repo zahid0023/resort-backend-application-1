@@ -14,5 +14,7 @@ public interface PriceTypeRepository extends JpaRepository<@NonNull PriceTypeEnt
 
     Optional<PriceTypeEntity> findByIdAndIsActiveAndIsDeleted(Long id, Boolean isActive, Boolean isDeleted);
 
+    Optional<PriceTypeEntity> findByCodeAndIsActiveAndIsDeleted(String code, Boolean isActive, Boolean isDeleted);
+
     List<PriceTypeEntity> findAllByIdInAndIsActiveAndIsDeleted(Set<Long> ids, Boolean isActive, Boolean isDeleted);
 }

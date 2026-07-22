@@ -1,5 +1,9 @@
 package com.example.resortbackendapplication1.resortroomcategoryprice.model.dto;
 
+import com.example.resortbackendapplication1.currency.model.dto.CurrencyDto;
+import com.example.resortbackendapplication1.price.model.dto.PriceTypeDto;
+import com.example.resortbackendapplication1.price.model.dto.PriceUnitDto;
+import com.example.resortbackendapplication1.resortroomcategory.model.dto.ResortRoomCategoryDto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,6 +14,7 @@ import tools.jackson.databind.annotation.JsonNaming;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @Builder
@@ -19,18 +24,17 @@ import java.time.LocalDate;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class ResortRoomCategoryPriceDto {
     private Long id;
-    private Long resortRoomCategoryId;
-    private Long priceTypeId;
-    private Long priceUnitId;
-    private BigDecimal amount;
-    private Integer priority;
+    private ResortRoomCategoryDto resortRoomCategory;
+    private PriceTypeDto priceType;
+    private PriceUnitDto priceUnit;
+    private CurrencyDto currency;
+    private String name;
+    private String description;
+    private BigDecimal price;
     private LocalDate validFrom;
     private LocalDate validTo;
-    private Boolean monday;
-    private Boolean tuesday;
-    private Boolean wednesday;
-    private Boolean thursday;
-    private Boolean friday;
-    private Boolean saturday;
-    private Boolean sunday;
+    private Integer priority;
+    private List<Long> dayOfWeekIds;
+    private BigDecimal discountAmount;
+    private BigDecimal discountPercentage;
 }

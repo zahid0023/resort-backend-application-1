@@ -11,11 +11,15 @@ import com.example.resortbackendapplication1.facility.dto.response.facilities.Fa
 import com.example.resortbackendapplication1.facility.model.dto.FacilityDto;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupEntity;
+import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeAssignmentEntity;
+import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeEntity;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.facility.model.enums.FacilitySearchField;
 import com.example.resortbackendapplication1.facility.model.enums.FacilitySortField;
 import com.example.resortbackendapplication1.facility.model.mapper.FacilityMapper;
+import com.example.resortbackendapplication1.facility.model.mapper.FacilityScopeAssignmentMapper;
 import com.example.resortbackendapplication1.facility.repository.FacilityRepository;
+import com.example.resortbackendapplication1.facility.repository.FacilityScopeAssignmentRepository;
 import com.example.resortbackendapplication1.facility.service.FacilityService;
 import com.example.resortbackendapplication1.facility.specification.FacilitySpecification;
 import jakarta.persistence.EntityNotFoundException;
@@ -37,18 +41,28 @@ public class FacilityServiceImpl implements FacilityService {
     private static final Set<String> ALLOWED_SEARCH_FIELDS = FacilitySearchField.allowedFields();
 
     private final FacilityRepository facilityRepository;
+    private final FacilityScopeAssignmentRepository scopeAssignmentRepository;
 
-    public FacilityServiceImpl(FacilityRepository facilityRepository) {
+    public FacilityServiceImpl(FacilityRepository facilityRepository,
+                                FacilityScopeAssignmentRepository scopeAssignmentRepository) {
         this.facilityRepository = facilityRepository;
+        this.scopeAssignmentRepository = scopeAssignmentRepository;
     }
 
     @Transactional
     @Override
     public SuccessResponse create(CreateFacilityRequest request,
                                   Map<Long, LocaleEntity> localeEntityMap,
-                                  FacilityGroupEntity facilityGroupEntity) {
+                                  FacilityGroupEntity facilityGroupEntity,
+                                  List<FacilityScopeEntity> scopeEntities) {
         FacilityEntity entity = FacilityMapper.create(request, facilityGroupEntity, localeEntityMap);
         facilityRepository.save(entity);
+
+        List<FacilityScopeAssignmentEntity> assignments = scopeEntities.stream()
+                .map(scope -> FacilityScopeAssignmentMapper.create(entity, scope))
+                .toList();
+        scopeAssignmentRepository.saveAll(assignments);
+
         log.info("Facility created with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
     }

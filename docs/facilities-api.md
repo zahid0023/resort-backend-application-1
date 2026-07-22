@@ -2,26 +2,29 @@
 
 Base URL: `/api/v1/facilities`
 
-Facilities are individual amenities or services that belong to a facility group (e.g., "Outdoor Pool" under "
-Recreation",
+Facilities are individual amenities or services that belong to a facility group (e.g., "Outdoor Pool" under "Recreation",
 "Sauna" under "Wellness"). Each facility carries an optional icon using the same icon system as facility groups. Display
-names and descriptions are locale-specific and are embedded in every response via the `locales` array. All records
-support soft-delete — deleted records are hidden from all responses.
+names and descriptions are locale-specific and are embedded in every response via the `locales` array. Each facility
+must be assigned at least one facility scope at creation time; scopes can also be managed individually after creation.
+All records support soft-delete — deleted records are hidden from all responses.
 
 ---
 
 ## Endpoints
 
-| Method | Path                                            | Description              |
-|--------|-------------------------------------------------|--------------------------|
-| POST   | `/api/v1/facilities`                            | Create a facility        |
-| GET    | `/api/v1/facilities`                            | List / search facilities |
-| GET    | `/api/v1/facilities/{id}`                       | Get a facility           |
-| PUT    | `/api/v1/facilities/{id}`                       | Update a facility        |
-| DELETE | `/api/v1/facilities/{id}`                       | Delete a facility        |
-| POST   | `/api/v1/facilities/{facility-id}/locales`      | Add a locale             |
-| PUT    | `/api/v1/facilities/{facility-id}/locales/{id}` | Update a locale          |
-| DELETE | `/api/v1/facilities/{facility-id}/locales/{id}` | Delete a locale          |
+| Method | Path                                                                          | Description                        |
+|--------|-------------------------------------------------------------------------------|------------------------------------|
+| POST   | `/api/v1/facilities`                                                          | Create a facility                  |
+| GET    | `/api/v1/facilities`                                                          | List / search facilities           |
+| GET    | `/api/v1/facilities/{id}`                                                     | Get a facility                     |
+| PUT    | `/api/v1/facilities/{id}`                                                     | Update a facility                  |
+| DELETE | `/api/v1/facilities/{id}`                                                     | Delete a facility                  |
+| POST   | `/api/v1/facilities/{facility-id}/locales`                                    | Add a locale                       |
+| PUT    | `/api/v1/facilities/{facility-id}/locales/{id}`                               | Update a locale                    |
+| DELETE | `/api/v1/facilities/{facility-id}/locales/{id}`                               | Delete a locale                    |
+| POST   | `/api/v1/facilities/{facility-id}/scope-assignments`                          | Assign a scope to a facility       |
+| DELETE | `/api/v1/facilities/{facility-id}/scope-assignments/{facility-scope-id}`      | Unassign a scope                   |
+| GET    | `/api/v1/facilities/{facility-id}/scope-assignments`                          | List scope assignments             |
 
 ---
 
@@ -39,6 +42,7 @@ support soft-delete — deleted records are hidden from all responses.
 | `icon_value`        | String  | No       | max 2000 chars      | Icon name or URL; omitted from response if not set                            |
 | `icon_meta`         | Object  | No       | any key-value pairs | Optional rendering hints (size, color, etc.); omitted if not set              |
 | `locales`           | Array   | No       | —                   | Locale entries (included in all responses)                                    |
+| `scope_assignments` | Array   | —        | read-only           | Active scope assignments (included in `getById` only)                         |
 
 ### Facility Locale
 
@@ -49,6 +53,15 @@ support soft-delete — deleted records are hidden from all responses.
 | `name`        | String  | Yes      | max 255 chars | Display name of the facility in this locale      |
 | `description` | String  | No       | unlimited     | Full description in this locale; omitted if null |
 | `sort_order`  | Integer | Yes      | —             | Display order for this locale entry              |
+
+### Facility Scope Assignment
+
+| Field               | Type    | Required | Constraints | Description                                  |
+|---------------------|---------|----------|-------------|----------------------------------------------|
+| `facility_scope_id` | Long    | —        | read-only   | ID of the assigned facility scope            |
+| `code`              | String  | —        | read-only   | Scope code (e.g., `RESORT`, `ROOM_CATEGORY`) |
+| `sort_order`        | Integer | —        | read-only   | Sort order of the scope                      |
+| `locales`           | Array   | —        | read-only   | Locale translations of the scope             |
 
 ### `icon_type` values
 
@@ -65,8 +78,8 @@ support soft-delete — deleted records are hidden from all responses.
 
 `POST /api/v1/facilities`
 
-Creates a facility along with its locale-specific translations in one request. All provided `locale_id` values must
-reference existing, active locales.
+Creates a facility along with its locale-specific translations and scope assignments in one request. At least one
+`scope_id` is required. All provided `locale_id` and `scope_id` values must reference existing, active records.
 
 ### Request Body
 
@@ -82,6 +95,7 @@ reference existing, active locales.
     "color": "#3b82f6",
     "stroke_width": 1.5
   },
+  "scope_ids": [1, 2],
   "locales": [
     {
       "locale_id": 1,
@@ -109,6 +123,7 @@ reference existing, active locales.
 | `icon_type`         | Enum    | Yes      | One of: `LUCIDE`, `IMAGE`, `SVG`, `EXTERNAL`   |
 | `icon_value`        | String  | No       | Max 2000 chars                                 |
 | `icon_meta`         | Object  | No       | Any JSON object                                |
+| `scope_ids`         | Array   | Yes      | Not empty; each ID must exist                  |
 | `locales`           | Array   | No       | See locale fields below                        |
 
 **Locale fields (`locales[]`):**
@@ -135,7 +150,7 @@ reference existing, active locales.
 
 `GET /api/v1/facilities/{id}`
 
-Returns a single facility with all its locale translations.
+Returns a single facility with all its locale translations and active scope assignments.
 
 ### Path Parameters
 
@@ -166,13 +181,34 @@ Returns a single facility with all its locale translations.
         "name": "Outdoor Pool",
         "description": "A large outdoor swimming pool with sun loungers and a poolside bar.",
         "sort_order": 1
+      }
+    ],
+    "scope_assignments": [
+      {
+        "facility_scope_id": 1,
+        "code": "RESORT",
+        "sort_order": 1,
+        "locales": [
+          {
+            "id": 1,
+            "locale_id": 1,
+            "name": "Resort",
+            "sort_order": 1
+          }
+        ]
       },
       {
-        "id": 2,
-        "locale_id": 2,
-        "name": "আউটডোর পুল",
-        "description": "সানলাউঞ্জার ও পুলসাইড বার সহ একটি বড় আউটডোর সুইমিং পুল।",
-        "sort_order": 2
+        "facility_scope_id": 2,
+        "code": "ROOM_CATEGORY",
+        "sort_order": 2,
+        "locales": [
+          {
+            "id": 2,
+            "locale_id": 1,
+            "name": "Room Category",
+            "sort_order": 2
+          }
+        ]
       }
     ]
   }
@@ -185,11 +221,9 @@ Returns a single facility with all its locale translations.
 
 `GET /api/v1/facilities`
 
-Returns a paginated, filterable list of active (non-deleted) facilities including their locales. All filter parameters
-are optional; omitting them returns all facilities. Multiple filters are combined with AND. String filters perform a
-case-insensitive partial match. To scope the list to a specific facility group, use the `facilityGroupId` query
-parameter or the dedicated sub-resource endpoint
-`GET /api/v1/facility-groups/{facility-group-id}/facilities` (see Facility Groups API).
+Returns a paginated, filterable list of active (non-deleted) facilities including their locales. Scope assignments are
+not included in list responses — use `GET /api/v1/facilities/{id}` to retrieve them. All filter parameters are
+optional; omitting them returns all facilities. String filters perform a case-insensitive partial match.
 
 ### Query Parameters
 
@@ -262,7 +296,8 @@ parameter or the dedicated sub-resource endpoint
 `PUT /api/v1/facilities/{id}`
 
 Updates `sort_order`, `icon_type`, `icon_value`, and `icon_meta`. The `code` and `facility_group_id` fields are set at
-creation time and cannot be changed. Locale translations are managed via the facility locale endpoints.
+creation time and cannot be changed. Locale translations are managed via the locale endpoints. Scope assignments are
+managed via the scope-assignment endpoints.
 
 ### Path Parameters
 
@@ -445,6 +480,129 @@ Soft-deletes the locale entry. The record is not removed from the database but w
 
 ---
 
+## Facility Scope Assignments
+
+Scope assignment endpoints manage which facility scopes (e.g., `RESORT`, `ROOM_CATEGORY`, `ROOM`) a facility applies
+to. The `{facility-id}` path parameter must reference an existing, active facility.
+
+Assigning a scope that was previously unassigned (soft-deleted) reactivates the existing assignment record.
+
+---
+
+### Assign Scope
+
+`POST /api/v1/facilities/{facility-id}/scope-assignments`
+
+Assigns a facility scope to the facility.
+
+#### Path Parameters
+
+| Parameter     | Type | Description        |
+|---------------|------|--------------------|
+| `facility-id` | Long | ID of the facility |
+
+#### Request Body
+
+```json
+{
+  "facility_scope_id": 3
+}
+```
+
+#### Request Fields
+
+| Field               | Type | Required | Validation           |
+|---------------------|------|----------|----------------------|
+| `facility_scope_id` | Long | Yes      | Not null, must exist |
+
+#### Response `201 Created`
+
+Returns the `facility_id` as `id`.
+
+```json
+{
+  "success": true,
+  "id": 1
+}
+```
+
+---
+
+### Unassign Scope
+
+`DELETE /api/v1/facilities/{facility-id}/scope-assignments/{facility-scope-id}`
+
+Soft-removes the scope assignment. The record is not deleted from the database but will no longer appear in any
+response.
+
+#### Path Parameters
+
+| Parameter           | Type | Description              |
+|---------------------|------|--------------------------|
+| `facility-id`       | Long | ID of the facility       |
+| `facility-scope-id` | Long | ID of the facility scope |
+
+#### Response `200 OK`
+
+Returns the `facility_id` as `id`.
+
+```json
+{
+  "success": true,
+  "id": 1
+}
+```
+
+---
+
+### List Scope Assignments
+
+`GET /api/v1/facilities/{facility-id}/scope-assignments`
+
+Returns all active scope assignments for the given facility, including each scope's code, sort order, and locale
+translations.
+
+#### Path Parameters
+
+| Parameter     | Type | Description        |
+|---------------|------|--------------------|
+| `facility-id` | Long | ID of the facility |
+
+#### Response `200 OK`
+
+```json
+[
+  {
+    "facility_scope_id": 1,
+    "code": "RESORT",
+    "sort_order": 1,
+    "locales": [
+      {
+        "id": 1,
+        "locale_id": 1,
+        "name": "Resort",
+        "sort_order": 1
+      }
+    ]
+  },
+  {
+    "facility_scope_id": 2,
+    "code": "ROOM_CATEGORY",
+    "sort_order": 2,
+    "locales": [
+      {
+        "id": 2,
+        "locale_id": 1,
+        "name": "Room Category",
+        "sort_order": 2
+      }
+    ]
+  }
+]
+```
+
+---
+
 ## Error Responses
 
 All errors follow a common structure:
@@ -458,10 +616,11 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                                   |
-|-------------|----------------------------|---------------------------------------------------------|
-| 400         | `VALIDATION_ERROR`         | Missing required fields or constraint violations        |
-| 400         | `INVALID_ARGUMENT`         | Invalid sort field or malformed request                 |
-| 404         | `ENTITY_NOT_FOUND`         | Facility, facility group, or locale not found / deleted |
-| 409         | `DATA_INTEGRITY_VIOLATION` | Constraint violation (e.g. duplicate code)              |
-| 500         | `INTERNAL_SERVER_ERROR`    | Unexpected server error                                 |
+| HTTP Status | Error Code                 | Cause                                                        |
+|-------------|----------------------------|--------------------------------------------------------------|
+| 400         | `VALIDATION_ERROR`         | Missing required fields or constraint violations             |
+| 400         | `INVALID_ARGUMENT`         | Invalid sort field or malformed request                      |
+| 404         | `ENTITY_NOT_FOUND`         | Facility, facility group, scope, or assignment not found     |
+| 409         | `CONFLICT`                 | Scope is already actively assigned to this facility          |
+| 409         | `DATA_INTEGRITY_VIOLATION` | DB constraint violation (e.g. duplicate code)                |
+| 500         | `INTERNAL_SERVER_ERROR`    | Unexpected server error                                      |

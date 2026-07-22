@@ -1,17 +1,22 @@
 package com.example.resortbackendapplication1.resortroomcategoryprice.model.entity;
 
 import com.example.resortbackendapplication1.commons.model.entity.AuditableEntity;
+import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
 import com.example.resortbackendapplication1.price.model.entity.PriceTypeEntity;
 import com.example.resortbackendapplication1.price.model.entity.PriceUnitEntity;
 import com.example.resortbackendapplication1.resortroomcategory.model.entity.ResortRoomCategoryEntity;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -35,13 +40,21 @@ public class ResortRoomCategoryPriceEntity extends AuditableEntity {
     private PriceUnitEntity priceUnitEntity;
 
     @NotNull
-    @Column(name = "amount", nullable = false, precision = 12, scale = 2)
-    private BigDecimal amount;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "currency_id", nullable = false)
+    private CurrencyEntity currencyEntity;
+
+    @NotBlank
+    @Size(max = 200)
+    @Column(name = "name", nullable = false, length = 200)
+    private String name;
+
+    @Column(name = "description", columnDefinition = "text")
+    private String description;
 
     @NotNull
-    @ColumnDefault("0")
-    @Column(name = "priority", nullable = false)
-    private Integer priority = 0;
+    @Column(name = "price", nullable = false, precision = 12, scale = 2)
+    private BigDecimal price;
 
     @Column(name = "valid_from")
     private LocalDate validFrom;
@@ -50,37 +63,10 @@ public class ResortRoomCategoryPriceEntity extends AuditableEntity {
     private LocalDate validTo;
 
     @NotNull
-    @ColumnDefault("false")
-    @Column(name = "monday", nullable = false)
-    private Boolean monday = false;
+    @ColumnDefault("0")
+    @Column(name = "priority", nullable = false)
+    private Integer priority = 0;
 
-    @NotNull
-    @ColumnDefault("false")
-    @Column(name = "tuesday", nullable = false)
-    private Boolean tuesday = false;
-
-    @NotNull
-    @ColumnDefault("false")
-    @Column(name = "wednesday", nullable = false)
-    private Boolean wednesday = false;
-
-    @NotNull
-    @ColumnDefault("false")
-    @Column(name = "thursday", nullable = false)
-    private Boolean thursday = false;
-
-    @NotNull
-    @ColumnDefault("false")
-    @Column(name = "friday", nullable = false)
-    private Boolean friday = false;
-
-    @NotNull
-    @ColumnDefault("false")
-    @Column(name = "saturday", nullable = false)
-    private Boolean saturday = false;
-
-    @NotNull
-    @ColumnDefault("false")
-    @Column(name = "sunday", nullable = false)
-    private Boolean sunday = false;
+    @OneToMany(mappedBy = "resortRoomCategoryPriceEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ResortRoomCategoryPriceDayEntity> days = new ArrayList<>();
 }
