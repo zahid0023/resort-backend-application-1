@@ -14,6 +14,8 @@ public interface ResortFacilityRepository extends JpaRepository<@NonNull ResortF
 
     Optional<ResortFacilityEntity> findByIdAndIsActiveAndIsDeleted(Long id, Boolean isActive, Boolean isDeleted);
 
+    Optional<ResortFacilityEntity> findByIdAndResortEntity_IdAndIsActiveAndIsDeleted(Long id, Long resortId, Boolean isActive, Boolean isDeleted);
+
     List<ResortFacilityEntity> findAllByIdInAndIsActiveAndIsDeleted(Set<Long> ids, Boolean isActive, Boolean isDeleted);
 
     List<ResortFacilityEntity> findAllByResortEntity_IdAndIsActiveAndIsDeleted(Long resortId, Boolean isActive, Boolean isDeleted);

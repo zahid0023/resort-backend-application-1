@@ -15,6 +15,7 @@ import com.example.resortbackendapplication1.facility.model.entity.FacilityScope
 import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeEntity;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.facility.model.enums.FacilitySearchField;
+import com.example.resortbackendapplication1.facility.model.enums.FacilityScopeCode;
 import com.example.resortbackendapplication1.facility.model.enums.FacilitySortField;
 import com.example.resortbackendapplication1.facility.model.mapper.FacilityMapper;
 import com.example.resortbackendapplication1.facility.model.mapper.FacilityScopeAssignmentMapper;
@@ -81,9 +82,9 @@ public class FacilityServiceImpl implements FacilityService {
     }
 
     @Override
-    public PaginatedResponse<FacilityDto> getAll(FacilityFilterRequest request, Long facilityGroupId) {
+    public PaginatedResponse<FacilityDto> getAll(FacilityFilterRequest request, Long facilityGroupId, FacilityScopeCode scopeCode) {
         Page<@NonNull FacilityDto> page = facilityRepository
-                .findAll(FacilitySpecification.filter(request, facilityGroupId), request.toPageable(ALLOWED_SORT_FIELDS))
+                .findAll(FacilitySpecification.filter(request, facilityGroupId, scopeCode), request.toPageable(ALLOWED_SORT_FIELDS))
                 .map(FacilityMapper::toDto);
         return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
     }

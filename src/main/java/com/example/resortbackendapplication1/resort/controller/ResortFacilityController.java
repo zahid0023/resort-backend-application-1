@@ -1,12 +1,16 @@
 package com.example.resortbackendapplication1.resort.controller;
 
 import com.example.resortbackendapplication1.commons.utils.LocaleUtils;
+import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
+import com.example.resortbackendapplication1.currency.service.CurrencyService;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
 import com.example.resortbackendapplication1.facility.service.FacilityService;
 import com.example.resortbackendapplication1.facilitypricetype.model.entity.FacilityPriceTypeEntity;
 import com.example.resortbackendapplication1.facilitypricetype.service.FacilityPriceTypeService;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.locale.service.LocaleService;
+import com.example.resortbackendapplication1.price.model.entity.PriceUnitEntity;
+import com.example.resortbackendapplication1.price.service.PriceUnitService;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.CreateResortFacilityRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.ResortFacilityFilterRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.SetResortFacilityHighlightsRequest;
@@ -35,6 +39,8 @@ public class ResortFacilityController {
     private final ResortFacilityService resortFacilityService;
     private final FacilityService facilityService;
     private final FacilityPriceTypeService facilityPriceTypeService;
+    private final PriceUnitService priceUnitService;
+    private final CurrencyService currencyService;
     private final LocaleService localeService;
 
     public ResortFacilityController(ResortService resortService,
@@ -42,12 +48,16 @@ public class ResortFacilityController {
                                     ResortFacilityService resortFacilityService,
                                     FacilityService facilityService,
                                     FacilityPriceTypeService facilityPriceTypeService,
+                                    PriceUnitService priceUnitService,
+                                    CurrencyService currencyService,
                                     LocaleService localeService) {
         this.resortService = resortService;
         this.resortFacilityGroupService = resortFacilityGroupService;
         this.resortFacilityService = resortFacilityService;
         this.facilityService = facilityService;
         this.facilityPriceTypeService = facilityPriceTypeService;
+        this.priceUnitService = priceUnitService;
+        this.currencyService = currencyService;
         this.localeService = localeService;
     }
 
@@ -56,24 +66,30 @@ public class ResortFacilityController {
             @PathVariable("resort-id") Long resortId,
             @Valid @RequestBody CreateResortFacilityRequest request) {
         ResortEntity resortEntity = resortService.getEntityById(resortId);
-        ResortFacilityGroupEntity resortFacilityGroupEntity = resortFacilityGroupService.getEntityById(request.getResortFacilityGroupId());
+        ResortFacilityGroupEntity resortFacilityGroupEntity = resortFacilityGroupService.getEntityById(request.getResortFacilityGroupId(), resortId);
         FacilityEntity facilityEntity = request.getFacilityId() != null
                 ? facilityService.getEntityById(request.getFacilityId())
                 : null;
         FacilityPriceTypeEntity facilityPriceTypeEntity = request.getFacilityPriceTypeId() != null
                 ? facilityPriceTypeService.getEntityById(request.getFacilityPriceTypeId())
                 : null;
+        PriceUnitEntity priceUnitEntity = request.getResortFacilityPrice() != null
+                ? priceUnitService.getEntityById(request.getResortFacilityPrice().getPriceUnitId())
+                : null;
+        CurrencyEntity currencyEntity = request.getResortFacilityPrice() != null
+                ? currencyService.getEntityById(request.getResortFacilityPrice().getCurrencyId())
+                : null;
         Map<Long, LocaleEntity> localeEntityMap = LocaleUtils.resolveLocaleMap(
                 request.getLocales(), CreateResortFacilityLocaleRequest::getLocaleId, localeService);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(resortFacilityService.create(request, resortEntity, resortFacilityGroupEntity, facilityEntity, facilityPriceTypeEntity, localeEntityMap));
+                .body(resortFacilityService.create(request, resortEntity, resortFacilityGroupEntity, facilityEntity, facilityPriceTypeEntity, priceUnitEntity, currencyEntity, localeEntityMap));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(
             @PathVariable("resort-id") Long resortId,
             @PathVariable Long id) {
-        return ResponseEntity.ok(resortFacilityService.getById(id));
+        return ResponseEntity.ok(resortFacilityService.getById(id, resortId));
     }
 
     @GetMapping

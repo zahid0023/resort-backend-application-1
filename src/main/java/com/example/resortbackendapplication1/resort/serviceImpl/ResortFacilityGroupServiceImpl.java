@@ -61,14 +61,14 @@ public class ResortFacilityGroupServiceImpl implements ResortFacilityGroupServic
     }
 
     @Override
-    public ResortFacilityGroupEntity getEntityById(Long id) {
-        return resortFacilityGroupRepository.findByIdAndIsActiveAndIsDeleted(id, true, false)
+    public ResortFacilityGroupEntity getEntityById(Long id, Long resortId) {
+        return resortFacilityGroupRepository.findByIdAndResortEntity_IdAndIsActiveAndIsDeleted(id, resortId, true, false)
                 .orElseThrow(() -> new EntityNotFoundException("ResortFacilityGroup not found with id: " + id));
     }
 
     @Override
-    public ResortFacilityGroupResponse getById(Long id) {
-        ResortFacilityGroupEntity entity = getEntityById(id);
+    public ResortFacilityGroupResponse getById(Long id, Long resortId) {
+        ResortFacilityGroupEntity entity = getEntityById(id, resortId);
         return new ResortFacilityGroupResponse(ResortFacilityGroupMapper.toDto(entity));
     }
 
@@ -99,8 +99,8 @@ public class ResortFacilityGroupServiceImpl implements ResortFacilityGroupServic
 
     @Transactional
     @Override
-    public SuccessResponse delete(Long id) {
-        ResortFacilityGroupEntity entity = getEntityById(id);
+    public SuccessResponse delete(Long id, Long resortId) {
+        ResortFacilityGroupEntity entity = getEntityById(id, resortId);
         entity.getResortFacilityEntities().stream()
                 .filter(f -> Boolean.TRUE.equals(f.getIsActive()) && Boolean.FALSE.equals(f.getIsDeleted()))
                 .forEach(f -> {

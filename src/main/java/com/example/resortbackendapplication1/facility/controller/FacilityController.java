@@ -8,6 +8,7 @@ import com.example.resortbackendapplication1.facility.dto.request.facilities.fac
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeEntity;
+import com.example.resortbackendapplication1.facility.model.enums.FacilityScopeCode;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.facility.service.FacilityGroupService;
 import com.example.resortbackendapplication1.facility.service.FacilityService;
@@ -59,8 +60,9 @@ public class FacilityController {
 
     @GetMapping
     public ResponseEntity<?> getAll(@Valid @ParameterObject FacilityFilterRequest request,
-                                    @RequestParam(required = false) Long facilityGroupId) {
-        return ResponseEntity.ok(facilityService.getAll(request, facilityGroupId));
+                                    @RequestParam(name = "facility-group-id", required = false) Long facilityGroupId,
+                                    @RequestParam("scope-code") FacilityScopeCode scopeCode) {
+        return ResponseEntity.ok(facilityService.getAll(request, facilityGroupId, scopeCode));
     }
 
     @PutMapping("/{id}")

@@ -2,7 +2,8 @@
 
 Base URL: `/api/v1/facilities`
 
-Facilities are individual amenities or services that belong to a facility group (e.g., "Outdoor Pool" under "Recreation",
+Facilities are individual amenities or services that belong to a facility group (e.g., "Outdoor Pool" under "
+Recreation",
 "Sauna" under "Wellness"). Each facility carries an optional icon using the same icon system as facility groups. Display
 names and descriptions are locale-specific and are embedded in every response via the `locales` array. Each facility
 must be assigned at least one facility scope at creation time; scopes can also be managed individually after creation.
@@ -12,19 +13,19 @@ All records support soft-delete — deleted records are hidden from all response
 
 ## Endpoints
 
-| Method | Path                                                                          | Description                        |
-|--------|-------------------------------------------------------------------------------|------------------------------------|
-| POST   | `/api/v1/facilities`                                                          | Create a facility                  |
-| GET    | `/api/v1/facilities`                                                          | List / search facilities           |
-| GET    | `/api/v1/facilities/{id}`                                                     | Get a facility                     |
-| PUT    | `/api/v1/facilities/{id}`                                                     | Update a facility                  |
-| DELETE | `/api/v1/facilities/{id}`                                                     | Delete a facility                  |
-| POST   | `/api/v1/facilities/{facility-id}/locales`                                    | Add a locale                       |
-| PUT    | `/api/v1/facilities/{facility-id}/locales/{id}`                               | Update a locale                    |
-| DELETE | `/api/v1/facilities/{facility-id}/locales/{id}`                               | Delete a locale                    |
-| POST   | `/api/v1/facilities/{facility-id}/scope-assignments`                          | Assign a scope to a facility       |
-| DELETE | `/api/v1/facilities/{facility-id}/scope-assignments/{facility-scope-id}`      | Unassign a scope                   |
-| GET    | `/api/v1/facilities/{facility-id}/scope-assignments`                          | List scope assignments             |
+| Method | Path                                                                     | Description                  |
+|--------|--------------------------------------------------------------------------|------------------------------|
+| POST   | `/api/v1/facilities`                                                     | Create a facility            |
+| GET    | `/api/v1/facilities`                                                     | List / search facilities     |
+| GET    | `/api/v1/facilities/{id}`                                                | Get a facility               |
+| PUT    | `/api/v1/facilities/{id}`                                                | Update a facility            |
+| DELETE | `/api/v1/facilities/{id}`                                                | Delete a facility            |
+| POST   | `/api/v1/facilities/{facility-id}/locales`                               | Add a locale                 |
+| PUT    | `/api/v1/facilities/{facility-id}/locales/{id}`                          | Update a locale              |
+| DELETE | `/api/v1/facilities/{facility-id}/locales/{id}`                          | Delete a locale              |
+| POST   | `/api/v1/facilities/{facility-id}/scope-assignments`                     | Assign a scope to a facility |
+| DELETE | `/api/v1/facilities/{facility-id}/scope-assignments/{facility-scope-id}` | Unassign a scope             |
+| GET    | `/api/v1/facilities/{facility-id}/scope-assignments`                     | List scope assignments       |
 
 ---
 
@@ -95,7 +96,10 @@ Creates a facility along with its locale-specific translations and scope assignm
     "color": "#3b82f6",
     "stroke_width": 1.5
   },
-  "scope_ids": [1, 2],
+  "scope_ids": [
+    1,
+    2
+  ],
   "locales": [
     {
       "locale_id": 1,
@@ -227,14 +231,15 @@ optional; omitting them returns all facilities. String filters perform a case-in
 
 ### Query Parameters
 
-| Parameter         | Type   | Default | Constraints                            | Description                                |
-|-------------------|--------|---------|----------------------------------------|--------------------------------------------|
-| `code`            | String | —       | —                                      | Filter by code (partial, case-insensitive) |
-| `facilityGroupId` | Long   | —       | —                                      | Filter by facility group (exact match)     |
-| `page`            | int    | `0`     | >= 0                                   | Zero-based page index                      |
-| `size`            | int    | `10`    | 1 – 50                                 | Number of items per page                   |
-| `sort_by`         | String | `id`    | `id`, `code`, `sortOrder`, `createdAt` | Field to sort by                           |
-| `sort_dir`        | String | `ASC`   | `ASC`, `DESC`                          | Sort direction                             |
+| Parameter           | Type   | Default | Constraints                                 | Description                                 |
+|---------------------|--------|---------|---------------------------------------------|---------------------------------------------|
+| `scope-code`        | String | —       | required; `RESORT`, `ROOM_CATEGORY`, `ROOM` | Filter to facilities assigned to this scope |
+| `code`              | String | —       | —                                           | Filter by code (partial, case-insensitive)  |
+| `facility-group-id` | Long   | —       | —                                           | Filter by facility group (exact match)      |
+| `page`              | int    | `0`     | >= 0                                        | Zero-based page index                       |
+| `size`              | int    | `10`    | 1 – 50                                      | Number of items per page                    |
+| `sort_by`           | String | `id`    | `id`, `code`, `sortOrder`, `createdAt`      | Field to sort by                            |
+| `sort_dir`          | String | `ASC`   | `ASC`, `DESC`                               | Sort direction                              |
 
 ### Response `200 OK`
 
@@ -616,11 +621,11 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                                        |
-|-------------|----------------------------|--------------------------------------------------------------|
-| 400         | `VALIDATION_ERROR`         | Missing required fields or constraint violations             |
-| 400         | `INVALID_ARGUMENT`         | Invalid sort field or malformed request                      |
-| 404         | `ENTITY_NOT_FOUND`         | Facility, facility group, scope, or assignment not found     |
-| 409         | `CONFLICT`                 | Scope is already actively assigned to this facility          |
-| 409         | `DATA_INTEGRITY_VIOLATION` | DB constraint violation (e.g. duplicate code)                |
-| 500         | `INTERNAL_SERVER_ERROR`    | Unexpected server error                                      |
+| HTTP Status | Error Code                 | Cause                                                    |
+|-------------|----------------------------|----------------------------------------------------------|
+| 400         | `VALIDATION_ERROR`         | Missing required fields or constraint violations         |
+| 400         | `INVALID_ARGUMENT`         | Invalid sort field or malformed request                  |
+| 404         | `ENTITY_NOT_FOUND`         | Facility, facility group, scope, or assignment not found |
+| 409         | `CONFLICT`                 | Scope is already actively assigned to this facility      |
+| 409         | `DATA_INTEGRITY_VIOLATION` | DB constraint violation (e.g. duplicate code)            |
+| 500         | `INTERNAL_SERVER_ERROR`    | Unexpected server error                                  |

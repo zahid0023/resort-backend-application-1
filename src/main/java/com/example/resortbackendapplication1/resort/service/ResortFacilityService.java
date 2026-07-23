@@ -2,9 +2,11 @@ package com.example.resortbackendapplication1.resort.service;
 
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
+import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
 import com.example.resortbackendapplication1.facilitypricetype.model.entity.FacilityPriceTypeEntity;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.price.model.entity.PriceUnitEntity;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.CreateResortFacilityRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.ResortFacilityFilterRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.SetResortFacilityHighlightsRequest;
@@ -26,11 +28,13 @@ public interface ResortFacilityService {
                            ResortFacilityGroupEntity resortFacilityGroupEntity,
                            FacilityEntity facilityEntity,
                            FacilityPriceTypeEntity facilityPriceTypeEntity,
+                           PriceUnitEntity priceUnitEntity,
+                           CurrencyEntity currencyEntity,
                            Map<Long, LocaleEntity> localeEntityMap);
 
     ResortFacilityEntity getEntityById(Long id);
 
-    ResortFacilityResponse getById(Long id);
+    ResortFacilityResponse getById(Long id, Long resortId);
 
     PaginatedResponse<ResortFacilityDto> getAll(ResortFacilityFilterRequest request, Long resortFacilityGroupId);
 

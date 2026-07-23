@@ -58,7 +58,7 @@ public class ResortFacilityGroupController {
     public ResponseEntity<?> getById(
             @PathVariable("resort-id") Long resortId,
             @PathVariable Long id) {
-        return ResponseEntity.ok(resortFacilityGroupService.getById(id));
+        return ResponseEntity.ok(resortFacilityGroupService.getById(id, resortId));
     }
 
     @GetMapping
@@ -73,7 +73,7 @@ public class ResortFacilityGroupController {
             @PathVariable("resort-id") Long resortId,
             @PathVariable Long id,
             @Valid @RequestBody UpdateResortFacilityGroupRequest request) {
-        ResortFacilityGroupEntity entity = resortFacilityGroupService.getEntityById(id);
+        ResortFacilityGroupEntity entity = resortFacilityGroupService.getEntityById(id, resortId);
         FacilityGroupEntity facilityGroupEntity = request.getFacilityGroupId() != null
                 ? facilityGroupService.getEntityById(request.getFacilityGroupId())
                 : null;
@@ -84,6 +84,6 @@ public class ResortFacilityGroupController {
     public ResponseEntity<?> delete(
             @PathVariable("resort-id") Long resortId,
             @PathVariable Long id) {
-        return ResponseEntity.ok(resortFacilityGroupService.delete(id));
+        return ResponseEntity.ok(resortFacilityGroupService.delete(id, resortId));
     }
 }

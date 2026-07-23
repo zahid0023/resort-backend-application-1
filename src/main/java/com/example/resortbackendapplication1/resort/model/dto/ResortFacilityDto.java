@@ -1,6 +1,9 @@
 package com.example.resortbackendapplication1.resort.model.dto;
 
 import com.example.resortbackendapplication1.commons.model.enums.IconType;
+import com.example.resortbackendapplication1.facility.model.dto.FacilityDto;
+import com.example.resortbackendapplication1.facilitypricetype.model.dto.FacilityPriceTypeDto;
+import com.example.resortbackendapplication1.resortfacilityprice.model.dto.ResortFacilityPriceDto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,13 +24,14 @@ import java.util.Map;
 public class ResortFacilityDto {
     private Long id;
     private Long resortId;
-    private Long resortFacilityGroupId;
-    private Long facilityId;
-    private Long facilityPriceTypeId;
+    private ResortFacilityGroupDto resortFacilityGroup;
+    private FacilityDto platformFacility;
+    private FacilityPriceTypeDto facilityPriceType;
     private Integer sortOrder;
     private Boolean isHighlighted;
     private IconType iconType;
     private String iconValue;
     private Map<String, Object> iconMeta;
     private List<ResortFacilityLocaleDto> locales;
+    private List<ResortFacilityPriceDto> prices;
 }

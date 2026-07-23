@@ -151,7 +151,8 @@ translations in the same request. All provided `locale_id` values must reference
 
 `GET /api/v1/resorts/{resort-id}/facility-groups/{id}`
 
-Returns a single resort facility group with all its locale translations.
+Returns a single resort facility group with all its locale translations. Returns `404` if the group does not exist or
+does not belong to the specified resort.
 
 ### Path Parameters
 
@@ -327,7 +328,7 @@ Null-valued optional fields are omitted per item.
 `PUT /api/v1/resorts/{resort-id}/facility-groups/{id}`
 
 Updates the resort facility group's presentation fields. Locale translations are managed separately via the locale
-sub-resource endpoints.
+sub-resource endpoints. Returns `404` if the group does not exist or does not belong to the specified resort.
 
 ### Path Parameters
 
@@ -389,7 +390,8 @@ sub-resource endpoints.
 `DELETE /api/v1/resorts/{resort-id}/facility-groups/{id}`
 
 Soft-deletes the resort facility group and its locale translations. The records are not removed from the database but
-will no longer appear in any response.
+will no longer appear in any response. Returns `404` if the group does not exist or does not belong to the specified
+resort.
 
 ### Path Parameters
 
@@ -544,10 +546,10 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                                                                                                                                                                   |
-|-------------|----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 400         | `VALIDATION_ERROR`         | Missing required fields or constraint violations (e.g. `sort_order` missing, `name` blank)                                                                                              |
+| HTTP Status | Error Code                 | Cause                                                                                                                                                                                                     |
+|-------------|----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 400         | `VALIDATION_ERROR`         | Missing required fields or constraint violations (e.g. `sort_order` missing, `name` blank)                                                                                                                |
 | 400         | `INVALID_ARGUMENT`         | Invalid `sort_by` field, invalid `icon_type` enum value, malformed request, or `facility_group_id` is already assigned to this resort (message: "This facility group is already assigned to the resort.") |
-| 404         | `ENTITY_NOT_FOUND`         | Resort, facility group, resort facility group, locale, or locale translation not found                                                                                                                    |
+| 404         | `ENTITY_NOT_FOUND`         | Resort, facility group, locale, or locale translation not found; or resort facility group not found / does not belong to the specified resort                                                             |
 | 409         | `DATA_INTEGRITY_VIOLATION` | Duplicate `locale_id` for the same resort facility group                                                                                                                                                  |
-| 500         | `INTERNAL_SERVER_ERROR`    | Unexpected server error                                                                                                                                                                 |
+| 500         | `INTERNAL_SERVER_ERROR`    | Unexpected server error                                                                                                                                                                                   |

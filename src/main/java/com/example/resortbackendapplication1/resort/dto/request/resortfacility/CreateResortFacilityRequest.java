@@ -1,6 +1,8 @@
 package com.example.resortbackendapplication1.resort.dto.request.resortfacility;
 
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.resortfacilitylocale.CreateResortFacilityLocaleRequest;
+import com.example.resortbackendapplication1.resortfacilityprice.dto.request.CreateResortFacilityPriceRequest;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -16,6 +18,9 @@ public class CreateResortFacilityRequest extends ResortFacilityRequest {
 
     @NotNull
     private Long resortFacilityGroupId;
+
+    @Valid
+    private CreateResortFacilityPriceRequest resortFacilityPrice;
 
     private List<CreateResortFacilityLocaleRequest> locales;
 }

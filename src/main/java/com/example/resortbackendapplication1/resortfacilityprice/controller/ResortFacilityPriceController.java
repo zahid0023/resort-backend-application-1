@@ -32,7 +32,7 @@ public class ResortFacilityPriceController {
                                          CurrencyService currencyService) {
         this.resortFacilityPriceService = resortFacilityPriceService;
         this.resortFacilityService = resortFacilityService;
-        this.priceUnitService = priceUnitService;
+        this.priceUnitService = priceUnitService;   
         this.currencyService = currencyService;
     }
 

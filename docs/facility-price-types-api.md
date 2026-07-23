@@ -12,16 +12,16 @@ support soft-delete — deleted records are hidden from all responses.
 
 ## Endpoints
 
-| Method | Path                                                                     | Description                           |
-|--------|--------------------------------------------------------------------------|---------------------------------------|
-| POST   | `/api/v1/facility-price-types`                                           | Create a facility price type          |
-| GET    | `/api/v1/facility-price-types`                                           | List / search facility price types    |
-| GET    | `/api/v1/facility-price-types/{id}`                                      | Get a facility price type             |
-| PUT    | `/api/v1/facility-price-types/{id}`                                      | Update a facility price type          |
-| DELETE | `/api/v1/facility-price-types/{id}`                                      | Delete a facility price type          |
-| POST   | `/api/v1/facility-price-types/{facility-price-type-id}/locales`          | Add a locale translation              |
-| PUT    | `/api/v1/facility-price-types/{facility-price-type-id}/locales/{id}`     | Update a locale translation           |
-| DELETE | `/api/v1/facility-price-types/{facility-price-type-id}/locales/{id}`     | Delete a locale translation           |
+| Method | Path                                                                 | Description                        |
+|--------|----------------------------------------------------------------------|------------------------------------|
+| POST   | `/api/v1/facility-price-types`                                       | Create a facility price type       |
+| GET    | `/api/v1/facility-price-types`                                       | List / search facility price types |
+| GET    | `/api/v1/facility-price-types/{id}`                                  | Get a facility price type          |
+| PUT    | `/api/v1/facility-price-types/{id}`                                  | Update a facility price type       |
+| DELETE | `/api/v1/facility-price-types/{id}`                                  | Delete a facility price type       |
+| POST   | `/api/v1/facility-price-types/{facility-price-type-id}/locales`      | Add a locale translation           |
+| PUT    | `/api/v1/facility-price-types/{facility-price-type-id}/locales/{id}` | Update a locale translation        |
+| DELETE | `/api/v1/facility-price-types/{facility-price-type-id}/locales/{id}` | Delete a locale translation        |
 
 ---
 
@@ -29,24 +29,24 @@ support soft-delete — deleted records are hidden from all responses.
 
 ### Facility Price Type
 
-| Field        | Type    | Required | Constraints           | Description                                                              |
-|--------------|---------|----------|-----------------------|--------------------------------------------------------------------------|
-| `id`         | Long    | —        | read-only             | Auto-generated identifier                                                |
-| `code`       | String  | Yes      | max 50 chars          | Stable internal code (e.g. `FREE`, `PAID`). Not updatable after creation |
-| `sort_order` | Integer | Yes      | >= 0                  | Display order                                                            |
-| `locales`    | Array   | —        | read-only             | All active locale translations                                           |
+| Field        | Type    | Required | Constraints  | Description                                                              |
+|--------------|---------|----------|--------------|--------------------------------------------------------------------------|
+| `id`         | Long    | —        | read-only    | Auto-generated identifier                                                |
+| `code`       | String  | Yes      | max 50 chars | Stable internal code (e.g. `FREE`, `PAID`). Not updatable after creation |
+| `sort_order` | Integer | Yes      | >= 0         | Display order                                                            |
+| `locales`    | Array   | —        | read-only    | All active locale translations                                           |
 
 ### Facility Price Type Locale
 
-| Field           | Type    | Required | Constraints              | Description                                         |
-|-----------------|---------|----------|--------------------------|-----------------------------------------------------|
-| `id`            | Long    | —        | read-only                | Auto-generated identifier                           |
-| `locale_id`     | Long    | Yes      | must exist               | ID of an existing active locale; not updatable      |
-| `name`          | String  | Yes      | not blank, max 100 chars | Localized display name                              |
-| `description`   | String  | No       | —                        | Short UI description; omitted if null               |
-| `sort_order`    | Integer | Yes      | not null                 | Display order for this locale entry                 |
-| `purpose`       | String  | No       | —                        | Explains when this price type should be used        |
-| `usage_example` | String  | No       | —                        | Example scenario shown to administrators            |
+| Field           | Type    | Required | Constraints              | Description                                    |
+|-----------------|---------|----------|--------------------------|------------------------------------------------|
+| `id`            | Long    | —        | read-only                | Auto-generated identifier                      |
+| `locale_id`     | Long    | Yes      | must exist               | ID of an existing active locale; not updatable |
+| `name`          | String  | Yes      | not blank, max 100 chars | Localized display name                         |
+| `description`   | String  | No       | —                        | Short UI description; omitted if null          |
+| `sort_order`    | Integer | Yes      | not null                 | Display order for this locale entry            |
+| `purpose`       | String  | No       | —                        | Explains when this price type should be used   |
+| `usage_example` | String  | No       | —                        | Example scenario shown to administrators       |
 
 ---
 
@@ -67,10 +67,10 @@ Creates a new facility price type. Locale translations are added separately via 
 
 ### Request Fields
 
-| Field        | Type    | Required | Validation             |
-|--------------|---------|----------|------------------------|
+| Field        | Type    | Required | Validation              |
+|--------------|---------|----------|-------------------------|
 | `code`       | String  | Yes      | Not blank, max 50 chars |
-| `sort_order` | Integer | Yes      | Not null, >= 0         |
+| `sort_order` | Integer | Yes      | Not null, >= 0          |
 
 ### Response `201 Created`
 
@@ -91,9 +91,9 @@ Returns a single facility price type with all its active locale translations.
 
 ### Path Parameters
 
-| Parameter | Type | Description                    |
-|-----------|------|--------------------------------|
-| `id`      | Long | ID of the facility price type  |
+| Parameter | Type | Description                   |
+|-----------|------|-------------------------------|
+| `id`      | Long | ID of the facility price type |
 
 ### Response `200 OK`
 
@@ -125,7 +125,8 @@ Returns a single facility price type with all its active locale translations.
 `GET /api/v1/facility-price-types`
 
 Returns a paginated, filterable list of active (non-deleted) facility price types including their locale translations.
-All filter parameters are optional; omitting them returns all types. Filtering performs a case-insensitive partial match.
+All filter parameters are optional; omitting them returns all types. Filtering performs a case-insensitive partial
+match.
 
 ### Query Parameters
 
@@ -388,10 +389,10 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                                                         |
-|-------------|----------------------------|-------------------------------------------------------------------------------|
-| 400         | `VALIDATION_ERROR`         | Missing required fields or constraint violations                              |
-| 400         | `INVALID_ARGUMENT`         | Invalid sort field or malformed request                                       |
-| 404         | `ENTITY_NOT_FOUND`         | Facility price type or locale not found                                       |
-| 409         | `DATA_INTEGRITY_VIOLATION` | Duplicate `code` or duplicate locale for the same facility price type         |
-| 500         | `INTERNAL_SERVER_ERROR`    | Unexpected server error                                                       |
+| HTTP Status | Error Code                 | Cause                                                                 |
+|-------------|----------------------------|-----------------------------------------------------------------------|
+| 400         | `VALIDATION_ERROR`         | Missing required fields or constraint violations                      |
+| 400         | `INVALID_ARGUMENT`         | Invalid sort field or malformed request                               |
+| 404         | `ENTITY_NOT_FOUND`         | Facility price type or locale not found                               |
+| 409         | `DATA_INTEGRITY_VIOLATION` | Duplicate `code` or duplicate locale for the same facility price type |
+| 500         | `INTERNAL_SERVER_ERROR`    | Unexpected server error                                               |

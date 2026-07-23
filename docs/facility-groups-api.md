@@ -19,7 +19,6 @@ soft-delete — deleted records are hidden from all responses.
 | GET    | `/api/v1/facility-groups/{id}`                                                      | Get a facility group               |
 | PUT    | `/api/v1/facility-groups/{id}`                                                      | Update a facility group            |
 | DELETE | `/api/v1/facility-groups/{id}`                                                      | Delete a facility group            |
-| GET    | `/api/v1/facility-groups/{facility-group-id}/facilities`                            | List facilities by facility group  |
 | POST   | `/api/v1/facility-groups/{facility-group-id}/locales`                               | Add a locale to a facility group   |
 | PUT    | `/api/v1/facility-groups/{facility-group-id}/locales/{id}`                          | Update a facility group locale     |
 | DELETE | `/api/v1/facility-groups/{facility-group-id}/locales/{id}`                          | Delete a facility group locale     |
@@ -391,67 +390,6 @@ longer appear in any response.
 {
   "success": true,
   "id": 1
-}
-```
-
----
-
-## Get Facilities by Facility Group
-
-`GET /api/v1/facility-groups/{facility-group-id}/facilities`
-
-Returns a paginated, filterable list of active (non-deleted) facilities belonging to the specified facility group. Each
-item includes all locale translations. Facilities are not included in the facility group list or getById responses.
-
-### Path Parameters
-
-| Parameter           | Type | Description              |
-|---------------------|------|--------------------------|
-| `facility-group-id` | Long | ID of the facility group |
-
-### Query Parameters
-
-| Parameter  | Type   | Default | Constraints                            | Description                                |
-|------------|--------|---------|----------------------------------------|--------------------------------------------|
-| `code`     | String | —       | —                                      | Filter by code (partial, case-insensitive) |
-| `page`     | int    | `0`     | >= 0                                   | Zero-based page index                      |
-| `size`     | int    | `10`    | 1 – 50                                 | Number of items per page                   |
-| `sort_by`  | String | `id`    | `id`, `code`, `sortOrder`, `createdAt` | Field to sort by                           |
-| `sort_dir` | String | `ASC`   | `ASC`, `DESC`                          | Sort direction                             |
-
-### Response `200 OK`
-
-```json
-{
-  "data": [
-    {
-      "id": 1,
-      "facility_group_id": 1,
-      "code": "POOL_OUTDOOR",
-      "sort_order": 1,
-      "icon_type": "LUCIDE",
-      "icon_value": "Waves",
-      "icon_meta": {
-        "size": 24,
-        "color": "#3b82f6"
-      },
-      "locales": [
-        {
-          "id": 1,
-          "locale_id": 1,
-          "name": "Outdoor Pool",
-          "description": "A large outdoor swimming pool with sun loungers and a poolside bar.",
-          "sort_order": 1
-        }
-      ]
-    }
-  ],
-  "current_page": 0,
-  "total_pages": 1,
-  "total_elements": 1,
-  "page_size": 10,
-  "has_next": false,
-  "has_previous": false
 }
 ```
 

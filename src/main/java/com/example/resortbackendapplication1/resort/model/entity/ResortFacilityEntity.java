@@ -12,6 +12,7 @@ import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import com.example.resortbackendapplication1.resortfacilityprice.model.entity.ResortFacilityPriceEntity;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -64,4 +65,7 @@ public class ResortFacilityEntity extends AuditableEntity {
 
     @OneToMany(mappedBy = "resortFacilityEntity", cascade = CascadeType.ALL)
     private Set<ResortFacilityLocaleEntity> resortFacilityLocaleEntities = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "resortFacilityEntity", cascade = CascadeType.ALL)
+    private Set<ResortFacilityPriceEntity> resortFacilityPriceEntities = new LinkedHashSet<>();
 }

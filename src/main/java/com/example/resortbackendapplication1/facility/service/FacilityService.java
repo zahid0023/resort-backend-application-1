@@ -4,6 +4,7 @@ import com.example.resortbackendapplication1.commons.dto.response.PaginatedRespo
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.facility.dto.request.facilities.CreateFacilityRequest;
 import com.example.resortbackendapplication1.facility.dto.request.facilities.FacilityFilterRequest;
+import com.example.resortbackendapplication1.facility.model.enums.FacilityScopeCode;
 import com.example.resortbackendapplication1.facility.dto.request.facilities.UpdateFacilityRequest;
 import com.example.resortbackendapplication1.facility.dto.response.facilities.FacilityResponse;
 import com.example.resortbackendapplication1.facility.model.dto.FacilityDto;
@@ -27,7 +28,7 @@ public interface FacilityService {
 
     FacilityResponse getById(Long id);
 
-    PaginatedResponse<FacilityDto> getAll(FacilityFilterRequest request, Long facilityGroupId);
+    PaginatedResponse<FacilityDto> getAll(FacilityFilterRequest request, Long facilityGroupId, FacilityScopeCode scopeCode);
 
     SuccessResponse update(FacilityEntity entity, UpdateFacilityRequest request);
 

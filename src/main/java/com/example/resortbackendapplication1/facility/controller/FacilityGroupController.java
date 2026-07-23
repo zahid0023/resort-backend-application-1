@@ -5,13 +5,11 @@ import com.example.resortbackendapplication1.facility.dto.request.facilitygroups
 import com.example.resortbackendapplication1.facility.dto.request.facilitygroups.FacilityGroupFilterRequest;
 import com.example.resortbackendapplication1.facility.dto.request.facilitygroups.UpdateFacilityGroupRequest;
 import com.example.resortbackendapplication1.facility.dto.request.facilitygroups.facilitygrouplocale.CreateFacilityGroupLocaleRequest;
-import com.example.resortbackendapplication1.facility.dto.request.facilities.FacilityFilterRequest;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeEntity;
 import com.example.resortbackendapplication1.facility.model.enums.FacilityScopeCode;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.facility.service.FacilityGroupService;
-import com.example.resortbackendapplication1.facility.service.FacilityService;
 import com.example.resortbackendapplication1.facility.service.FacilityScopeService;
 import com.example.resortbackendapplication1.locale.service.LocaleService;
 import jakarta.validation.Valid;
@@ -29,16 +27,13 @@ import java.util.Map;
 public class FacilityGroupController {
 
     private final FacilityGroupService facilityGroupService;
-    private final FacilityService facilityService;
     private final FacilityScopeService facilityScopeService;
     private final LocaleService localeService;
 
     public FacilityGroupController(FacilityGroupService facilityGroupService,
-                                   FacilityService facilityService,
                                    FacilityScopeService facilityScopeService,
                                    LocaleService localeService) {
         this.facilityGroupService = facilityGroupService;
-        this.facilityService = facilityService;
         this.facilityScopeService = facilityScopeService;
         this.localeService = localeService;
     }
@@ -76,10 +71,4 @@ public class FacilityGroupController {
         return ResponseEntity.ok(facilityGroupService.delete(id));
     }
 
-    @GetMapping("/{facility-group-id}/facilities")
-    public ResponseEntity<?> getFacilitiesByFacilityGroup(
-            @PathVariable("facility-group-id") Long facilityGroupId,
-            @Valid @ParameterObject FacilityFilterRequest request) {
-        return ResponseEntity.ok(facilityService.getAll(request, facilityGroupId));
-    }
 }

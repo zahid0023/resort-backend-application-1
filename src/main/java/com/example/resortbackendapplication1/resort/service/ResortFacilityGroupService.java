@@ -23,9 +23,9 @@ public interface ResortFacilityGroupService {
                            FacilityGroupEntity facilityGroupEntity,
                            Map<Long, LocaleEntity> localeEntityMap);
 
-    ResortFacilityGroupEntity getEntityById(Long id);
+    ResortFacilityGroupEntity getEntityById(Long id, Long resortId);
 
-    ResortFacilityGroupResponse getById(Long id);
+    ResortFacilityGroupResponse getById(Long id, Long resortId);
 
     PaginatedResponse<ResortFacilityGroupDto> getAll(ResortFacilityGroupFilterRequest request, Long resortId);
 
@@ -33,7 +33,7 @@ public interface ResortFacilityGroupService {
                            UpdateResortFacilityGroupRequest request,
                            FacilityGroupEntity facilityGroupEntity);
 
-    SuccessResponse delete(Long id);
+    SuccessResponse delete(Long id, Long resortId);
 
     List<ResortFacilityGroupEntity> getAll(Set<Long> ids);
 }

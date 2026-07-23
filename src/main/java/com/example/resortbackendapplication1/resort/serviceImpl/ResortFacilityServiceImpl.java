@@ -4,9 +4,11 @@ import com.example.resortbackendapplication1.commons.dto.response.PaginatedRespo
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.commons.utils.EntityValidator;
 import com.example.resortbackendapplication1.commons.utils.Pagination;
+import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
 import com.example.resortbackendapplication1.facilitypricetype.model.entity.FacilityPriceTypeEntity;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.price.model.entity.PriceUnitEntity;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.CreateResortFacilityRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.ResortFacilityFilterRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.SetResortFacilityHighlightsRequest;
@@ -21,6 +23,9 @@ import com.example.resortbackendapplication1.resort.model.mapper.ResortFacilityM
 import com.example.resortbackendapplication1.resort.repository.ResortFacilityRepository;
 import com.example.resortbackendapplication1.resort.service.ResortFacilityService;
 import com.example.resortbackendapplication1.resort.specification.ResortFacilitySpecification;
+import com.example.resortbackendapplication1.resortfacilityprice.model.entity.ResortFacilityPriceEntity;
+import com.example.resortbackendapplication1.resortfacilityprice.model.mapper.ResortFacilityPriceMapper;
+import com.example.resortbackendapplication1.resortfacilityprice.repository.ResortFacilityPriceRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;
@@ -40,10 +45,15 @@ public class ResortFacilityServiceImpl implements ResortFacilityService {
     private static final Set<String> ALLOWED_SORT_FIELDS = ResortFacilitySortField.allowedFields();
     private static final Set<String> ALLOWED_SEARCH_FIELDS = Set.of();
 
-    private final ResortFacilityRepository resortFacilityRepository;
+    private static final String PAID_CODE = "PAID";
 
-    public ResortFacilityServiceImpl(ResortFacilityRepository resortFacilityRepository) {
+    private final ResortFacilityRepository resortFacilityRepository;
+    private final ResortFacilityPriceRepository resortFacilityPriceRepository;
+
+    public ResortFacilityServiceImpl(ResortFacilityRepository resortFacilityRepository,
+                                     ResortFacilityPriceRepository resortFacilityPriceRepository) {
         this.resortFacilityRepository = resortFacilityRepository;
+        this.resortFacilityPriceRepository = resortFacilityPriceRepository;
     }
 
     @Transactional
@@ -53,9 +63,24 @@ public class ResortFacilityServiceImpl implements ResortFacilityService {
                                   ResortFacilityGroupEntity resortFacilityGroupEntity,
                                   FacilityEntity facilityEntity,
                                   FacilityPriceTypeEntity facilityPriceTypeEntity,
+                                  PriceUnitEntity priceUnitEntity,
+                                  CurrencyEntity currencyEntity,
                                   Map<Long, LocaleEntity> localeEntityMap) {
+        boolean isPaid = facilityPriceTypeEntity != null && PAID_CODE.equals(facilityPriceTypeEntity.getCode());
+        if (isPaid && request.getResortFacilityPrice() == null) {
+            throw new IllegalArgumentException("A price is required when facility price type is PAID.");
+        }
+        if (!isPaid && request.getResortFacilityPrice() != null) {
+            throw new IllegalArgumentException("A price can only be provided when facility price type is PAID.");
+        }
         ResortFacilityEntity entity = ResortFacilityMapper.create(request, resortEntity, resortFacilityGroupEntity, facilityEntity, facilityPriceTypeEntity, localeEntityMap);
         resortFacilityRepository.save(entity);
+        if (isPaid) {
+            ResortFacilityPriceEntity priceEntity = ResortFacilityPriceMapper.create(
+                    request.getResortFacilityPrice(), entity, priceUnitEntity, currencyEntity);
+            resortFacilityPriceRepository.save(priceEntity);
+            log.info("ResortFacilityPrice created with id: {} for ResortFacility id: {}", priceEntity.getId(), entity.getId());
+        }
         log.info("ResortFacility created with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
     }
@@ -67,8 +92,10 @@ public class ResortFacilityServiceImpl implements ResortFacilityService {
     }
 
     @Override
-    public ResortFacilityResponse getById(Long id) {
-        ResortFacilityEntity entity = getEntityById(id);
+    public ResortFacilityResponse getById(Long id, Long resortId) {
+        ResortFacilityEntity entity = resortFacilityRepository
+                .findByIdAndResortEntity_IdAndIsActiveAndIsDeleted(id, resortId, true, false)
+                .orElseThrow(() -> new EntityNotFoundException("ResortFacility not found with id: " + id));
         return new ResortFacilityResponse(ResortFacilityMapper.toDto(entity));
     }
 

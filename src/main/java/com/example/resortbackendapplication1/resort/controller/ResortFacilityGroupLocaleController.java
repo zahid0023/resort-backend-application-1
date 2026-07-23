@@ -34,7 +34,7 @@ public class ResortFacilityGroupLocaleController {
             @PathVariable("resort-id") Long resortId,
             @PathVariable("resort-facility-group-id") Long resortFacilityGroupId,
             @Valid @RequestBody CreateResortFacilityGroupLocaleRequest request) {
-        ResortFacilityGroupEntity resortFacilityGroup = resortFacilityGroupService.getEntityById(resortFacilityGroupId);
+        ResortFacilityGroupEntity resortFacilityGroup = resortFacilityGroupService.getEntityById(resortFacilityGroupId, resortId);
         LocaleEntity localeEntity = localeService.getEntityById(request.getLocaleId());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(resortFacilityGroupLocaleService.create(resortFacilityGroup, localeEntity, request));
