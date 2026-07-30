@@ -1,4 +1,4 @@
-package com.example.resortbackendapplication1.address.dto.request.city.citylocale;
+package com.example.resortbackendapplication1.address.dto.request.city.locale;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

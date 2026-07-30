@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS countries
     code       varchar(10)                  NOT NULL UNIQUE,
     iso3_code  varchar(10),
     phone_code varchar(10),
-    sort_order int                          NOT NULL DEFAULT 0,
+    sort_order integer                      NOT NULL DEFAULT 0,
 
     created_by bigint references users (id) NOT NULL,
     created_at timestamp with time zone     NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS country_locales
 
     name        varchar(255)                 NOT NULL,
     description text,
-    sort_order  int                          NOT NULL DEFAULT 0,
+    sort_order  integer                      NOT NULL DEFAULT 0,
 
     created_by  bigint references users (id) NOT NULL,
     created_at  timestamp with time zone     NOT NULL DEFAULT CURRENT_TIMESTAMP,

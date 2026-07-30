@@ -1,8 +1,8 @@
 package com.example.resortbackendapplication1.locale.specification;
 
+import com.example.resortbackendapplication1.commons.utils.SpecificationUtils;
 import com.example.resortbackendapplication1.locale.dto.request.locale.LocaleFilterRequest;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
-import com.example.resortbackendapplication1.commons.utils.SpecificationUtils;
 import lombok.experimental.UtilityClass;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.jpa.domain.Specification;

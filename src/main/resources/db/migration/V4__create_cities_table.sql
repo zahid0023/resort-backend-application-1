@@ -2,8 +2,8 @@ CREATE TABLE IF NOT EXISTS cities
 (
     id         bigserial PRIMARY KEY,
     country_id bigint                       NOT NULL REFERENCES countries (id) ON DELETE RESTRICT,
-    code       varchar(50),
-    sort_order int                          NOT NULL DEFAULT 0,
+    code       char(3)                      NOT NUll UNIQUE,
+    sort_order integer                      NOT NULL DEFAULT 0,
 
     created_by bigint references users (id) NOT NULL,
     created_at timestamp with time zone     NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS city_locales
 
     name        varchar(255)                 NOT NULL,
     description text                         NOT NULL DEFAULT '',
-    sort_order  int                          NOT NULL DEFAULT 0,
+    sort_order  integer                      NOT NULL DEFAULT 0,
 
     created_by  bigint references users (id) NOT NULL,
     created_at  timestamp with time zone     NOT NULL DEFAULT CURRENT_TIMESTAMP,

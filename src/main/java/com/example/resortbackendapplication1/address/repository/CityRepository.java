@@ -7,9 +7,12 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.Optional;
 
-public interface CityRepository extends JpaRepository<@NonNull CityEntity, @NonNull Long>,
+@SuppressWarnings("unused")
+public interface CityRepository extends
+        JpaRepository<@NonNull CityEntity, @NonNull Long>,
         JpaSpecificationExecutor<@NonNull CityEntity> {
-    Optional<CityEntity> findByCountryEntity_IdAndIdAndIsActiveAndIsDeleted(Long countryId, Long id, Boolean isActive, Boolean isDeleted);
 
     Optional<CityEntity> findByIdAndIsActiveAndIsDeleted(Long id, Boolean isActive, Boolean isDeleted);
+
+    boolean existsByCodeAndIsActiveAndIsDeleted(String code, Boolean isActive, Boolean isDeleted);
 }

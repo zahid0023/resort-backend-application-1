@@ -4,6 +4,7 @@ import com.example.resortbackendapplication1.commons.model.entity.AuditableEntit
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,6 +12,8 @@ import org.hibernate.annotations.ColumnDefault;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
+
+import static com.example.resortbackendapplication1.commons.model.entity.EntityRelationshipHelper.*;
 
 @Getter
 @Setter
@@ -23,12 +26,16 @@ public class CountryEntity extends AuditableEntity {
     @Column(name = "code", nullable = false, unique = true, length = 10)
     private String code;
 
-    @Size(max = 10)
-    @Column(name = "iso3_code", length = 10)
+    @NotBlank
+    @Size(max = 3)
+    @Pattern(regexp = "^[A-Z]{3}$")
+    @Column(name = "iso3_code", nullable = false, length = 3)
     private String iso3Code;
 
-    @Size(max = 10)
-    @Column(name = "phone_code", length = 10)
+    @NotBlank
+    @Size(max = 3)
+    @Pattern(regexp = "^[0-9]{1,3}$")
+    @Column(name = "phone_code", nullable = false, length = 3)
     private String phoneCode;
 
     @NotNull
@@ -36,10 +43,33 @@ public class CountryEntity extends AuditableEntity {
     @Column(name = "sort_order", nullable = false)
     private Integer sortOrder = 0;
 
-    @OneToMany(mappedBy = "countryEntity", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "countryEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<CountryLocaleEntity> countryLocaleEntities = new LinkedHashSet<>();
 
-    @OneToMany(mappedBy = "countryEntity")
+    @OneToMany(mappedBy = "countryEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<CityEntity> cityEntities = new LinkedHashSet<>();
 
+    // -------------------------------------------------------------------------
+    // Country Locale relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addCountryLocaleEntity(CountryLocaleEntity entity) {
+        addChild(countryLocaleEntities, entity, CountryLocaleEntity::assignCountry, this);
+    }
+
+    public void removeCountryLocaleEntity(CountryLocaleEntity entity) {
+        removeChild(countryLocaleEntities, entity, (child, ignored) -> child.unassignCountry());
+    }
+
+    // -------------------------------------------------------------------------
+    // City relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addCityEntity(CityEntity entity) {
+        addChild(cityEntities, entity, CityEntity::assignCountry, this);
+    }
+
+    public void removeCityEntity(CityEntity entity) {
+        removeChild(cityEntities, entity, (child, ignored) -> child.unassignCountry());
+    }
 }

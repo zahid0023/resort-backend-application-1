@@ -8,6 +8,7 @@ import tools.jackson.databind.annotation.JsonNaming;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class CityRequest {
+
     @NotNull
     private Integer sortOrder;
 }

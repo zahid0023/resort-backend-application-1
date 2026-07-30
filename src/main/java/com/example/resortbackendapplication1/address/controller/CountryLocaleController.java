@@ -1,12 +1,12 @@
 package com.example.resortbackendapplication1.address.controller;
 
-import com.example.resortbackendapplication1.address.dto.request.country.countrylocale.CreateCountryLocaleRequest;
-import com.example.resortbackendapplication1.address.dto.request.country.countrylocale.UpdateCountryLocaleRequest;
+import com.example.resortbackendapplication1.address.dto.request.country.locale.CreateCountryLocaleRequest;
+import com.example.resortbackendapplication1.address.dto.request.country.locale.UpdateCountryLocaleRequest;
 import com.example.resortbackendapplication1.address.model.entity.CountryEntity;
 import com.example.resortbackendapplication1.address.model.entity.CountryLocaleEntity;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.address.service.CountryLocaleService;
 import com.example.resortbackendapplication1.address.service.CountryService;
+import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.locale.service.LocaleService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -33,10 +33,10 @@ public class CountryLocaleController {
     public ResponseEntity<?> create(
             @PathVariable("country-id") Long countryId,
             @Valid @RequestBody CreateCountryLocaleRequest request) {
-        CountryEntity country = countryService.getEntityById(countryId);
+        CountryEntity countryEntity = countryService.getEntityById(countryId);
         LocaleEntity localeEntity = localeService.getEntityById(request.getLocaleId());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(countryLocaleService.create(country, localeEntity, request));
+                .body(countryLocaleService.create(request, countryEntity, localeEntity));
     }
 
     @PutMapping("/{id}")

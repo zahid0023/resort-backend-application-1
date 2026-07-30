@@ -1,4 +1,4 @@
-package com.example.resortbackendapplication1.address.dto.request.country.countrylocale;
+package com.example.resortbackendapplication1.address.dto.request.country.locale;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -13,4 +13,5 @@ public class CreateCountryLocaleRequest extends CountryLocaleRequest {
 
     @NotNull
     private Long localeId;
+
 }

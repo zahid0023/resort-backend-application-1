@@ -1,23 +1,18 @@
 package com.example.resortbackendapplication1.address.model.mapper;
 
-import com.example.resortbackendapplication1.address.dto.request.country.countrylocale.CountryLocaleRequest;
-import com.example.resortbackendapplication1.address.dto.request.country.countrylocale.CreateCountryLocaleRequest;
-import com.example.resortbackendapplication1.address.dto.request.country.countrylocale.UpdateCountryLocaleRequest;
+import com.example.resortbackendapplication1.address.dto.request.country.locale.CountryLocaleRequest;
+import com.example.resortbackendapplication1.address.dto.request.country.locale.CreateCountryLocaleRequest;
+import com.example.resortbackendapplication1.address.dto.request.country.locale.UpdateCountryLocaleRequest;
 import com.example.resortbackendapplication1.address.model.dto.CountryLocaleDto;
-import com.example.resortbackendapplication1.address.model.entity.CountryEntity;
 import com.example.resortbackendapplication1.address.model.entity.CountryLocaleEntity;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.locale.model.mapper.LocaleMapper;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class CountryLocaleMapper {
 
-    public CountryLocaleEntity create(CreateCountryLocaleRequest request,
-                                      CountryEntity countryEntity,
-                                      LocaleEntity localeEntity) {
+    public CountryLocaleEntity create(CreateCountryLocaleRequest request) {
         CountryLocaleEntity entity = new CountryLocaleEntity();
-        entity.setCountryEntity(countryEntity);
-        entity.setLocaleEntity(localeEntity);
         applyCommonFields(entity, request);
         return entity;
     }
@@ -35,7 +30,7 @@ public class CountryLocaleMapper {
     public CountryLocaleDto toDto(CountryLocaleEntity entity) {
         return CountryLocaleDto.builder()
                 .id(entity.getId())
-                .localeId(entity.getLocaleEntity().getId())
+                .locale(LocaleMapper.toDto(entity.getLocaleEntity()))
                 .name(entity.getName())
                 .description(entity.getDescription())
                 .sortOrder(entity.getSortOrder())

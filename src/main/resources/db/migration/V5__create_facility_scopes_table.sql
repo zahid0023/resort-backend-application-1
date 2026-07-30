@@ -20,12 +20,8 @@ create table if not exists facility_scope_locales
 (
     id                bigserial primary key,
 
-    facility_scope_id bigint                   not null
-        references facility_scopes (id)
-            on delete cascade,
-
-    locale_id         bigint                   not null
-        references locales (id),
+    facility_scope_id bigint                   not null references facility_scopes (id),
+    locale_id         bigint                   not null references locales (id),
 
     name              varchar(100)             not null,
     description       text                     not null default '',

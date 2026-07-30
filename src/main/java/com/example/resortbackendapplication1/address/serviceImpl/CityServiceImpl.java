@@ -1,22 +1,24 @@
 package com.example.resortbackendapplication1.address.serviceImpl;
 
-import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
-import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.address.dto.request.city.CityFilterRequest;
 import com.example.resortbackendapplication1.address.dto.request.city.CreateCityRequest;
 import com.example.resortbackendapplication1.address.dto.request.city.UpdateCityRequest;
 import com.example.resortbackendapplication1.address.dto.response.cities.CityResponse;
 import com.example.resortbackendapplication1.address.model.dto.CityDto;
 import com.example.resortbackendapplication1.address.model.entity.CityEntity;
+import com.example.resortbackendapplication1.address.model.entity.CityLocaleEntity;
 import com.example.resortbackendapplication1.address.model.entity.CountryEntity;
-import com.example.resortbackendapplication1.commons.utils.Pagination;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.address.model.enums.CitySearchField;
 import com.example.resortbackendapplication1.address.model.enums.CitySortField;
+import com.example.resortbackendapplication1.address.model.mapper.CityLocaleMapper;
 import com.example.resortbackendapplication1.address.model.mapper.CityMapper;
 import com.example.resortbackendapplication1.address.repository.CityRepository;
 import com.example.resortbackendapplication1.address.service.CityService;
 import com.example.resortbackendapplication1.address.specification.CitySpecification;
+import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
+import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
+import com.example.resortbackendapplication1.commons.utils.Pagination;
+import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
@@ -42,27 +44,46 @@ public class CityServiceImpl implements CityService {
 
     @Transactional
     @Override
-    public SuccessResponse create(CreateCityRequest request,
-                                  CountryEntity countryEntity,
-                                  Map<Long, LocaleEntity> localeEntityMap) {
-        CityEntity entity = CityMapper.create(request, countryEntity, localeEntityMap);
+    public SuccessResponse create(CreateCityRequest request, CountryEntity countryEntity, Map<Long, LocaleEntity> localeEntityMap) {
+        if (cityRepository.existsByCodeAndIsActiveAndIsDeleted(request.getCode(), true, false)) {
+            throw new IllegalStateException("City with code '" + request.getCode() + "' already exists");
+        }
+
+        CityEntity entity = CityMapper.create(request);
+        countryEntity.addCityEntity(entity);
+
+        request.getLocales().forEach(localeReq -> {
+            CityLocaleEntity cityLocaleEntity = CityLocaleMapper.create(localeReq);
+
+            LocaleEntity localeEntity = localeEntityMap.get(localeReq.getLocaleId());
+            cityLocaleEntity.assignLocale(localeEntity);
+
+            entity.addCityLocaleEntity(cityLocaleEntity);
+        });
+
         cityRepository.save(entity);
         log.info("City created with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
     }
 
     @Override
+    public CityEntity getEntityById(Long id) {
+        return cityRepository.findByIdAndIsActiveAndIsDeleted(id, true, false)
+                .orElseThrow(() -> new EntityNotFoundException("City not found with id: " + id));
+    }
+
+    @Override
     public CityResponse getById(Long id) {
         CityEntity entity = getEntityById(id);
-        CityDto dto = CityMapper.toDto(entity, false);
+        CityDto dto = CityMapper.toDto(entity);
         return new CityResponse(dto);
     }
 
     @Override
-    public PaginatedResponse<CityDto> getAll(CityFilterRequest request, Long countryId) {
+    public PaginatedResponse<CityDto> getAll(CityFilterRequest request, Long localeId) {
         Page<@NonNull CityDto> page = cityRepository
-                .findAll(CitySpecification.filter(request, countryId), request.toPageable(ALLOWED_SORT_FIELDS))
-                .map(entity -> CityMapper.toDto(entity, false));
+                .findAll(CitySpecification.filter(request, localeId), request.toPageable(ALLOWED_SORT_FIELDS, CitySortField.localeSortFields()))
+                .map(entity -> CityMapper.toDto(entity, localeId));
         return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
     }
 
@@ -83,11 +104,5 @@ public class CityServiceImpl implements CityService {
         cityRepository.save(entity);
         log.info("City soft-deleted with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
-    }
-
-    @Override
-    public CityEntity getEntityById(Long id) {
-        return cityRepository.findByIdAndIsActiveAndIsDeleted(id, true, false)
-                .orElseThrow(() -> new EntityNotFoundException("City not found with id: " + id));
     }
 }

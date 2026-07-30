@@ -18,11 +18,13 @@ import com.example.resortbackendapplication1.locale.service.LocaleService;
 import com.example.resortbackendapplication1.locale.specification.LocaleSpecification;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -41,6 +43,9 @@ public class LocaleServiceImpl implements LocaleService {
     @Transactional
     @Override
     public SuccessResponse create(CreateLocaleRequest request) {
+        if (localeRepository.existsByCodeAndIsActiveAndIsDeleted(request.getCode(), true, false)) {
+            throw new IllegalStateException("Locale with code '" + request.getCode() + "' already exists");
+        }
         LocaleEntity entity = LocaleMapper.create(request);
         localeRepository.save(entity);
         log.info("Locale created with id: {}", entity.getId());
@@ -56,7 +61,7 @@ public class LocaleServiceImpl implements LocaleService {
 
     @Override
     public PaginatedResponse<LocaleDto> getAll(LocaleFilterRequest request) {
-        Page<LocaleDto> page = localeRepository
+        Page<@NonNull LocaleDto> page = localeRepository
                 .findAll(LocaleSpecification.filter(request), request.toPageable(ALLOWED_SORT_FIELDS))
                 .map(LocaleMapper::toDto);
         return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
@@ -84,7 +89,10 @@ public class LocaleServiceImpl implements LocaleService {
     @Override
     public LocaleEntity getEntityById(Long id) {
         return localeRepository.findByIdAndIsActiveAndIsDeleted(id, true, false)
-                .orElseThrow(() -> new EntityNotFoundException("Locale not found with id: " + id));
+                .orElseThrow(() -> {
+                    log.warn("Locale not found with id: {}", id);
+                    return new EntityNotFoundException("Locale not found with id: " + id);
+                });
     }
 
     @Override
@@ -92,5 +100,33 @@ public class LocaleServiceImpl implements LocaleService {
         List<LocaleEntity> localeEntities = localeRepository.findAllByIdInAndIsActiveAndIsDeleted(ids, true, false);
         EntityValidator.validateAllFound(ids, localeEntities, LocaleEntity::getId, "Locale");
         return localeEntities;
+    }
+
+    @Override
+    public Long resolveLocaleId(String acceptLanguageHeader) {
+        String code = parsePrimaryLanguageTag(acceptLanguageHeader);
+        if (code != null) {
+            Optional<LocaleEntity> localeEntity = localeRepository.findByCodeAndIsActiveAndIsDeleted(code, true, false);
+            if (localeEntity.isPresent()) {
+                return localeEntity.get().getId();
+            }
+        }
+        if (!"en".equals(code)) {
+            Optional<LocaleEntity> fallbackEntity = localeRepository.findByCodeAndIsActiveAndIsDeleted("en", true, false);
+            if (fallbackEntity.isPresent()) {
+                return fallbackEntity.get().getId();
+            }
+        }
+        return null;
+    }
+
+    private String parsePrimaryLanguageTag(String acceptLanguageHeader) {
+        if (acceptLanguageHeader == null || acceptLanguageHeader.isBlank()) {
+            return null;
+        }
+        String tag = acceptLanguageHeader.split(",", 2)[0];
+        tag = tag.split(";", 2)[0];
+        tag = tag.split("-", 2)[0];
+        return tag.trim();
     }
 }

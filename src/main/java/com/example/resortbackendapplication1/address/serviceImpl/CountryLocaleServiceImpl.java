@@ -1,14 +1,14 @@
 package com.example.resortbackendapplication1.address.serviceImpl;
 
-import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
-import com.example.resortbackendapplication1.address.dto.request.country.countrylocale.CreateCountryLocaleRequest;
-import com.example.resortbackendapplication1.address.dto.request.country.countrylocale.UpdateCountryLocaleRequest;
+import com.example.resortbackendapplication1.address.dto.request.country.locale.CreateCountryLocaleRequest;
+import com.example.resortbackendapplication1.address.dto.request.country.locale.UpdateCountryLocaleRequest;
 import com.example.resortbackendapplication1.address.model.entity.CountryEntity;
 import com.example.resortbackendapplication1.address.model.entity.CountryLocaleEntity;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.address.model.mapper.CountryLocaleMapper;
 import com.example.resortbackendapplication1.address.repository.CountryLocaleRepository;
 import com.example.resortbackendapplication1.address.service.CountryLocaleService;
+import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
+import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,10 +25,12 @@ public class CountryLocaleServiceImpl implements CountryLocaleService {
 
     @Transactional
     @Override
-    public SuccessResponse create(CountryEntity countryEntity,
-                                  LocaleEntity localeEntity,
-                                  CreateCountryLocaleRequest request) {
-        CountryLocaleEntity entity = CountryLocaleMapper.create(request, countryEntity, localeEntity);
+    public SuccessResponse create(CreateCountryLocaleRequest request,
+                                  CountryEntity countryEntity,
+                                  LocaleEntity localeEntity) {
+        CountryLocaleEntity entity = CountryLocaleMapper.create(request);
+        entity.assignLocale(localeEntity);
+        countryEntity.addCountryLocaleEntity(entity);
         countryLocaleRepository.save(entity);
         log.info("CountryLocale created with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());

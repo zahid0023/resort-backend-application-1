@@ -12,6 +12,7 @@ public class LocaleMapper {
 
     public LocaleEntity create(CreateLocaleRequest request) {
         LocaleEntity entity = new LocaleEntity();
+        entity.setCode(request.getCode());
         applyCommonFields(entity, request);
         return entity;
     }
@@ -21,7 +22,6 @@ public class LocaleMapper {
     }
 
     private void applyCommonFields(LocaleEntity entity, LocaleRequest request) {
-        entity.setCode(request.getCode());
         entity.setName(request.getName());
         entity.setSortOrder(request.getSortOrder());
     }

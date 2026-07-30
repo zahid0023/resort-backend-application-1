@@ -1,14 +1,14 @@
 package com.example.resortbackendapplication1.address.serviceImpl;
 
-import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
-import com.example.resortbackendapplication1.address.dto.request.city.citylocale.CreateCityLocaleRequest;
-import com.example.resortbackendapplication1.address.dto.request.city.citylocale.UpdateCityLocaleRequest;
+import com.example.resortbackendapplication1.address.dto.request.city.locale.CreateCityLocaleRequest;
+import com.example.resortbackendapplication1.address.dto.request.city.locale.UpdateCityLocaleRequest;
 import com.example.resortbackendapplication1.address.model.entity.CityEntity;
 import com.example.resortbackendapplication1.address.model.entity.CityLocaleEntity;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.address.model.mapper.CityLocaleMapper;
 import com.example.resortbackendapplication1.address.repository.CityLocaleRepository;
 import com.example.resortbackendapplication1.address.service.CityLocaleService;
+import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
+import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Slf4j
 public class CityLocaleServiceImpl implements CityLocaleService {
-
     private final CityLocaleRepository cityLocaleRepository;
 
     public CityLocaleServiceImpl(CityLocaleRepository cityLocaleRepository) {
@@ -26,10 +25,12 @@ public class CityLocaleServiceImpl implements CityLocaleService {
 
     @Transactional
     @Override
-    public SuccessResponse create(CityEntity cityEntity,
-                                  LocaleEntity localeEntity,
-                                  CreateCityLocaleRequest request) {
-        CityLocaleEntity entity = CityLocaleMapper.create(request, cityEntity, localeEntity);
+    public SuccessResponse create(CreateCityLocaleRequest request,
+                                  CityEntity cityEntity,
+                                  LocaleEntity localeEntity) {
+        CityLocaleEntity entity = CityLocaleMapper.create(request);
+        entity.assignLocale(localeEntity);
+        cityEntity.addCityLocaleEntity(entity);
         cityLocaleRepository.save(entity);
         log.info("CityLocale created with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());

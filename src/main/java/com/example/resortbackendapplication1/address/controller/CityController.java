@@ -3,13 +3,13 @@ package com.example.resortbackendapplication1.address.controller;
 import com.example.resortbackendapplication1.address.dto.request.city.CityFilterRequest;
 import com.example.resortbackendapplication1.address.dto.request.city.CreateCityRequest;
 import com.example.resortbackendapplication1.address.dto.request.city.UpdateCityRequest;
-import com.example.resortbackendapplication1.address.dto.request.city.citylocale.CreateCityLocaleRequest;
+import com.example.resortbackendapplication1.address.dto.request.city.locale.CreateCityLocaleRequest;
 import com.example.resortbackendapplication1.address.model.entity.CityEntity;
 import com.example.resortbackendapplication1.address.model.entity.CountryEntity;
-import com.example.resortbackendapplication1.commons.utils.LocaleUtils;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.address.service.CityService;
 import com.example.resortbackendapplication1.address.service.CountryService;
+import com.example.resortbackendapplication1.commons.utils.LocaleUtils;
+import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.locale.service.LocaleService;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
@@ -49,9 +49,11 @@ public class CityController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getAll(@Valid @ParameterObject CityFilterRequest request,
-                                    @RequestParam(required = false) Long countryId) {
-        return ResponseEntity.ok(cityService.getAll(request, countryId));
+    public ResponseEntity<?> getAll(
+            @Valid @ParameterObject CityFilterRequest request,
+            @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
+        Long localeId = localeService.resolveLocaleId(acceptLanguage);
+        return ResponseEntity.ok(cityService.getAll(request, localeId));
     }
 
     @PutMapping("/{id}")

@@ -9,10 +9,27 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+@SuppressWarnings("unused")
 public interface LocaleRepository extends JpaRepository<@NonNull LocaleEntity, @NonNull Long>,
         JpaSpecificationExecutor<@NonNull LocaleEntity> {
 
-    Optional<LocaleEntity> findByIdAndIsActiveAndIsDeleted(Long id, Boolean isActive, Boolean isDeleted);
+    Optional<LocaleEntity> findByIdAndIsActiveAndIsDeleted(
+            Long id,
+            Boolean isActive,
+            Boolean isDeleted
+    );
 
-    List<LocaleEntity> findAllByIdInAndIsActiveAndIsDeleted(Set<Long> ids, Boolean isActive, Boolean isDeleted);
+    List<@NonNull LocaleEntity> findAllByIdInAndIsActiveAndIsDeleted(
+            Set<Long> ids,
+            Boolean isActive,
+            Boolean isDeleted
+    );
+
+    boolean existsByCodeAndIsActiveAndIsDeleted(String code, Boolean isActive, Boolean isDeleted);
+
+    Optional<LocaleEntity> findByCodeAndIsActiveAndIsDeleted(
+            String code,
+            Boolean isActive,
+            Boolean isDeleted
+    );
 }

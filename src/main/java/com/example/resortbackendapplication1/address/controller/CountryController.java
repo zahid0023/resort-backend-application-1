@@ -1,15 +1,13 @@
 package com.example.resortbackendapplication1.address.controller;
 
-import com.example.resortbackendapplication1.address.dto.request.city.CityFilterRequest;
 import com.example.resortbackendapplication1.address.dto.request.country.CountryFilterRequest;
 import com.example.resortbackendapplication1.address.dto.request.country.CreateCountryRequest;
 import com.example.resortbackendapplication1.address.dto.request.country.UpdateCountryRequest;
-import com.example.resortbackendapplication1.address.dto.request.country.countrylocale.CreateCountryLocaleRequest;
+import com.example.resortbackendapplication1.address.dto.request.country.locale.CreateCountryLocaleRequest;
 import com.example.resortbackendapplication1.address.model.entity.CountryEntity;
-import com.example.resortbackendapplication1.address.service.CityService;
+import com.example.resortbackendapplication1.address.service.CountryService;
 import com.example.resortbackendapplication1.commons.utils.LocaleUtils;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
-import com.example.resortbackendapplication1.address.service.CountryService;
 import com.example.resortbackendapplication1.locale.service.LocaleService;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
@@ -24,14 +22,11 @@ import java.util.Map;
 public class CountryController {
 
     private final CountryService countryService;
-    private final CityService cityService;
     private final LocaleService localeService;
 
     public CountryController(CountryService countryService,
-                             CityService cityService,
                              LocaleService localeService) {
         this.countryService = countryService;
-        this.cityService = cityService;
         this.localeService = localeService;
     }
 
@@ -48,8 +43,11 @@ public class CountryController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getAll(@Valid @ParameterObject CountryFilterRequest request) {
-        return ResponseEntity.ok(countryService.getAll(request));
+    public ResponseEntity<?> getAll(
+            @Valid @ParameterObject CountryFilterRequest request,
+            @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
+        Long localeId = localeService.resolveLocaleId(acceptLanguage);
+        return ResponseEntity.ok(countryService.getAll(request, localeId));
     }
 
     @PutMapping("/{id}")
@@ -62,13 +60,7 @@ public class CountryController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
-        return ResponseEntity.ok(countryService.delete(id));
-    }
-
-    @GetMapping("/{country-id}/cities")
-    public ResponseEntity<?> getCitiesByCountry(
-            @PathVariable("country-id") Long countryId,
-            @Valid @ParameterObject CityFilterRequest request) {
-        return ResponseEntity.ok(cityService.getAll(request, countryId));
+        CountryEntity entity = countryService.getEntityById(id);
+        return ResponseEntity.ok(countryService.delete(entity));
     }
 }

@@ -1,16 +1,16 @@
 package com.example.resortbackendapplication1.address.service;
 
-import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
-import com.example.resortbackendapplication1.address.dto.request.city.citylocale.CreateCityLocaleRequest;
-import com.example.resortbackendapplication1.address.dto.request.city.citylocale.UpdateCityLocaleRequest;
+import com.example.resortbackendapplication1.address.dto.request.city.locale.CreateCityLocaleRequest;
+import com.example.resortbackendapplication1.address.dto.request.city.locale.UpdateCityLocaleRequest;
 import com.example.resortbackendapplication1.address.model.entity.CityEntity;
 import com.example.resortbackendapplication1.address.model.entity.CityLocaleEntity;
+import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 
 public interface CityLocaleService {
-    SuccessResponse create(CityEntity city,
-                           LocaleEntity localeEntity,
-                           CreateCityLocaleRequest request);
+    SuccessResponse create(CreateCityLocaleRequest request,
+                           CityEntity cityEntity,
+                           LocaleEntity localeEntity);
 
     CityLocaleEntity getEntityById(Long cityId, Long id);
 

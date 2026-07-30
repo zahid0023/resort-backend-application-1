@@ -1,6 +1,9 @@
 package com.example.resortbackendapplication1.address.dto.request.city;
 
-import com.example.resortbackendapplication1.address.dto.request.city.citylocale.CreateCityLocaleRequest;
+import com.example.resortbackendapplication1.address.dto.request.city.locale.CreateCityLocaleRequest;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -14,9 +17,15 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = false)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class CreateCityRequest extends CityRequest {
-    @NotNull
-    private Long countryId;
+
+    @NotBlank
     @Size(max = 50)
     private String code;
+
+    @NotNull
+    private Long countryId;
+
+    @Valid
+    @NotEmpty
     private List<CreateCityLocaleRequest> locales;
 }

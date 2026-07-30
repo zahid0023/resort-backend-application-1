@@ -1,12 +1,12 @@
 package com.example.resortbackendapplication1.address.controller;
 
-import com.example.resortbackendapplication1.address.dto.request.city.citylocale.CreateCityLocaleRequest;
-import com.example.resortbackendapplication1.address.dto.request.city.citylocale.UpdateCityLocaleRequest;
+import com.example.resortbackendapplication1.address.dto.request.city.locale.CreateCityLocaleRequest;
+import com.example.resortbackendapplication1.address.dto.request.city.locale.UpdateCityLocaleRequest;
 import com.example.resortbackendapplication1.address.model.entity.CityEntity;
 import com.example.resortbackendapplication1.address.model.entity.CityLocaleEntity;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.address.service.CityLocaleService;
 import com.example.resortbackendapplication1.address.service.CityService;
+import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.locale.service.LocaleService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -36,7 +36,7 @@ public class CityLocaleController {
         CityEntity cityEntity = cityService.getEntityById(cityId);
         LocaleEntity localeEntity = localeService.getEntityById(request.getLocaleId());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(cityLocaleService.create(cityEntity, localeEntity, request));
+                .body(cityLocaleService.create(request, cityEntity, localeEntity));
     }
 
     @PutMapping("/{id}")
