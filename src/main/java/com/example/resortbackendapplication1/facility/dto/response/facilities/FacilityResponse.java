@@ -8,9 +8,10 @@ import tools.jackson.databind.annotation.JsonNaming;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class FacilityResponse {
+
     private final FacilityDto data;
 
-    public FacilityResponse(FacilityDto facility) {
-        this.data = facility;
+    public FacilityResponse(FacilityDto data) {
+        this.data = data;
     }
 }

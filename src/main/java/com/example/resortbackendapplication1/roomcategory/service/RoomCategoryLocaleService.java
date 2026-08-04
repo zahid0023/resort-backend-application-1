@@ -1,21 +1,26 @@
 package com.example.resortbackendapplication1.roomcategory.service;
 
+import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
+import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
-import com.example.resortbackendapplication1.roomcategory.dto.request.roomcategory.roomcategorylocale.CreateRoomCategoryLocaleRequest;
-import com.example.resortbackendapplication1.roomcategory.dto.request.roomcategory.roomcategorylocale.UpdateRoomCategoryLocaleRequest;
+import com.example.resortbackendapplication1.roomcategory.dto.request.roomcategory.locale.CreateRoomCategoryLocaleRequest;
+import com.example.resortbackendapplication1.roomcategory.dto.request.roomcategory.locale.UpdateRoomCategoryLocaleRequest;
+import com.example.resortbackendapplication1.roomcategory.model.dto.RoomCategoryLocaleDto;
 import com.example.resortbackendapplication1.roomcategory.model.entity.RoomCategoryEntity;
 import com.example.resortbackendapplication1.roomcategory.model.entity.RoomCategoryLocaleEntity;
+import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 
 public interface RoomCategoryLocaleService {
-
-    SuccessResponse create(RoomCategoryEntity roomCategoryEntity,
-                           LocaleEntity localeEntity,
-                           CreateRoomCategoryLocaleRequest request);
+    SuccessResponse create(CreateRoomCategoryLocaleRequest request,
+                           RoomCategoryEntity roomCategoryEntity,
+                           LocaleEntity localeEntity);
 
     RoomCategoryLocaleEntity getEntityById(Long roomCategoryId, Long id);
 
-    SuccessResponse update(RoomCategoryLocaleEntity entity, UpdateRoomCategoryLocaleRequest request);
+    PaginatedResponse<RoomCategoryLocaleDto> getAll(Long roomCategoryId, String localeCode, PaginatedRequest paginatedRequest);
+
+    SuccessResponse update(RoomCategoryLocaleEntity entity,
+                           UpdateRoomCategoryLocaleRequest request);
 
     SuccessResponse delete(RoomCategoryLocaleEntity entity);
 }

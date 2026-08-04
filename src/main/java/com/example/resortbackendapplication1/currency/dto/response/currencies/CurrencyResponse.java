@@ -8,9 +8,10 @@ import tools.jackson.databind.annotation.JsonNaming;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class CurrencyResponse {
-    private final CurrencyDto currency;
 
-    public CurrencyResponse(CurrencyDto currency) {
-        this.currency = currency;
+    private final CurrencyDto data;
+
+    public CurrencyResponse(CurrencyDto data) {
+        this.data = data;
     }
 }

@@ -1,23 +1,19 @@
 package com.example.resortbackendapplication1.unit.controller;
 
+import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.locale.service.LocaleService;
 import com.example.resortbackendapplication1.unit.dto.request.unit.CreateUnitRequest;
 import com.example.resortbackendapplication1.unit.dto.request.unit.UnitFilterRequest;
 import com.example.resortbackendapplication1.unit.dto.request.unit.UpdateUnitRequest;
-import com.example.resortbackendapplication1.unit.dto.request.unit.unitlocale.CreateUnitLocaleRequest;
 import com.example.resortbackendapplication1.unit.model.entity.UnitEntity;
+import com.example.resortbackendapplication1.unit.model.entity.UnitTypeEntity;
 import com.example.resortbackendapplication1.unit.service.UnitService;
-import com.example.resortbackendapplication1.commons.utils.LocaleUtils;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
-import com.example.resortbackendapplication1.locale.service.LocaleService;
-import com.example.resortbackendapplication1.unittype.model.entity.UnitTypeEntity;
-import com.example.resortbackendapplication1.unittype.service.UnitTypeService;
+import com.example.resortbackendapplication1.unit.service.UnitTypeService;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/units")
@@ -38,10 +34,8 @@ public class UnitController {
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody CreateUnitRequest request) {
         UnitTypeEntity unitTypeEntity = unitTypeService.getEntityById(request.getUnitTypeId());
-        Map<Long, LocaleEntity> localeEntityMap = LocaleUtils.resolveLocaleMap(
-                request.getLocales(), CreateUnitLocaleRequest::getLocaleId, localeService);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(unitService.create(request, unitTypeEntity, localeEntityMap));
+        LocaleEntity localeEntity = localeService.getEntityByCode("en");
+        return ResponseEntity.status(HttpStatus.CREATED).body(unitService.create(request, unitTypeEntity, localeEntity));
     }
 
     @GetMapping("/{id}")
@@ -50,9 +44,8 @@ public class UnitController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getAll(@Valid @ParameterObject UnitFilterRequest request,
-                                    @RequestParam(value = "unit-type-id", required = false) Long unitTypeId) {
-        return ResponseEntity.ok(unitService.getAll(request,unitTypeId));
+    public ResponseEntity<?> getAll(@Valid @ParameterObject UnitFilterRequest request) {
+        return ResponseEntity.ok(unitService.getAll(request));
     }
 
     @PutMapping("/{id}")
@@ -65,6 +58,7 @@ public class UnitController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
-        return ResponseEntity.ok(unitService.delete(id));
+        UnitEntity entity = unitService.getEntityById(id);
+        return ResponseEntity.ok(unitService.delete(entity));
     }
 }

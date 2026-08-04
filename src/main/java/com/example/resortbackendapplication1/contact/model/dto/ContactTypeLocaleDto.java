@@ -1,5 +1,6 @@
 package com.example.resortbackendapplication1.contact.model.dto;
 
+import com.example.resortbackendapplication1.locale.model.dto.LocaleDto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,7 +17,7 @@ import tools.jackson.databind.annotation.JsonNaming;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class ContactTypeLocaleDto {
     private Long id;
-    private Long localeId;
+    private LocaleDto locale;
     private String name;
     private String description;
     private Integer sortOrder;

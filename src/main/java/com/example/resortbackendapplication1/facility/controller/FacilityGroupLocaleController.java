@@ -1,14 +1,16 @@
 package com.example.resortbackendapplication1.facility.controller;
 
-import com.example.resortbackendapplication1.facility.dto.request.facilitygroups.facilitygrouplocale.CreateFacilityGroupLocaleRequest;
-import com.example.resortbackendapplication1.facility.dto.request.facilitygroups.facilitygrouplocale.UpdateFacilityGroupLocaleRequest;
+import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
+import com.example.resortbackendapplication1.facility.dto.request.facilitygroup.locale.CreateFacilityGroupLocaleRequest;
+import com.example.resortbackendapplication1.facility.dto.request.facilitygroup.locale.UpdateFacilityGroupLocaleRequest;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupLocaleEntity;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.facility.service.FacilityGroupLocaleService;
 import com.example.resortbackendapplication1.facility.service.FacilityGroupService;
+import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.locale.service.LocaleService;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,14 +31,23 @@ public class FacilityGroupLocaleController {
         this.localeService = localeService;
     }
 
+    @GetMapping
+    public ResponseEntity<?> getAll(
+            @PathVariable("facility-group-id") Long facilityGroupId,
+            @RequestParam(value = "localeCode", required = false) String localeCode,
+            @ParameterObject PaginatedRequest paginatedRequest) {
+        facilityGroupService.getEntityById(facilityGroupId);
+        return ResponseEntity.ok(facilityGroupLocaleService.getAll(facilityGroupId, localeCode, paginatedRequest));
+    }
+
     @PostMapping
     public ResponseEntity<?> create(
             @PathVariable("facility-group-id") Long facilityGroupId,
             @Valid @RequestBody CreateFacilityGroupLocaleRequest request) {
-        FacilityGroupEntity facilityGroup = facilityGroupService.getEntityById(facilityGroupId);
+        FacilityGroupEntity facilityGroupEntity = facilityGroupService.getEntityById(facilityGroupId);
         LocaleEntity localeEntity = localeService.getEntityById(request.getLocaleId());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(facilityGroupLocaleService.create(facilityGroup, localeEntity, request));
+                .body(facilityGroupLocaleService.create(request, facilityGroupEntity, localeEntity));
     }
 
     @PutMapping("/{id}")

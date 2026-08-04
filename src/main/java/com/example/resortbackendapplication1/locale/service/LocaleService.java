@@ -5,6 +5,7 @@ import com.example.resortbackendapplication1.commons.dto.response.SuccessRespons
 import com.example.resortbackendapplication1.locale.dto.request.locale.CreateLocaleRequest;
 import com.example.resortbackendapplication1.locale.dto.request.locale.LocaleFilterRequest;
 import com.example.resortbackendapplication1.locale.dto.request.locale.UpdateLocaleRequest;
+import com.example.resortbackendapplication1.locale.dto.response.locales.LocaleCountResponse;
 import com.example.resortbackendapplication1.locale.dto.response.locales.LocaleResponse;
 import com.example.resortbackendapplication1.locale.model.dto.LocaleDto;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
@@ -17,9 +18,13 @@ public interface LocaleService {
 
     LocaleEntity getEntityById(Long id);
 
+    LocaleEntity getEntityByCode(String code);
+
     LocaleResponse getById(Long id);
 
     PaginatedResponse<LocaleDto> getAll(LocaleFilterRequest request);
+
+    LocaleCountResponse getActiveCount();
 
     SuccessResponse update(LocaleEntity entity, UpdateLocaleRequest request);
 

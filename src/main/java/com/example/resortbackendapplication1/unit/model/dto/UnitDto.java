@@ -9,7 +9,6 @@ import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Data
 @Builder
@@ -18,12 +17,20 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class UnitDto {
+
     private Long id;
-    private Long unitTypeId;
+
+    private UnitTypeDto unitType;
+
     private String code;
+
     private String symbol;
+
     private Boolean isBaseUnit;
+
     private BigDecimal conversionFactor;
+
     private Integer sortOrder;
-    private List<UnitLocaleDto> locales;
+
+    private UnitLocaleDto locale;
 }

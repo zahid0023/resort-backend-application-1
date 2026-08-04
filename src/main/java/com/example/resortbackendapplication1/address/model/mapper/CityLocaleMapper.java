@@ -1,7 +1,6 @@
 package com.example.resortbackendapplication1.address.model.mapper;
 
 import com.example.resortbackendapplication1.address.dto.request.city.locale.CityLocaleRequest;
-import com.example.resortbackendapplication1.address.dto.request.city.locale.CreateCityLocaleRequest;
 import com.example.resortbackendapplication1.address.dto.request.city.locale.UpdateCityLocaleRequest;
 import com.example.resortbackendapplication1.address.model.dto.CityLocaleDto;
 import com.example.resortbackendapplication1.address.model.entity.CityLocaleEntity;
@@ -11,7 +10,7 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class CityLocaleMapper {
 
-    public CityLocaleEntity create(CreateCityLocaleRequest request) {
+    public CityLocaleEntity create(CityLocaleRequest request) {
         CityLocaleEntity entity = new CityLocaleEntity();
         applyCommonFields(entity, request);
         return entity;

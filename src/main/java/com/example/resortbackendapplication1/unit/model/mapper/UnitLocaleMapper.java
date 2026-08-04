@@ -1,24 +1,17 @@
 package com.example.resortbackendapplication1.unit.model.mapper;
 
-import com.example.resortbackendapplication1.unit.dto.request.unit.unitlocale.CreateUnitLocaleRequest;
-import com.example.resortbackendapplication1.unit.dto.request.unit.unitlocale.UnitLocaleRequest;
-import com.example.resortbackendapplication1.unit.dto.request.unit.unitlocale.UpdateUnitLocaleRequest;
-import com.example.resortbackendapplication1.unit.model.dto.UnitLocaleDto;
-import com.example.resortbackendapplication1.unit.model.entity.UnitEntity;
-import com.example.resortbackendapplication1.unit.model.entity.UnitLocaleEntity;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.locale.model.mapper.LocaleMapper;
+import com.example.resortbackendapplication1.unit.dto.request.unit.locale.UnitLocaleRequest;
+import com.example.resortbackendapplication1.unit.dto.request.unit.locale.UpdateUnitLocaleRequest;
+import com.example.resortbackendapplication1.unit.model.dto.UnitLocaleDto;
+import com.example.resortbackendapplication1.unit.model.entity.UnitLocaleEntity;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class UnitLocaleMapper {
 
-    public UnitLocaleEntity create(CreateUnitLocaleRequest request,
-                                   UnitEntity unitEntity,
-                                   LocaleEntity localeEntity) {
+    public UnitLocaleEntity create(UnitLocaleRequest request) {
         UnitLocaleEntity entity = new UnitLocaleEntity();
-        entity.setUnitEntity(unitEntity);
-        entity.setLocaleEntity(localeEntity);
         applyCommonFields(entity, request);
         return entity;
     }

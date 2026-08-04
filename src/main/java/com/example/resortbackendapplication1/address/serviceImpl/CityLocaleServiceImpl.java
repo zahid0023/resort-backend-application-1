@@ -2,17 +2,26 @@ package com.example.resortbackendapplication1.address.serviceImpl;
 
 import com.example.resortbackendapplication1.address.dto.request.city.locale.CreateCityLocaleRequest;
 import com.example.resortbackendapplication1.address.dto.request.city.locale.UpdateCityLocaleRequest;
+import com.example.resortbackendapplication1.address.model.dto.CityLocaleDto;
 import com.example.resortbackendapplication1.address.model.entity.CityEntity;
 import com.example.resortbackendapplication1.address.model.entity.CityLocaleEntity;
 import com.example.resortbackendapplication1.address.model.mapper.CityLocaleMapper;
 import com.example.resortbackendapplication1.address.repository.CityLocaleRepository;
 import com.example.resortbackendapplication1.address.service.CityLocaleService;
+import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
+import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
+import com.example.resortbackendapplication1.commons.utils.Pagination;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Set;
 
 @Service
 @Slf4j
@@ -28,9 +37,14 @@ public class CityLocaleServiceImpl implements CityLocaleService {
     public SuccessResponse create(CreateCityLocaleRequest request,
                                   CityEntity cityEntity,
                                   LocaleEntity localeEntity) {
+        if (cityLocaleRepository.existsByCityEntity_IdAndLocaleEntity_IdAndIsActiveAndIsDeleted(
+                cityEntity.getId(), localeEntity.getId(), true, false)) {
+            throw new IllegalStateException("City already has a locale entry for locale id: " + localeEntity.getId());
+        }
+
         CityLocaleEntity entity = CityLocaleMapper.create(request);
-        entity.assignLocale(localeEntity);
         cityEntity.addCityLocaleEntity(entity);
+        localeEntity.addCityLocaleEntity(entity);
         cityLocaleRepository.save(entity);
         log.info("CityLocale created with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
@@ -61,5 +75,16 @@ public class CityLocaleServiceImpl implements CityLocaleService {
         return cityLocaleRepository
                 .findByCityEntity_IdAndIdAndIsActiveAndIsDeleted(cityId, id, true, false)
                 .orElseThrow(() -> new EntityNotFoundException("CityLocale not found with id: " + id));
+    }
+
+    @Override
+    public PaginatedResponse<CityLocaleDto> getAll(Long cityId, String localeCode, PaginatedRequest paginatedRequest) {
+        Pageable pageable = paginatedRequest.toPageable(Set.of());
+        Page<@NonNull CityLocaleDto> dtoPage = (localeCode == null || localeCode.isBlank()
+                ? cityLocaleRepository.findByCityEntity_IdAndIsActiveAndIsDeleted(cityId, true, false, pageable)
+                : cityLocaleRepository.findByCityEntity_IdAndLocaleEntity_CodeContainingIgnoreCaseAndIsActiveAndIsDeleted(
+                        cityId, localeCode, true, false, pageable))
+                .map(CityLocaleMapper::toDto);
+        return Pagination.buildPaginatedResponse(dtoPage);
     }
 }

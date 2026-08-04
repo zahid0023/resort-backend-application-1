@@ -2,26 +2,42 @@
 
 Base URL: `/api/v1/countries`
 
-Countries represent geographic countries used across the platform. Country names and descriptions are locale-specific
-and are embedded in every response via the `locales` array. Cities are a sub-resource of countries and are managed via
-the Cities API — they are not included in any country response. All records support soft-delete — deleted records are
-hidden from all responses.
+Countries represent nations recognized by the platform, each identified by a unique `code` (e.g., `BD`)
+plus a 3-letter ISO code and an international calling code. A country's display name and description are
+locale-specific and are managed through a companion sub-resource — Country Locales — reached via
+`/api/v1/countries/{country-id}/locales`. All records support soft-delete — deleted records are hidden from
+all responses.
+
+**`Accept-Language` is required on every endpoint below, with no exceptions** — a request missing (or with
+a blank) `Accept-Language` header is rejected with `400 INVALID_ARGUMENT` before it reaches any endpoint
+(see [Error Responses](#error-responses)). What differs per endpoint is whether the header's *value* is
+actually used to shape the response:
+
+- **`GET /{id}` (Get Country)** and **`GET` (List/Search Countries)** — the header's value selects exactly
+  one locale translation for the country's `locale` field: an exact match if the country has one,
+  otherwise `en`, otherwise `null`.
+- **`GET /{country-id}/locales` (List Country Locales)** — the header must be present, but its value has no
+  effect; this endpoint returns every translation (optionally filtered by `localeCode`), not a single
+  Accept-Language-matched one.
+- **`POST`/`PUT`/`DELETE`** — the header must be present but its value has no effect at all.
 
 ---
 
 ## Endpoints
 
-| Method | Path                                          | Description             |
-|--------|-----------------------------------------------|-------------------------|
-| POST   | `/api/v1/countries`                           | Create a country        |
-| GET    | `/api/v1/countries`                           | List / search countries |
-| GET    | `/api/v1/countries/{id}`                      | Get a country           |
-| PUT    | `/api/v1/countries/{id}`                      | Update a country        |
-| DELETE | `/api/v1/countries/{id}`                      | Delete a country        |
-| GET    | `/api/v1/countries/{country-id}/cities`       | List cities by country  |
-| POST   | `/api/v1/countries/{country-id}/locales`      | Create a country locale |
-| PUT    | `/api/v1/countries/{country-id}/locales/{id}` | Update a country locale |
-| DELETE | `/api/v1/countries/{country-id}/locales/{id}` | Delete a country locale |
+| Method | Path                                          | Description                   |
+|--------|-----------------------------------------------|-------------------------------|
+| POST   | `/api/v1/countries`                           | Create a country              |
+| GET    | `/api/v1/countries`                           | List / search countries       |
+| GET    | `/api/v1/countries/{id}`                      | Get a country                 |
+| PUT    | `/api/v1/countries/{id}`                      | Update a country              |
+| DELETE | `/api/v1/countries/{id}`                      | Delete a country              |
+| GET    | `/api/v1/countries/{country-id}/locales`      | List a country's locales      |
+| POST   | `/api/v1/countries/{country-id}/locales`      | Create a country locale       |
+| PUT    | `/api/v1/countries/{country-id}/locales/{id}` | Update a country locale       |
+| DELETE | `/api/v1/countries/{country-id}/locales/{id}` | Delete a country locale       |
+| POST   | `/api/v1/countries/{country-id}/images`       | Upload a country's flag image |
+| DELETE | `/api/v1/countries/{country-id}/images`       | Remove a country's flag image |
 
 ---
 
@@ -29,24 +45,25 @@ hidden from all responses.
 
 ### Country
 
-| Field        | Type    | Required | Constraints           | Description                                                   |
-|--------------|---------|----------|-----------------------|---------------------------------------------------------------|
-| `id`         | Long    | —        | read-only             | Auto-generated identifier                                     |
-| `code`       | String  | Yes      | max 10 chars, unique  | ISO 3166-1 alpha-2 code (e.g., `BD`, `US`)                    |
-| `iso3_code`  | String  | No       | max 10 chars          | ISO 3166-1 alpha-3 code (e.g., `BGD`, `USA`); omitted if null |
-| `phone_code` | String  | No       | max 10 chars          | International dialing code (e.g., `+880`); omitted if null    |
-| `sort_order` | Integer | Yes      | not null, default `0` | Display order                                                 |
-| `locales`    | Array   | —        | read-only             | All locale translations for this country                      |
+| Field        | Type    | Required | Constraints                                                                             | Description                                                                                                                                 |
+|--------------|---------|----------|-----------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
+| `id`         | Long    | —        | read-only                                                                               | Auto-generated identifier                                                                                                                   |
+| `code`       | String  | Yes      | max 10 chars, unique among active records; set at creation, immutable                   | Short country code (e.g., `BD`)                                                                                                             |
+| `iso3_code`  | String  | Yes      | max 3 chars, must match `^[A-Z]{3}$`                                                    | 3-letter ISO country code (e.g., `BGD`)                                                                                                     |
+| `phone_code` | String  | Yes      | max 3 chars, must match `^[0-9]{1,3}$`                                                  | International calling code (e.g., `880`)                                                                                                    |
+| `flag_url`   | String  | —        | not null (defaults to `""`); read-only here — set via [Country Images](#country-images) | URL of the country's flag image, or `""` if none has been uploaded                                                                          |
+| `sort_order` | Integer | Yes      | default 0                                                                               | Display order                                                                                                                               |
+| `locale`     | Object  | —        | nullable; see CountryLocale below                                                       | The single translation matching the request's `Accept-Language` (falls back to `en`, then `null` if the country has no translations at all) |
 
-### Country Locale
+### CountryLocale
 
-| Field         | Type    | Required | Constraints   | Description                                          |
-|---------------|---------|----------|---------------|------------------------------------------------------|
-| `id`          | Long    | —        | read-only     | Auto-generated identifier                            |
-| `locale_id`   | Long    | Yes      | must exist    | ID of an existing active locale                      |
-| `name`        | String  | Yes      | max 255 chars | Localized name of the country                        |
-| `description` | String  | No       | unlimited     | Localized description; omitted from response if null |
-| `sort_order`  | Integer | Yes      | not null      | Display order for this locale entry                  |
+| Field         | Type    | Required | Constraints                                      | Description                                                                    |
+|---------------|---------|----------|--------------------------------------------------|--------------------------------------------------------------------------------|
+| `id`          | Long    | —        | read-only                                        | Auto-generated identifier                                                      |
+| `locale`      | Locale  | —        | read-only, resolved from `locale_id` at creation | The locale this translation is written in (`id`, `code`, `name`, `sort_order`) |
+| `name`        | String  | Yes      | max 255 chars                                    | Localized country name                                                         |
+| `description` | String  | Yes      | not null (defaults to `""`)                      | Localized description                                                          |
+| `sort_order`  | Integer | Yes      | default 0                                        | Display order among locale entries                                             |
 
 ---
 
@@ -54,8 +71,12 @@ hidden from all responses.
 
 `POST /api/v1/countries`
 
-Creates a country along with its locale-specific translations in one request. All provided `locale_id` values must
-reference existing, active locales.
+Creates a new country together with exactly **one** initial locale translation. `code` must be unique
+among active, non-deleted countries — attempting to reuse an existing code returns `409 CONFLICT`.
+
+**The initial translation is always attached to the `en` locale, resolved by the server — the request
+carries no `locale_id` at all.** There is no option to submit multiple locales at creation time.
+Additional languages are added afterward via the Country Locales sub-resource below.
 
 ### Request Body
 
@@ -63,42 +84,32 @@ reference existing, active locales.
 {
   "code": "BD",
   "iso3_code": "BGD",
-  "phone_code": "+880",
+  "phone_code": "880",
   "sort_order": 1,
-  "locales": [
-    {
-      "locale_id": 1,
-      "name": "Bangladesh",
-      "description": "A country in South Asia.",
-      "sort_order": 1
-    },
-    {
-      "locale_id": 2,
-      "name": "বাংলাদেশ",
-      "description": "দক্ষিণ এশিয়ার একটি দেশ।",
-      "sort_order": 2
-    }
-  ]
+  "locale": {
+    "name": "Bangladesh",
+    "description": "People's Republic of Bangladesh",
+    "sort_order": 1
+  }
 }
 ```
 
 ### Request Fields
 
-| Field        | Type    | Required | Validation              |
-|--------------|---------|----------|-------------------------|
-| `code`       | String  | Yes      | Not blank, max 10 chars |
-| `iso3_code`  | String  | No       | max 10 chars            |
-| `phone_code` | String  | No       | max 10 chars            |
-| `sort_order` | Integer | Yes      | Not null                |
-| `locales`    | Array   | No       | See locale fields below |
+| Field        | Type    | Required | Validation                                                                                 |
+|--------------|---------|----------|--------------------------------------------------------------------------------------------|
+| `code`       | String  | Yes      | Not blank, max 10 chars, unique among active records                                       |
+| `iso3_code`  | String  | Yes      | Not blank, max 3 chars, must match `^[A-Z]{3}$`                                            |
+| `phone_code` | String  | Yes      | Not blank, max 3 chars, must match `^[0-9]{1,3}$`                                          |
+| `sort_order` | Integer | Yes      | Not null                                                                                   |
+| `locale`     | Object  | Yes      | Not null; validated (see below) — no `locale_id` field; always resolved to the `en` locale |
 
-**Locale fields (`locales[]`):**
+**Locale entry (`locale`):**
 
 | Field         | Type    | Required | Validation               |
 |---------------|---------|----------|--------------------------|
-| `locale_id`   | Long    | Yes      | Not null, must exist     |
 | `name`        | String  | Yes      | Not blank, max 255 chars |
-| `description` | String  | No       | —                        |
+| `description` | String  | Yes      | Not null                 |
 | `sort_order`  | Integer | Yes      | Not null                 |
 
 ### Response `201 Created`
@@ -116,7 +127,9 @@ reference existing, active locales.
 
 `GET /api/v1/countries/{id}`
 
-Returns a single country with all its locale translations.
+Returns a single active country by its ID. `locale` is the one translation matching the request's
+`Accept-Language` header (falls back to `en`, then `null` if the country has no translations at all). To
+fetch every translation a country has, use [List Country Locales](#list-country-locales) below.
 
 ### Path Parameters
 
@@ -126,31 +139,27 @@ Returns a single country with all its locale translations.
 
 ### Response `200 OK`
 
-Optional fields (`iso3_code`, `phone_code`, locale `description`) are omitted from the response when not set.
-
 ```json
 {
-  "country": {
+  "data": {
     "id": 1,
     "code": "BD",
     "iso3_code": "BGD",
-    "phone_code": "+880",
+    "phone_code": "880",
+    "flag_url": "",
     "sort_order": 1,
-    "locales": [
-      {
+    "locale": {
+      "id": 1,
+      "locale": {
         "id": 1,
-        "locale_id": 1,
-        "name": "Bangladesh",
-        "description": "A country in South Asia.",
+        "code": "en",
+        "name": "English",
         "sort_order": 1
       },
-      {
-        "id": 2,
-        "locale_id": 2,
-        "name": "বাংলাদেশ",
-        "sort_order": 2
-      }
-    ]
+      "name": "Bangladesh",
+      "description": "People's Republic of Bangladesh",
+      "sort_order": 1
+    }
   }
 }
 ```
@@ -161,25 +170,39 @@ Optional fields (`iso3_code`, `phone_code`, locale `description`) are omitted fr
 
 `GET /api/v1/countries`
 
-Returns a paginated, filterable list of active (non-deleted) countries. Each item includes all locale translations. All
-filter parameters are optional; omitting them returns all countries. Multiple filters are combined with AND. Each filter
-performs a case-insensitive partial match.
+Returns a paginated, filterable list of active (non-deleted) countries. All filter parameters are
+optional; omitting them returns all countries. Multiple filters are combined with AND. Each `LIKE`-type
+filter performs a case-insensitive partial match. `Accept-Language` selects each country's `locale` field
+the same way as `GET /{id}` (exact match, falls back to `en`, then `null`).
+
+> **Note:** `id` is not a selectable `sortBy` value — passing `?sortBy=id` throws
+> `400 INVALID_ARGUMENT: Invalid sort field: id`. It's used only as the implicit sort when `sortBy` is
+> omitted entirely.
 
 ### Query Parameters
 
-| Parameter   | Type   | Default | Constraints                                    | Description                                                   |
-|-------------|--------|---------|------------------------------------------------|---------------------------------------------------------------|
-| `code`      | String | —       | —                                              | Filter by country code (partial, case-insensitive)            |
-| `iso3Code`  | String | —       | —                                              | Filter by ISO 3166-1 alpha-3 code (partial, case-insensitive) |
-| `phoneCode` | String | —       | —                                              | Filter by dialing code (partial, case-insensitive)            |
-| `page`      | int    | `0`     | >= 0                                           | Zero-based page index                                         |
-| `size`      | int    | `10`    | 1 – 50                                         | Number of items per page                                      |
-| `sort_by`   | String | `id`    | `id`, `code`, `name`, `sortOrder`, `createdAt` | Field to sort by                                              |
-| `sort_dir`  | String | `ASC`   | `ASC`, `DESC`                                  | Sort direction                                                |
+> **Note:** Query parameters bind directly onto `CountryFilterRequest`'s Java field names, so they are
+> **camelCase** — not the snake_case used in JSON request/response bodies. Jackson's `@JsonNaming`
+> (which produces snake_case) only applies to `@RequestBody`/`@ResponseBody`; `@ModelAttribute` /
+> `@ParameterObject` query-string binding goes through Spring's plain `DataBinder` instead, which
+> matches the exact property name.
+
+| Parameter   | Type   | Default         | Constraints                                                                | Description                                                                               |
+|-------------|--------|-----------------|----------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
+| `code`      | String | —               | —                                                                          | Accepted but **not currently applied** as a filter (see note below)                       |
+| `iso3Code`  | String | —               | —                                                                          | Filter by ISO3 code (partial, case-insensitive)                                           |
+| `phoneCode` | String | —               | —                                                                          | Filter by phone code (partial, case-insensitive)                                          |
+| `name`      | String | —               | —                                                                          | Filter by locale-specific name (partial, case-insensitive), scoped to the resolved locale |
+| `page`      | int    | `0`             | >= 0                                                                       | Zero-based page index                                                                     |
+| `size`      | int    | `10`            | 1 – 50                                                                     | Number of items per page                                                                  |
+| `sortBy`    | String | `id` (implicit) | `createdAt`, `code`, `iso3Code`, `phoneCode`, `name` (`id` NOT selectable) | Field to sort by                                                                          |
+| `sortDir`   | String | `ASC`           | `ASC`, `DESC`                                                              | Sort direction                                                                            |
+
+> **Note:** `code` is bound onto the filter request but is not wired into the search predicates in the
+> current implementation (`CountrySearchField` has no entry for it) — passing `?code=...` has no
+> filtering effect.
 
 ### Response `200 OK`
-
-Optional fields (`iso3_code`, `phone_code`, locale `description`) are omitted when not set.
 
 ```json
 {
@@ -188,37 +211,41 @@ Optional fields (`iso3_code`, `phone_code`, locale `description`) are omitted wh
       "id": 1,
       "code": "BD",
       "iso3_code": "BGD",
-      "phone_code": "+880",
+      "phone_code": "880",
+      "flag_url": "",
       "sort_order": 1,
-      "locales": [
-        {
+      "locale": {
+        "id": 1,
+        "locale": {
           "id": 1,
-          "locale_id": 1,
-          "name": "Bangladesh",
-          "description": "A country in South Asia.",
+          "code": "en",
+          "name": "English",
           "sort_order": 1
         },
-        {
-          "id": 2,
-          "locale_id": 2,
-          "name": "বাংলাদেশ",
-          "sort_order": 2
-        }
-      ]
+        "name": "Bangladesh",
+        "description": "People's Republic of Bangladesh",
+        "sort_order": 1
+      }
     },
     {
       "id": 2,
       "code": "US",
+      "iso3_code": "USA",
+      "phone_code": "1",
+      "flag_url": "",
       "sort_order": 2,
-      "locales": [
-        {
-          "id": 3,
-          "locale_id": 1,
-          "name": "United States",
-          "description": "A country in North America.",
+      "locale": {
+        "id": 3,
+        "locale": {
+          "id": 1,
+          "code": "en",
+          "name": "English",
           "sort_order": 1
-        }
-      ]
+        },
+        "name": "United States",
+        "description": "",
+        "sort_order": 1
+      }
     }
   ],
   "current_page": 0,
@@ -226,7 +253,19 @@ Optional fields (`iso3_code`, `phone_code`, locale `description`) are omitted wh
   "total_elements": 2,
   "page_size": 10,
   "has_next": false,
-  "has_previous": false
+  "has_previous": false,
+  "sortable_fields": [
+    "createdAt",
+    "code",
+    "iso3Code",
+    "phoneCode",
+    "name"
+  ],
+  "searchable_fields": [
+    "iso3Code",
+    "phoneCode",
+    "name"
+  ]
 }
 ```
 
@@ -236,8 +275,9 @@ Optional fields (`iso3_code`, `phone_code`, locale `description`) are omitted wh
 
 `PUT /api/v1/countries/{id}`
 
-Updates `iso3_code`, `phone_code`, and `sort_order`. The `code` field is set at creation time and cannot be changed.
-Locale translations are managed via the country locale endpoints.
+Updates `iso3_code`, `phone_code`, and `sort_order`. `code` is set at creation and cannot be changed.
+Locale translations are managed separately via the Country Locales sub-resource endpoints below, not
+through this endpoint.
 
 ### Path Parameters
 
@@ -250,18 +290,18 @@ Locale translations are managed via the country locale endpoints.
 ```json
 {
   "iso3_code": "BGD",
-  "phone_code": "+880",
-  "sort_order": 1
+  "phone_code": "880",
+  "sort_order": 2
 }
 ```
 
 ### Request Fields
 
-| Field        | Type    | Required | Validation   |
-|--------------|---------|----------|--------------|
-| `iso3_code`  | String  | No       | max 10 chars |
-| `phone_code` | String  | No       | max 10 chars |
-| `sort_order` | Integer | Yes      | Not null     |
+| Field        | Type    | Required | Validation                                        |
+|--------------|---------|----------|---------------------------------------------------|
+| `iso3_code`  | String  | Yes      | Not blank, max 3 chars, must match `^[A-Z]{3}$`   |
+| `phone_code` | String  | Yes      | Not blank, max 3 chars, must match `^[0-9]{1,3}$` |
+| `sort_order` | Integer | Yes      | Not null                                          |
 
 ### Response `200 OK`
 
@@ -278,7 +318,8 @@ Locale translations are managed via the country locale endpoints.
 
 `DELETE /api/v1/countries/{id}`
 
-Soft-deletes the country. The record is not removed from the database but will no longer appear in any response.
+Soft-deletes the country. The record is not removed from the database but will no longer appear in any
+response.
 
 ### Path Parameters
 
@@ -297,68 +338,68 @@ Soft-deletes the country. The record is not removed from the database but will n
 
 ---
 
-## Get Cities by Country
+## Country Locales
 
-`GET /api/v1/countries/{country-id}/cities`
+Country Locale endpoints manage locale-specific name/description translations for a country. The
+`{country-id}` path parameter must reference an existing, active country.
 
-Returns a paginated, filterable list of active (non-deleted) cities belonging to the specified country. Each item
-includes all locale translations. The `country` field is not included in city responses.
+---
 
-### Path Parameters
+### List Country Locales
 
-| Parameter    | Type | Description       |
-|--------------|------|-------------------|
-| `country-id` | Long | ID of the country |
+`GET /api/v1/countries/{country-id}/locales`
 
-### Query Parameters
+Returns a paginated list of every locale translation belonging to a country — this is the only way to see
+more than the single Accept-Language-matched translation returned by `GET /countries/{id}` and
+`GET /countries`. Optionally filtered to locales whose `code` contains a given substring.
 
-| Parameter  | Type   | Default | Constraints                            | Description                                     |
-|------------|--------|---------|----------------------------------------|-------------------------------------------------|
-| `code`     | String | —       | —                                      | Filter by city code (partial, case-insensitive) |
-| `page`     | int    | `0`     | >= 0                                   | Zero-based page index                           |
-| `size`     | int    | `10`    | 1 – 50                                 | Number of items per page                        |
-| `sort_by`  | String | `id`    | `id`, `code`, `sortOrder`, `createdAt` | Field to sort by                                |
-| `sort_dir` | String | `ASC`   | `ASC`, `DESC`                          | Sort direction                                  |
+#### Path Parameters
 
-### Response `200 OK`
+| Parameter    | Type | Description              |
+|--------------|------|--------------------------|
+| `country-id` | Long | ID of the parent country |
 
-Optional fields (`code`, locale `description`) are omitted when not set.
+#### Query Parameters
+
+| Parameter    | Type   | Default | Constraints | Description                                                                                     |
+|--------------|--------|---------|-------------|-------------------------------------------------------------------------------------------------|
+| `localeCode` | String | —       | —           | Filter to locales whose `code` contains this value (partial, case-insensitive), e.g. `en`, `bn` |
+| `page`       | int    | `0`     | >= 0        | Zero-based page index                                                                           |
+| `size`       | int    | `10`    | 1 – 50      | Number of items per page                                                                        |
+
+> **Note:** `sortBy`/`sortDir` are accepted on the request object but there are no sortable fields
+> registered for this endpoint — passing any non-null `sortBy` value throws
+> `400 INVALID_ARGUMENT: Invalid sort field: <value>`. Omit `sortBy` entirely to get the default
+> (sorted by `id` ascending).
+
+#### Response `200 OK`
 
 ```json
 {
   "data": [
     {
       "id": 1,
-      "code": "DHK",
-      "sort_order": 1,
-      "locales": [
-        {
-          "id": 1,
-          "locale_id": 1,
-          "name": "Dhaka",
-          "description": "Capital city of Bangladesh.",
-          "sort_order": 1
-        },
-        {
-          "id": 2,
-          "locale_id": 2,
-          "name": "ঢাকা",
-          "sort_order": 2
-        }
-      ]
+      "locale": {
+        "id": 1,
+        "code": "en",
+        "name": "English",
+        "sort_order": 1
+      },
+      "name": "Bangladesh",
+      "description": "People's Republic of Bangladesh",
+      "sort_order": 1
     },
     {
       "id": 2,
-      "code": "CTG",
-      "sort_order": 2,
-      "locales": [
-        {
-          "id": 3,
-          "locale_id": 1,
-          "name": "Chittagong",
-          "sort_order": 1
-        }
-      ]
+      "locale": {
+        "id": 2,
+        "code": "bn",
+        "name": "Bengali",
+        "sort_order": 2
+      },
+      "name": "বাংলাদেশ",
+      "description": "",
+      "sort_order": 2
     }
   ],
   "current_page": 0,
@@ -366,16 +407,11 @@ Optional fields (`code`, locale `description`) are omitted when not set.
   "total_elements": 2,
   "page_size": 10,
   "has_next": false,
-  "has_previous": false
+  "has_previous": false,
+  "sortable_fields": null,
+  "searchable_fields": null
 }
 ```
-
----
-
-## Country Locales
-
-Country locale endpoints manage per-locale translations for a country. The `{country-id}` path parameter must reference
-an existing, active country.
 
 ---
 
@@ -383,40 +419,44 @@ an existing, active country.
 
 `POST /api/v1/countries/{country-id}/locales`
 
-Adds a new locale translation to an existing country.
+Adds a new locale translation to an existing country. `locale_id` must reference an existing, active
+locale — an unknown `locale_id` returns `404 ENTITY_NOT_FOUND`. The combination of country and locale
+must be unique — adding a locale the country already has a translation for returns `409 CONFLICT`,
+pre-checked at the application level before any write (backed by a DB-level unique constraint on
+`(country_id, locale_id)` as a last-resort guard).
 
 #### Path Parameters
 
-| Parameter    | Type | Description       |
-|--------------|------|-------------------|
-| `country-id` | Long | ID of the country |
+| Parameter    | Type | Description              |
+|--------------|------|--------------------------|
+| `country-id` | Long | ID of the parent country |
 
 #### Request Body
 
 ```json
 {
-  "locale_id": 1,
-  "name": "Bangladesh",
-  "description": "A country in South Asia.",
-  "sort_order": 1
+  "locale_id": 2,
+  "name": "বাংলাদেশ",
+  "description": "গণপ্রজাতন্ত্রী বাংলাদেশ",
+  "sort_order": 2
 }
 ```
 
 #### Request Fields
 
-| Field         | Type    | Required | Validation               |
-|---------------|---------|----------|--------------------------|
-| `locale_id`   | Long    | Yes      | Not null, must exist     |
-| `name`        | String  | Yes      | Not blank, max 255 chars |
-| `description` | String  | No       | —                        |
-| `sort_order`  | Integer | Yes      | Not null                 |
+| Field         | Type    | Required | Validation                                  |
+|---------------|---------|----------|---------------------------------------------|
+| `locale_id`   | Long    | Yes      | Not null; must reference an existing locale |
+| `name`        | String  | Yes      | Not blank, max 255 chars                    |
+| `description` | String  | Yes      | Not null                                    |
+| `sort_order`  | Integer | Yes      | Not null                                    |
 
 #### Response `201 Created`
 
 ```json
 {
   "success": true,
-  "id": 3
+  "id": 2
 }
 ```
 
@@ -426,22 +466,23 @@ Adds a new locale translation to an existing country.
 
 `PUT /api/v1/countries/{country-id}/locales/{id}`
 
-Updates an existing locale translation for a country.
+Updates `name`, `description`, and `sort_order` for an existing country locale translation. The
+associated country and locale cannot be changed after creation.
 
 #### Path Parameters
 
 | Parameter    | Type | Description              |
 |--------------|------|--------------------------|
-| `country-id` | Long | ID of the country        |
+| `country-id` | Long | ID of the parent country |
 | `id`         | Long | ID of the country locale |
 
 #### Request Body
 
 ```json
 {
-  "name": "Bangladesh",
-  "description": "Updated description.",
-  "sort_order": 1
+  "name": "বাংলাদেশ",
+  "description": "গণপ্রজাতন্ত্রী বাংলাদেশ",
+  "sort_order": 2
 }
 ```
 
@@ -450,7 +491,7 @@ Updates an existing locale translation for a country.
 | Field         | Type    | Required | Validation               |
 |---------------|---------|----------|--------------------------|
 | `name`        | String  | Yes      | Not blank, max 255 chars |
-| `description` | String  | No       | —                        |
+| `description` | String  | Yes      | Not null                 |
 | `sort_order`  | Integer | Yes      | Not null                 |
 
 #### Response `200 OK`
@@ -458,7 +499,7 @@ Updates an existing locale translation for a country.
 ```json
 {
   "success": true,
-  "id": 3
+  "id": 2
 }
 ```
 
@@ -468,13 +509,14 @@ Updates an existing locale translation for a country.
 
 `DELETE /api/v1/countries/{country-id}/locales/{id}`
 
-Soft-deletes a country locale. The record is not removed from the database but will no longer appear in any response.
+Soft-deletes a country locale. The record is not removed from the database but will no longer appear in
+any response.
 
 #### Path Parameters
 
 | Parameter    | Type | Description              |
 |--------------|------|--------------------------|
-| `country-id` | Long | ID of the country        |
+| `country-id` | Long | ID of the parent country |
 | `id`         | Long | ID of the country locale |
 
 #### Response `200 OK`
@@ -482,7 +524,107 @@ Soft-deletes a country locale. The record is not removed from the database but w
 ```json
 {
   "success": true,
-  "id": 3
+  "id": 2
+}
+```
+
+---
+
+## Country Images
+
+Country Image endpoints upload (or remove) the single flag image associated with a country, using the
+[Unified Image Hosting Strategy](unified-image-hosting-strategy.md) engine — see that document for how
+provider dispatch, credential resolution, and the underlying Cloudinary/S3 calls actually work. The
+`{country-id}` path parameter must reference an existing, active country.
+
+> **Note:** the result of these endpoints is readable afterward — `flag_url` is included on the `Country`
+> data model (see [Data Model](#data-model) above) and appears in both `GET /countries/{id}` and
+> `GET /countries` responses.
+
+---
+
+### Upload Country Flag Image
+
+`POST /api/v1/countries/{country-id}/images`
+
+Uploads a single image through the given `ImageHostingProviderConfig` and saves the resulting URL onto the
+country's `flag_url` column, overwriting any previous value. Consumes `multipart/form-data`.
+
+**The uploaded file must be an SVG** — accepted if either its content-type is `image/svg+xml` or its
+filename ends in `.svg` (some clients send a generic content-type for SVG uploads, so either signal is
+enough). Anything else is rejected with `400 INVALID_ARGUMENT` before any upload is attempted.
+
+#### Path Parameters
+
+| Parameter    | Type | Description       |
+|--------------|------|-------------------|
+| `country-id` | Long | ID of the country |
+
+#### Request Parts
+
+| Part                 | Type              | Required | Description                                                              |
+|----------------------|-------------------|----------|--------------------------------------------------------------------------|
+| `provider_config_id` | Long (form field) | Yes      | ID of an existing, active `ImageHostingProviderConfig` to upload through |
+| `image`              | File              | Yes      | The image file to upload                                                 |
+
+#### Example Request
+
+```bash
+curl -X POST http://localhost:8080/api/v1/countries/1/images \
+  -H "Accept-Language: en" \
+  -F "provider_config_id=1" \
+  -F "image=@bangladesh-flag.png"
+```
+
+#### Response `200 OK`
+
+```json
+{
+  "success": true,
+  "id": 1
+}
+```
+
+`id` is the country's own id — not an image id, since there is no persisted image record (see
+[Unified Image Hosting Strategy](unified-image-hosting-strategy.md)).
+
+---
+
+### Remove Country Flag Image
+
+`DELETE /api/v1/countries/{country-id}/images`
+
+Deletes the image from its provider and resets the country's `flag_url` back to `""` (not `null` —
+`countries.flag_url` is `not null default ''`). The caller must supply both the config that owns the image
+and the `public_id` returned at upload time; there is no way to look this up server-side since it isn't
+persisted anywhere.
+
+#### Path Parameters
+
+| Parameter    | Type | Description       |
+|--------------|------|-------------------|
+| `country-id` | Long | ID of the country |
+
+#### Query Parameters
+
+| Parameter            | Type   | Required | Description                                                             |
+|----------------------|--------|----------|-------------------------------------------------------------------------|
+| `provider_config_id` | Long   | Yes      | ID of the `ImageHostingProviderConfig` the image was uploaded through   |
+| `public_id`          | String | Yes      | The `public_id` (Cloudinary) or object key (S3) returned at upload time |
+
+#### Example Request
+
+```bash
+curl -X DELETE "http://localhost:8080/api/v1/countries/1/images?provider_config_id=1&public_id=bangladesh-flag" \
+  -H "Accept-Language: en"
+```
+
+#### Response `200 OK`
+
+```json
+{
+  "success": true,
+  "id": 1
 }
 ```
 
@@ -501,8 +643,9 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                                                  |
-|-------------|----------------------------|------------------------------------------------------------------------|
-| 400         | `INVALID_ARGUMENT`         | Missing required fields or invalid sort field                          |
-| 404         | `ENTITY_NOT_FOUND`         | Country, city, locale, or country locale not found, or already deleted |
-| 409         | `DATA_INTEGRITY_VIOLATION` | Constraint violation (e.g. duplicate code)                             |
+| HTTP Status | Error Code                 | Cause                                                                                                                                                                                                                                                                                                                                                                      |
+|-------------|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields; an unsupported `sortBy` query value; or, on the Country Images endpoints, an uploaded file that isn't an SVG, a required config key missing/blank for the resolved image hosting provider, or `provider_config_id`'s provider has no registered upload strategy |
+| 404         | `ENTITY_NOT_FOUND`         | Country not found, country locale not found, the locale referenced by `locale_id` not found (locale creation), or `provider_config_id` not referencing an existing, active `ImageHostingProviderConfig` (Country Images)                                                                                                                                                   |
+| 409         | `CONFLICT`                 | `code` already in use by another active country (`create`); the country already has a translation for the given `locale_id` (`create` country locale, pre-checked at the application level); or the underlying image hosting provider (Cloudinary/S3) itself rejected the upload/delete call (Country Images)                                                              |
+| 409         | `DATA_INTEGRITY_VIOLATION` | Last-resort DB-level unique constraint on `country_id` + `locale_id`, should not normally be reachable now that the duplicate is pre-checked at the application level                                                                                                                                                                                                      |

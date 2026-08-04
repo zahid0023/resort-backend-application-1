@@ -10,21 +10,21 @@ import com.example.resortbackendapplication1.commons.dto.response.PaginatedRespo
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 
-import java.util.Map;
-
 public interface CountryService {
 
     SuccessResponse create(CreateCountryRequest request,
-                           Map<Long, LocaleEntity> localeEntityMap);
+                           LocaleEntity localeEntity);
 
     CountryEntity getEntityById(Long id);
 
     CountryResponse getById(Long id);
 
-    PaginatedResponse<CountryDto> getAll(CountryFilterRequest request, Long localeId);
+    PaginatedResponse<CountryDto> getAll(CountryFilterRequest request);
 
     SuccessResponse update(CountryEntity entity,
                            UpdateCountryRequest request);
 
     SuccessResponse delete(CountryEntity entity);
+
+    SuccessResponse updateFlagImage(CountryEntity entity, String flagUrl);
 }

@@ -94,8 +94,10 @@ before generating anything:
 4. Confirm build tooling: this repo uses Maven with a wrapper (`./mvnw` / `mvnw.cmd`), not Gradle.
 
 Also read `address/model/entity/AuditableEntity.java`'s package (`commons/model/entity/AuditableEntity.java`),
-`commons/dto/response/SuccessResponse.java`, `PaginatedResponse.java`, `commons/utils/EntityValidator.java`,
-`commons/utils/LocaleUtils.java` — these are stable shared building blocks every entity uses as-is.
+`commons/dto/response/SuccessResponse.java`, `PaginatedResponse.java`, `commons/utils/EntityValidator.java`
+— these are stable shared building blocks every entity uses as-is. A root entity's `create()` flow resolves
+its single required locale directly via `LocaleService.getEntityByCode("en")` (see the live `Country`/`City`
+reference controllers) — there is no `LocaleUtils` map/list-resolution helper anymore.
 
 ## Step 0 — Verify the schema exists
 
@@ -150,31 +152,53 @@ user on 2026-07-30.
    as a Unicode box-drawing table (`┌─┬─┐` / `├─┼─┤` / `└─┴─┘`, column widths computed from the actual data,
    per the repo-wide box-drawing table convention) — never a markdown pipe table. One table for the entity's
    own fields (name, type, nullable, notes — pull straight off the Step 0 migration columns), and if a locale
-   sub-resource applies, a second box-drawing table underneath for `{Entity}Locale`'s own fields. Note below
-   the tables that both also inherit audit columns from `AuditableEntity`, plus any table-level constraint
-   (e.g. `UNIQUE(city_id, locale_id)`). Options: `"Confirm as-is (Recommended)"` + `"Other"`.
+   sub-resource applies, a second box-drawing table underneath for `{Entity}Locale`'s **every** column as it
+   literally appears in the migration — this **must include its structural FK columns** (e.g. `city_id`,
+   `locale_id` / `unit_type_id`, `locale_id`) as their own rows, not just its non-FK scalar fields. Corrected
+   2026-07-31 after a UnitType run silently dropped `unit_type_id`/`locale_id` from the table, per explicit user
+   correction: *"why you did not show unittypeid,localeid for unittypelocales i asked you to never assume must
+   show each for permission please!"* The **only** columns allowed to stay implicit/omitted from this table are
+   the ones actually inherited from `AuditableEntity` (id, createdBy/At, updatedBy/At, version, isActive,
+   isDeleted, deletedBy/At) — every other real column, including structural FKs, gets a row. Layer 2's later
+   exemption for a locale sub-resource's structural FK ids (see the "Never drop a field" note there) only means
+   those two columns skip the Create/Update/Filterable/Sortable *classification* question — it does **not** mean
+   they're exempt from being shown here in the Layer 1 Fields table. Note below the tables that both also
+   inherit audit columns from `AuditableEntity`, plus any table-level constraint (e.g.
+   `UNIQUE(city_id, locale_id)`). Options: `"Confirm as-is (Recommended)"` + `"Other"`.
 
 3. **Relationship** tab — single-select, header `"Relationship"`. Only include when Step 0 found a parent FK.
-   Ask whether the parent entity/DTO should expose a back-reference collection to this new child (bidirectional)
-   or stay unidirectional (child holds the FK only — the existing precedent already in the codebase, e.g.
-   `City → Country`). Options: `"Unidirectional (Recommended)"` + `"Bidirectional"` — present both as existing
-   precedents, not a pushed recommendation beyond the default option ordering.
+   Ask whether the **parent entity** (JPA level only — `@OneToMany(mappedBy=...)` collection +
+   `add{Child}Entity`/`remove{Child}Entity` helpers, for cascade-delete/orphan-removal bookkeeping) should hold
+   a back-reference collection to this new child (bidirectional) or stay unidirectional (child holds the FK
+   only — the existing precedent already in the codebase, e.g. `City → Country`). Options:
+   `"Unidirectional (Recommended)"` + `"Bidirectional"` — present both as existing precedents, not a pushed
+   recommendation beyond the default option ordering. **This is an entity/JPA-only question — see the DTO-shape
+   rule below, it never affects the parent DTO, mapper, or service.**
 
 **Locale sub-resource note:** whether a locale sub-resource exists at all is *not* a question — it's a settled
 fact from Step 0 (a `{table}_locales` migration table present or absent). When present, its fields simply
 appear as the second table in the Fields tab; there is no separate "does it need one" question.
 
-**Bidirectional recursion note:** if Relationship = Bidirectional, the parent DTO gets a list of the child DTO
-and the child DTO gets the parent DTO — which, mapped naively, recurses forever (parent → children → each
-child's parent → that parent's children → ...). There is no existing precedent for this in the codebase (the
-one other bidirectional entity pair, `Locale`↔`CountryLocale`, only wires the entity side; `LocaleDto` never
-exposes a reverse collection). Default resolution, applied automatically without a separate question unless
-the user's Layer 1 answers imply otherwise: nested DTOs stop one level deep — each mapper gets a
-package-private `toDtoWithout{Other}(...)` variant (e.g. `CityMapper.toDtoWithoutCountry`,
-`CountryMapper.toDtoWithoutCities`) that the *other* mapper calls when embedding, so a `CountryDto.cities`
-entry never re-embeds `country`, and a `CityDto.country` never re-embeds `cities`. This resolution belongs to
-Layer 3 (Mapper), not Layer 1 — Layer 1 only produces the entity fields/collections and the DTO fields; the
-recursion-safe mapping methods are generated when Layer 3 is answered.
+**DTO shape rule, superseded 2026-08-02 — no nested collections, no locale lists, ever:** a Bidirectional
+answer above only adds a JPA-level `@OneToMany` collection + helpers to the **parent entity** — it never adds
+anything to the parent DTO. Every entity's DTO (root or child, locale sub-resource or not) consists of exactly
+three kinds of fields, no more:
+1. Its own basic scalar fields.
+2. A **single** foreign-key reference, if the entity has a parent FK (e.g. `CityDto.country`,
+   `UnitDto.unitType`) — one nested object, never a list.
+3. A **single** `locale` field (nullable `{Entity}LocaleDto`, not a list) — the translation matching the
+   current request's `Accept-Language`, falling back to `en`, then `null` if there's no translation at all.
+
+A DTO **never** exposes a nested child collection (no `Country.cities`, no `Country.currencies`, no
+`UnitType.units` — these all existed at one point and were removed) and **never** exposes every locale as a
+list (`locales` doesn't exist on any DTO — only singular `locale`). Fetching every translation a parent has is
+only ever done through the locale sub-resource's own dedicated list endpoint (see the new Layer 4/5/6 rules
+below), never embedded in the parent's own response.
+
+Because of this, mapper `toDto` methods take **no flags at all** — see Layer 3 — and `ServiceImpl.getById`
+never builds a nested child list to chain onto a parent DTO. The one remaining thing a `ServiceImpl` still
+chains onto the builder is the single parent FK DTO for a child entity (e.g. `City` chains `.country(...)`) —
+this belongs to Layer 5, not Layer 1.
 
 **Locale-entity collection note:** when a locale sub-resource applies, `LocaleEntity` (in the `locale`
 module) also needs a `{entity}LocaleEntities` collection + `add{Entity}LocaleEntity`/
@@ -208,7 +232,9 @@ are legitimately skipped are the inherited `AuditableEntity` audit columns (id, 
 version, isActive, isDeleted, deletedBy/At) and a locale sub-resource's own structural FK ids (e.g.
 `city_id`/`locale_id` on `CityLocale` itself), which are exempt because the locale controller's routing has no
 alternative precedent (always nested under the parent per Layer 6) — there is no genuine open question about
-how those two get populated.
+how those two get populated. **This exemption is scoped to this Layer 2 classification question only** — those
+same structural FK columns must still appear as their own rows in Layer 1's Fields box-drawing table (see
+Layer 1's Fields tab note); don't let "exempt from classification" bleed into "exempt from display."
 
 **Parent FK fix, hardcoded 2026-07-31 — do NOT assume a parent FK's Create checkbox:** the entity's own parent
 FK field (e.g. `City.country_id`) is a normal classifiable field like any other and must get the full genuine
@@ -227,23 +253,78 @@ all of them — e.g. 6 classifiable fields = two calls of 4 + 2, not one call of
 Send every planned call before considering Layer 2 answered; do not treat the first call's answers as
 sufficient just because the questionnaire UI accepted them.
 
+**Root create's single English locale, hardcoded 2026-08-01 — not a question, always this shape:** whenever a
+locale sub-resource applies, `Create{Entity}Request` embeds exactly **one** `{Entity}LocaleRequest locale`
+field (`@Valid @NotNull`) — never `List<Create{Entity}LocaleRequest> locales`, and never with a `locale_id` in
+the root create payload at all. The controller resolves the `en` `LocaleEntity` itself via
+`localeService.getEntityByCode("en")` (add this method to `LocaleService`/`LocaleServiceImpl` if it isn't
+already there — it wraps `localeRepository.findByCodeAndIsActiveAndIsDeleted(code, true, false)`, throwing
+`EntityNotFoundException` like `getEntityById`), and the service always attaches the one submitted translation
+to that resolved entity — there is no "must be English" runtime check anywhere, because the client never
+supplies a `locale_id` to get it wrong. This is unconditional across every entity with a locale sub-resource —
+do not ask about it, do not offer a multi-locale-at-create option. Additional languages are only ever added
+afterward via the entity's own `POST /{entities}/{id}/locales` sub-resource endpoint, which keeps accepting an
+explicit `locale_id` via `Create{Entity}LocaleRequest` (the locale sub-resource's own create is untouched by
+this rule). Because of this, `{Entity}LocaleMapper.create(...)`'s parameter type should be the **base**
+`{Entity}LocaleRequest` (not `Create{Entity}LocaleRequest`) — it never reads `locale_id` anyway (that's
+resolved separately by whichever controller calls it), and the base type is what the root
+`Create{Entity}Request.locale` field actually is. `Create{Entity}LocaleRequest` (with `locale_id`) still gets
+generated and used by the locale sub-resource's own controller/service.
+
 ### Layer 3 — Mapper (incl. locale mapper)
 
-Ask this layer as **one `AskUserQuestion` call**: a `"Methods"` tab (single-select, always present) plus a
-`"Recursion"` tab (single-select, only when Layer 1's Relationship answer was Bidirectional). **Both tabs'
-question text must contain a Unicode box-drawing table** (hardcoded 2026-07-30 — "must show as table please"),
-never a plain sentence:
+**Builder-returning, cross-entity-unaware, no-flags mapper strategy (current, final design as of 2026-08-02 —
+see the live `CountryMapper.java`/`CityMapper.java`/`currency/.../CurrencyMapper.java`/
+`unit/.../UnitTypeMapper.java`/`UnitMapper.java` for the exact shape).** Several earlier intermediate designs
+were tried and abandoned across this repo's history — a `toDto(entity)`/`toDto(entity, Optional<Long>
+localeId)` overload split, a `toDtoWithout{Parent}` helper family, an `include{X}`-boolean-per-foreign-field
+family, and (most recently) a single `boolean includeLocales` flag toggling between one-locale and
+every-locale — do not propose any of those; go straight to this final shape.
 
-1. **Methods** tab — one box-drawing table per mapper (entity mapper, then locale mapper if applicable) with
-   columns `Method | Signature | Notes`, listing `create`, `update`, `toDto`, and (if the reference
-   `CountryMapper`/`CountryLocaleMapper` currently has it) the locale-scoped `toDto(entity, localeId)`
-   overload — mirroring the live reference mappers' exact signatures. Below the tables, note that
-   immutable/unique fields are set only in `create()`, never in the shared `applyCommonFields()`. Options:
-   `"Mirror Country/CountryLocale mappers (Recommended)"` + `"Other"`.
-2. **Recursion** tab — a box-drawing table with columns `Mapper | Helper method | Purpose` listing each
-   side's `toDtoWithout{Other}` helper (e.g. `CityMapper.toDtoWithoutCountry`,
-   `CountryMapper.toDtoWithoutCities`) and what it's used for. Options:
-   `"One-level embed via helpers (Recommended)"` + `"Other"`.
+Every entity mapper (and locale mapper) exposes **exactly one** `toDto` method, taking **only the entity, no
+other parameters at all**:
+
+```java
+public {Entity}Dto.{Entity}DtoBuilder toDto({Entity}Entity entity) {
+    return {Entity}Dto.builder()
+            .id(entity.getId())
+            // ...every basic scalar field...
+            .locale(singleLocale(entity));
+}
+
+private {Entity}LocaleDto singleLocale({Entity}Entity entity) {
+    {Entity}LocaleEntity matched = matchLocale(entity, LocaleContext.getLocaleId());
+    return matched == null ? null : {Entity}LocaleMapper.toDto(matched);
+}
+```
+
+- It returns the **unbuilt Lombok builder** (`{Entity}Dto.{Entity}DtoBuilder`), never a finished `{Entity}Dto`
+  — the caller (always a `ServiceImpl`, see Layer 5) chains the single foreign-key field it wants (if any) and
+  calls `.build()` itself.
+- The method takes **only** `(entity)` — no boolean flag, no foreign-key parameter, no nested-collection
+  parameter of any kind. The mapper does not import any other entity's mapper and has zero knowledge of
+  parent/child relationships.
+- There is **no "every translation" branch anywhere in the mapper.** `toDto` always resolves exactly one
+  translation via a private `singleLocale(entity)` helper that calls
+  `matchLocale(entity, LocaleContext.getLocaleId())` (`LocaleContext` — see
+  `commons/context/LocaleContext.java` — holds the id resolved from the current request's `Accept-Language`;
+  `matchLocale` already contains the fallback: match that id, else whichever translation has code `"en"`, else
+  `null`). Returning every translation for a parent is the locale sub-resource's own list endpoint's job (see
+  the new Layer 4/5/6 rules) — it is never something the parent's own mapper/DTO does.
+- There is **no `active{X}(entity)` nested-collection helper on the entity mapper at all** — since DTOs never
+  expose a nested child collection (see Layer 1's DTO shape rule), there's nothing for such a helper to
+  produce. A parent FK reference needs no helper either — `ServiceImpl` reaches it directly via
+  `entity.get{Parent}Entity()`.
+
+Ask this layer as **one `AskUserQuestion` call** with a single `"Methods"` tab (single-select) — there is no
+separate `"Recursion"` tab, bidirectional or not, since there is no mapper-level recursion concern left at
+all (a nested-collection DTO field doesn't exist to recurse through in the first place). **The question text
+must contain a Unicode box-drawing table** (hardcoded 2026-07-30 — "must show as table please"), never a
+plain sentence: one box-drawing table per mapper (entity mapper, then locale mapper if applicable) with
+columns `Method | Signature | Notes`, listing `create`, `update`, and the single `toDto(entity)` returning the
+builder type — mirroring the live reference mappers' exact current shape. Below the table, note that
+immutable/unique fields are set only in `create()`, never in the shared `applyCommonFields()`. Options:
+`"Mirror Country/CountryLocale mappers (Recommended)"` + `"Other"`.
 
 ### Layer 4 — Repository (incl. locale repository)
 
@@ -266,6 +347,21 @@ reference actually names the field `{parent}Entity` vs. plain `{parent}`, phrase
 `{parent}Entity` form as the default/recommended shape but treat a user correction to the literal field name as
 authoritative — don't silently keep guessing the column-shaped form for this same entity's remaining layers.
 
+**Locale repository always needs two paginated finders, hardcoded 2026-08-02 (not a question — this is settled,
+mirror it directly):** whenever a locale sub-resource applies, `{entity}LocaleRepository` gets, in addition to
+whatever Layer 4 questions cover, these two `Page`-returning finders unconditionally — they back the locale
+sub-resource's own list endpoint (see Layer 5/6), which every locale sub-resource now has:
+
+```java
+Page<@NonNull {Entity}LocaleEntity> findBy{Parent}Entity_IdAndIsActiveAndIsDeleted(
+        Long {parent}Id, Boolean isActive, Boolean isDeleted, Pageable pageable);
+
+Page<@NonNull {Entity}LocaleEntity> findBy{Parent}Entity_IdAndLocaleEntity_CodeContainingIgnoreCaseAndIsActiveAndIsDeleted(
+        Long {parent}Id, String localeCode, Boolean isActive, Boolean isDeleted, Pageable pageable);
+```
+
+Mirror `CountryLocaleRepository`'s exact current shape.
+
 ### Layer 5 — Service / ServiceImpl (incl. locale service)
 
 Ask this layer in two parts, one per service (entity service, then locale service if applicable), each
@@ -274,43 +370,164 @@ following the same shape validated in the City smoke test:
 1. First, in the question text, show a box-drawing table of the **service interface's** method signatures
    (columns `Method | Signature`) — full return type + parameter types, mirrored from
    `CountryService`/`CountryLocaleService`'s actual current signatures (e.g.
-   `SuccessResponse create(CreateCityRequest, CountryEntity, Map<Long, LocaleEntity>)`). This table is
+   `SuccessResponse create(CreateCityRequest, CountryEntity, LocaleEntity)` — a single `LocaleEntity`, not a
+   map/list, per the Layer 2 "Root create's single English locale" rule; and `PaginatedResponse<CityDto>
+   getAll(CityFilterRequest)` — **no `localeId` parameter** — `ServiceImpl.getAll` reads
+   `LocaleContext.getLocaleId()` internally instead of receiving it from the controller). This table is
    informational context for the questions that follow, not itself a question.
-2. Then ask one `multiSelect` question **per method that has a genuine implementation choice** (typically
-   `create` and `update` — e.g. whether `create` re-validates uniqueness, whether `update` re-checks
-   uniqueness for a field the user marked Update-able in Layer 2), with options phrased as concrete
-   implementation-behavior descriptions (e.g. `"Implements uniqueness check for code (Recommended)"`), not
-   abstract yes/no. **Do not ask a question with only one real option** — if a method's behavior is a pure
-   mirror of the reference with no alternative (this is normally true for `getEntityById`/`getById`/`getAll`,
-   and often `delete`), state that directly as settled instead of calling `AskUserQuestion` (the tool rejects
-   single-option questions outright — see `delete`/read-method handling in the City smoke test for the exact
-   wording pattern to reuse).
+2. Then ask a question **for every method, with no exceptions** — even `getEntityById`/`getById`/`getAll`/
+   `delete`, and even when the behavior is a pure mirror of the reference with no real alternative. Never
+   state a method's behavior as "settled" or "mirrored" in prose instead of asking — that is exactly the
+   self-assumption this rule forbids (hardcoded 2026-07-31, superseding the older "don't ask single-option
+   questions" carve-out, per explicit user correction: *"never assume anything yourself, must ask questions for
+   each field where fields are needed, must ask each method where methods are required"*). Use `multiSelect`
+   with concrete implementation-behavior options (e.g. `"Implements uniqueness check for code (Recommended)"`)
+   when there's a genuine choice; when there truly is only one sensible behavior, ask anyway as a single-select
+   confirmation (`"Confirm mirrored behavior (Recommended)"` + `"Other"`) rather than skipping the
+   `AskUserQuestion` call entirely.
 
-**Locale-side wiring correctness fix, hardcoded 2026-07-30 — do NOT mirror this specific bug in
-`CountryLocaleServiceImpl.create`:** the reference `CountryLocaleServiceImpl.create` does
-`entity.assignLocale(localeEntity); countryEntity.addCountryLocaleEntity(entity);` — the parent-entity side
-goes through the proper `add...` helper (keeps both collection and FK in sync), but the `LocaleEntity` side
-only gets `assignLocale` (sets the FK, but never adds `entity` to `LocaleEntity.countryLocaleEntities`), even
-though `LocaleEntity` already exposes `addCountryLocaleEntity`/`removeCountryLocaleEntity` for exactly this.
-That leaves `LocaleEntity`'s collection stale after every create — a real inconsistency, caught by the user
-during the City build, not a style choice. For every new `{Entity}Locale`, do the root-adds-child pattern on
-**both** sides instead: `parentEntity.add{Entity}LocaleEntity(entity)` **and**
-`localeEntity.add{Entity}LocaleEntity(entity)` (never a bare `entity.assignLocale(...)` call from
-ServiceImpl). This means `LocaleEntity` (in the `locale` module, shared/outside the target entity's own
-module) needs a parallel `{entity}LocaleEntities` collection + `add{Entity}LocaleEntity`/
+**`getById`'s implementation shape, hardcoded 2026-08-02 (no boolean flags anywhere — see Layer 3):** mirror
+whichever of these matches the entity:
+
+- **Entity with no parent FK** (e.g. `Country`, `UnitType`) — no embedding at all, since nested collections
+  are never on the DTO (Layer 1's DTO shape rule):
+
+```java
+@Override
+public {Entity}Response getById(Long id) {
+    {Entity}Entity entity = getEntityById(id);
+    {Entity}Dto dto = {Entity}Mapper.toDto(entity).build();
+    return new {Entity}Response(dto);
+}
+```
+
+- **Child entity with a single parent FK** (e.g. `City`, `Currency`, `Unit`) — the only thing ever chained
+  onto the builder is the single parent DTO:
+
+```java
+@Override
+public {Entity}Response getById(Long id) {
+    {Entity}Entity entity = getEntityById(id);
+    {Parent}Dto parent = {Parent}Mapper.toDto(entity.get{Parent}Entity()).build();
+    {Entity}Dto dto = {Entity}Mapper.toDto(entity)
+            .{parent}(parent)
+            .build();
+    return new {Entity}Response(dto);
+}
+```
+
+Both the entity itself and any embedded parent resolve to the same single Accept-Language-matched locale
+(there is no "every locale" mode left anywhere — see Layer 3).
+
+**`getAll`'s implementation shape, hardcoded 2026-08-02:** extract the `Specification` and `Pageable` as their
+own named local variables before the `repository.findAll(...)` call — never build them inline as call
+arguments (which forces recomputing/duplicating the same expression if you also need to reference them
+elsewhere, and reads worse). Mirror whichever of these matches the entity:
+
+- **Entity with no parent FK** (mirroring `CountryServiceImpl`/`UnitTypeServiceImpl`):
+
+```java
+@Override
+public PaginatedResponse<{Entity}Dto> getAll({Entity}FilterRequest request) {
+    Specification<@NonNull {Entity}Entity> specification =
+            {Entity}Specification.filter(request, LocaleContext.getLocaleId());
+    Pageable pageable = request.toPageable(ALLOWED_SORT_FIELDS, {Entity}SortField.localeSortFields());
+    Page<@NonNull {Entity}Dto> page = {entity}Repository
+            .findAll(specification, pageable)
+            .map(entity -> {Entity}Mapper.toDto(entity).build());
+    return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
+}
+```
+
+- **Child entity with a single parent FK** — list rows keep embedding the parent (mirroring
+  `CityServiceImpl`/`CurrencyServiceImpl`/`UnitServiceImpl`):
+
+```java
+@Override
+public PaginatedResponse<{Entity}Dto> getAll({Entity}FilterRequest request) {
+    Specification<@NonNull {Entity}Entity> specification =
+            {Entity}Specification.filter(request, LocaleContext.getLocaleId());
+    Pageable pageable = request.toPageable(ALLOWED_SORT_FIELDS, {Entity}SortField.localeSortFields());
+    Page<@NonNull {Entity}Dto> page = {entity}Repository
+            .findAll(specification, pageable)
+            .map(entity -> {Entity}Mapper.toDto(entity)
+                    .{parent}({Parent}Mapper.toDto(entity.get{Parent}Entity()).build())
+                    .build());
+    return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
+}
+```
+
+`LocaleContext.getLocaleId()` is called inline directly inside the `.filter(...)` argument (there's no need for
+a separate `Long localeId` local anymore, since nothing else in the method reads it — the mapper resolves its
+own single-locale case internally per Layer 3). Requires importing `org.springframework.data.domain.Pageable`
+and `org.springframework.data.jpa.domain.Specification` in the `ServiceImpl` alongside the existing `Page`
+import.
+
+**Locale sub-resource always gets its own paginated `getAll`, hardcoded 2026-08-02 (not a question — mirror
+this directly, it applies to every locale sub-resource unconditionally):** since a parent's own DTO/mapper
+never returns more than one translation (see Layer 1/3), the *only* way to fetch every translation a parent
+has is this dedicated method on `{Entity}LocaleService`/`{Entity}LocaleServiceImpl` — named **`getAll`** (not
+`getPage`), taking the already-bound `PaginatedRequest` (see Layer 6 for where it's bound) plus an optional
+`localeCode` filter:
+
+```java
+PaginatedResponse<{Entity}LocaleDto> getAll(Long {parent}Id, String localeCode, PaginatedRequest paginatedRequest);
+```
+
+```java
+@Override
+public PaginatedResponse<{Entity}LocaleDto> getAll(Long {parent}Id, String localeCode, PaginatedRequest paginatedRequest) {
+    Pageable pageable = paginatedRequest.toPageable(Set.of());
+    Page<@NonNull {Entity}LocaleDto> dtoPage = (localeCode == null || localeCode.isBlank()
+            ? {entity}LocaleRepository.findBy{Parent}Entity_IdAndIsActiveAndIsDeleted({parent}Id, true, false, pageable)
+            : {entity}LocaleRepository.findBy{Parent}Entity_IdAndLocaleEntity_CodeContainingIgnoreCaseAndIsActiveAndIsDeleted(
+                    {parent}Id, localeCode, true, false, pageable))
+            .map({Entity}LocaleMapper::toDto);
+    return Pagination.buildPaginatedResponse(dtoPage);
+}
+```
+
+Notes:
+- `paginatedRequest.toPageable(Set.of())` — an **empty** allowed-sort-fields set, deliberately: this endpoint
+  has no registered sortable fields, so any non-null `sortBy` throws `400 INVALID_ARGUMENT: Invalid sort field:
+  <value>`; omitting `sortBy` falls through to the default (sort by `id`). Do not wire up `{Entity}SortField`
+  here — there isn't one for this endpoint.
+- Uses the **2-arg** `Pagination.buildPaginatedResponse(dtoPage)` overload (no `sortableFields`/
+  `searchableFields` sets) — those two fields will serialize as `null` in the response, which is expected and
+  correct, not a bug to fix.
+- The local `Page<@NonNull {Entity}LocaleDto>` variable is named **`dtoPage`**, matching every current
+  reference implementation.
+- `localeCode` does a case-insensitive `Contains` (LIKE) match against the joined `Locale.code`, mirroring
+  `CountryLocaleServiceImpl`'s exact current shape — never an exact match.
+
+**Locale-side wiring correctness, hardcoded 2026-07-30, fixed 2026-08-01:** every `{Entity}LocaleServiceImpl.create`
+must do two things — (a) check
+`{entity}LocaleRepository.existsBy{Parent}Entity_IdAndLocaleEntity_IdAndIsActiveAndIsDeleted(...)` and throw
+`IllegalStateException` (→ `409 CONFLICT`) on a duplicate before creating, and (b) sync **both** sides of the
+relationship: `parentEntity.add{Entity}LocaleEntity(entity)` **and**
+`localeEntity.add{Entity}LocaleEntity(entity)` (never a bare `entity.assignLocale(...)` call, which only sets
+the FK and leaves `LocaleEntity`'s own collection stale). `CountryLocaleServiceImpl.create` originally shipped
+without either of these — caught during a later consistency review and fixed on 2026-08-01 — so all five
+current reference implementations (`Country`/`City`/`Currency`/`UnitType`/`Unit`) now do this correctly; mirror
+any of them, not just `City`'s. This means `LocaleEntity` (in the `locale` module, shared/outside the target
+entity's own module) needs a parallel `{entity}LocaleEntities` collection + `add{Entity}LocaleEntity`/
 `remove{Entity}LocaleEntity` helpers added at Layer 1, mirroring its existing `countryLocaleEntities`/
-`addCountryLocaleEntity` pattern exactly. This is a deliberate, flagged exception to "only touch files for
-this new entity" (see Step 2) — call it out explicitly in the Layer 1 diff when it applies, since it touches
-a shared entity outside the target module. Do not go back and retrofit `CountryLocaleServiceImpl`'s existing
-bug unless the user separately asks — out of scope for this entity's generation.
+`addCountryLocaleEntity` pattern exactly, and the target entity's own repository needs the
+`existsBy...` method alongside its `findBy...` finder (see Layer 4). This is a deliberate, flagged exception
+to "only touch files for this new entity" (see Step 2) for the `LocaleEntity` edit — call it out explicitly
+in the Layer 1 diff when it applies, since it touches a shared entity outside the target module.
 
 ### Layer 6 — Controller (incl. locale controller)
 
 Ask this layer as two questions (one per controller): entity controller routing, then locale controller
 routing if applicable. Each question's text contains a box-drawing table (columns `Method | Route | Resolves
-before delegating`) listing every controller method's HTTP route and what it resolves (parent entity, locale
-entity, Accept-Language → localeId, etc.) before delegating to the service — mirrored from
-`CountryController`/`CountryLocaleController`'s actual current methods.
+before delegating`) listing every controller method's HTTP route and what it resolves (parent entity, the
+single `en` locale for `create` via `LocaleService.getEntityByCode("en")`, etc.) before delegating to the
+service — mirrored from `CountryController`/`CountryLocaleController`'s actual current methods. **Do not add
+`Accept-Language` header handling to the controller** — that's handled globally, once, for every request by
+`commons/filter/LocaleContextFilter.java` (rejects with `400` if missing/blank, otherwise resolves it into
+`LocaleContext`), not per-endpoint; a new entity's controller needs no `@RequestHeader`, no
+`resolveLocaleId` call, and `getAll`'s service method takes no `localeId` parameter.
 
 - **Entity controller** — the URL/routing shape is a genuine choice between concrete precedents already in the
   codebase, do not research or propose a new shape: **top-level, unscoped** (Country's shape:
@@ -323,16 +540,44 @@ entity, Accept-Language → localeId, etc.) before delegating to the service —
   here — Create checked → recommend top-level (parent id in the body); Create unchecked → recommend nested
   (parent id resolved from the URL path segment, never expected in the body). State that connection explicitly
   in the question text rather than re-deriving the routing recommendation from scratch.
+  If the entity has no parent FK at all (Country's own shape — nothing to nest under), top-level is the only
+  structurally possible route; still ask it as a single-select confirmation (`"Confirm top-level routing
+  (Recommended)"` + `"Other"`) rather than stating it as settled without a question — per the Layer 5
+  "never assume, always ask" rule, this applies to routing shape too, not just service methods.
 - **Locale controller** (only if a locale sub-resource applies) — this shape has no alternative precedent in
   this codebase (always `/api/v1/{entities}/{entity-id}/locales`, mirroring `CountryLocaleController` exactly),
   so the question is a single-select confirmation (`"Confirm nested shape (Recommended)"` + `"Other"`), not an
   open design choice.
 
+**Locale controller always gets a `GET` list endpoint too, hardcoded 2026-08-02 (not a question, mirror this
+directly — it's the only way to reach every translation a parent has, since the parent's own DTO never returns
+more than one, per Layer 1):**
+
+```java
+@GetMapping
+public ResponseEntity<?> getAll(
+        @PathVariable("{parent}-id") Long {parent}Id,
+        @RequestParam(value = "localeCode", required = false) String localeCode,
+        @ParameterObject PaginatedRequest paginatedRequest) {
+    {parent}Service.getEntityById({parent}Id);
+    return ResponseEntity.ok({entity}LocaleService.getAll({parent}Id, localeCode, paginatedRequest));
+}
+```
+
+Notes:
+- Placed before `create` in the controller (mirroring `CountryLocaleController`'s current method order), but
+  this is cosmetic — what matters is that it exists at all.
+- `{parent}Service.getEntityById({parent}Id)` is called first, purely to 404 on an unknown/inactive parent
+  before querying its locales — its return value is discarded.
+- `@ParameterObject` (springdoc) on `PaginatedRequest`, same annotation already used on the entity's own
+  `{Entity}FilterRequest` — import `org.springdoc.core.annotations.ParameterObject`.
+- No `@RequestParam` for `page`/`size` directly — those live on `PaginatedRequest`, bound as a whole object.
+
 ### Layer 7 — Recap
 
 After Layer 6 is answered — and before any file is generated or written — show one final summary message
 recapping every answer given across Layers 1–6 (package, field table, relationship, per-field
-Create/Update/Filter/Sort classification, mapper method/recursion confirmation, repository methods, service
+Create/Update/Filter/Sort classification, mapper method confirmation, repository methods, service
 business rules, controller routing shape). This is a record, not a new question — no `AskUserQuestion` call
 here, just the recap — but if the user spots something wrong in the recap, go back and re-ask/correct the
 relevant layer's answer before Step 2 generates anything (nothing has been written yet at this point).
@@ -352,26 +597,28 @@ generating and writing every layer's files together in one pass.
    above.
 3. Now perform the **Ground truth rule** reads once, for everything needed across all six layers at once
    (Country/CountryLocale reference files, the target entity's own existing files, the shared infra classes).
-4. Generate every layer's file(s) in one pass — Model (entity + DTO, + locale entity/DTO), Request
-   (Create/Update/Filter requests + SortField/SearchField enums), Mapper, Repository, Service/ServiceImpl,
-   Controller (+ response DTO) — plus any bidirectional parent-entity edits. Show the full file/diff content for
-   everything, grouped clearly by layer/file so the user can review it as a whole, and get the user's per-file
-   write confirmation (per the write-confirmation gate — never write without this) before writing anything.
-   **Hardcoded 2026-07-31, corrected mid-run:** "show content, then write" must be two separate turns — send the
-   message showing every file's content/diff and STOP; do not call `Write`/`Edit` in that same turn even for one
-   file "to save time." Only call `Write`/`Edit` after the user's next reply explicitly confirms. Calling
-   `Write` in the same turn you're presenting content for review — even if you show it "after the fact" in your
-   next message — violates the gate, because the file is already on disk before the user had a chance to object.
+4. Generate every layer's file(s) — Model (entity + DTO, + locale entity/DTO), Request (Create/Update/Filter
+   requests + SortField/SearchField enums), Mapper, Repository, Service/ServiceImpl, Controller (+ response
+   DTO) — plus any bidirectional parent-entity edits. **Do not show an upfront plan/summary table of all files
+   before writing (hardcoded 2026-07-31 — the user explicitly said no plan table is needed since they can ask
+   for a correction if something's wrong).** Instead go file by file: show one file's full content/diff, wait
+   for the user's reply confirming that specific file, write it, then move to the next file. Never batch
+   multiple files into one write-confirmation round and never call `Write`/`Edit` in the same turn you're
+   presenting that file's content — "show content, then write" must be two separate turns even for a single
+   file. Only call `Write`/`Edit` after the user's next reply explicitly confirms that file.
 5. Once every file is written, proceed to Step 3 (locale migration, if needed), Step 4 (compile check), Step 5
    (optional docs).
 
 So the actual order for an entity with a locale sub-resource looks like: Layer 1 questions → Layer 2 questions
 → Layer 3 questions → Layer 4 questions → Layer 5 questions → Layer 6 questions → Layer 7 recap → **then** a
 single Ground truth read pass → a single generation pass covering CityEntity + CityDto + CityLocaleEntity +
-CityLocaleDto (+ CountryEntity/CountryDto edits if bidirectional) + the Create/Update/Filter requests +
-SearchField/SortField enums + CityMapper + CityLocaleMapper (+ CountryMapper edits if bidirectional) + the
-repositories + the service interfaces/impls + the controllers + response DTOs, shown together for one
-write-confirmation round → Step 3/4/5. Never generate or write anything before Layer 7's recap has been shown.
+CityLocaleDto (+ a `CountryEntity`-only collection/helper edit if bidirectional — never `CountryDto` or
+`CountryMapper`, see the Step 2 bidirectional exception below) + the Create/Update/Filter requests +
+SearchField/SortField enums + CityMapper + CityLocaleMapper + the repositories (incl. the two mandatory
+paginated locale finders) + the service interfaces/impls (incl. the locale service's mandatory `getAll`) + the
+controllers (incl. the locale controller's mandatory `GET` list endpoint) + response DTOs, shown together for
+one write-confirmation round → Step 3/4/5. Never generate or write anything before Layer 7's recap has been
+shown.
 
 ## Step 2 — Generate all files (once Step 1 is fully confirmed through Layer 7)
 
@@ -386,7 +633,8 @@ the user's field classification as you go (e.g. Create-only fields appear on `Cr
 `UpdateXRequest`; filterable fields appear on `XSearchField`/`XFilterRequest`; sortable fields appear on
 `XSortField`).
 
-Mirror the exact package/file layout you found under the Ground truth rule above, substituting the new entity name, under:
+Mirror the exact package/file layout you found under the Ground truth rule above, substituting the new entity name,
+under:
 `{module}/controller`, `service`, `serviceImpl`, `repository`, `specification`, `model/entity`, `model/mapper`,
 `model/dto`, `model/enums`, `dto/request/{entity}` (+ `dto/request/{entity}/locale` if applicable),
 `dto/response/{entities}`.
@@ -399,14 +647,16 @@ scanning picks up new `@RestController`/`@Service`/`@Repository` beans automatic
 **Exception — bidirectional relationship, only if the user confirmed it in Layer 1**: at Layer 1, add a
 collection field (with getter/setter, matching whatever collection-mapping convention is already present —
 e.g. the `EntityRelationshipHelper.addChild/removeChild` pattern on `CountryEntity`/`CityEntity`, or a plain
-`@OneToMany(mappedBy = ...)` if that's what's actually there) to the **parent** entity, plus a corresponding
-list field on the **parent** DTO. Do not wire the mapper population yet — that's Layer 3's job, per the
-bidirectional recursion note (each side gets a `toDtoWithout{Other}` helper so nested DTOs stop one level
-deep, and both mappers' `toDto` methods populate the reverse field using the *other* mapper's
-`toDtoWithout{Other}` variant, never each other's plain `toDto`, to avoid infinite recursion). This is the only
-case where you touch an existing entity's files — read the parent's current entity/DTO/mapper fresh first (per
-the Ground truth rule above) so you match its real current shape rather than inventing one. If the user said
-unidirectional (or didn't ask for bidirectional), leave the parent's files untouched entirely.
+`@OneToMany(mappedBy = ...)` if that's what's actually there) to the **parent entity only**. **This is
+JPA/entity-level bookkeeping alone (cascade-delete/orphan-removal) — per Layer 1's DTO shape rule, it never
+adds anything to the parent DTO and never touches the parent mapper.** There is no child-list field to add to
+the parent DTO, no `active{Children}(entity)` helper to add to the parent mapper, and no embedding to wire up
+anywhere, because a parent DTO never exposes a nested child collection at all — the only way to browse a
+parent's children is that child entity's own `getAll` list endpoint (unrelated to this bidirectional
+JPA-only edit). This is the only case where you touch an existing entity's files — read the parent's current
+entity fresh first (per the Ground truth rule above) so you match its real current shape rather than inventing
+one. If the user said unidirectional (or didn't ask for bidirectional), leave the parent's files untouched
+entirely.
 
 Apply every convention observed in the live reference, including but not limited to:
 
@@ -431,7 +681,12 @@ Apply every convention observed in the live reference, including but not limited
 - Filter request: `@EqualsAndHashCode(callSuper = true)`; create/update requests:
   `@EqualsAndHashCode(callSuper = false)`.
 - `@ParameterObject` (springdoc) on the GET list controller method's filter param.
-- Repository generics use `org.jspecify.annotations.@NonNull`.
+- Repository generics use `org.jspecify.annotations.@NonNull`, e.g. `JpaRepository<@NonNull {Entity}Entity,
+  @NonNull Long>` and every `Page<...>` type argument, e.g. `Page<@NonNull {Entity}Dto>` /
+  `Page<@NonNull {Entity}LocaleEntity>` — this applies to the locale sub-resource's paginated finders/`getAll`
+  local variable too, not just the entity's own `getAll`.
+- The locale sub-resource's `getAll` local `Page<@NonNull {Entity}LocaleDto>` variable is named **`dtoPage`**
+  (not `result` or `page`), matching every current reference implementation.
 - Response DTO wraps the entity DTO in a single field (check the current field name on `CountryResponse` /
   `CityResponse` — it has changed before, e.g. from `country` to `data`).
 
@@ -440,7 +695,7 @@ Apply every convention observed in the live reference, including but not limited
 The entity's own table must already exist (verified in Step 0) — never create or alter that table here. If
 the entity has a locale sub-resource and its `{entity}_locales` table does *not* already exist in
 `db/migration/`, add `V{next}__create_{table}_locales_table.sql` matching the column/constraint style of
-`V3__create_countries_table.sql` / `V4__create_cities_table.sql` (audit columns, FKs with the correct
+`V4__create_countries_table.sql` / `V4__create_cities_table.sql` (audit columns, FKs with the correct
 `ON DELETE` action per `docs/localization-architecture.md`'s constraint table — CASCADE on parent-child locale
 FK, RESTRICT on locale_id FK), with `UNIQUE ({entity}_id, locale_id)`. If that table already exists too, skip
 this step entirely.
@@ -458,7 +713,15 @@ fix them unless the user asks.
 If the user wants documentation too, generate `docs/{entities}-api.md` following the structure of
 `docs/countries-api.md` (endpoints table, data model tables, per-endpoint sections with request/response JSON,
 error responses table) — read that file fresh as well, since its format is the stable part even though the
-underlying code pattern isn't.
+underlying code pattern isn't. As of 2026-08-02, `docs/countries-api.md`'s intro paragraph shape is: a bolded
+"`Accept-Language` is required on every endpoint below, with no exceptions" note followed by a bullet list of
+which endpoints actually *use* the header's value vs. merely require its presence — **`GET /{id}` and `GET`
+(list) both use it to pick the single `locale` field** (exact match, falls back to `en`, then `null`); **the
+locale sub-resource's own `GET .../locales` list endpoint requires the header but ignores its value**, since it
+returns every translation (optionally filtered by `localeCode`) rather than one Accept-Language-matched
+translation; `POST`/`PUT`/`DELETE` require it but ignore the value everywhere. Mirror that shape rather than
+reinventing the wording, and make sure the endpoints table and data model section include the locale
+sub-resource's list endpoint (path/query params `localeCode`, `page`, `size`) alongside create/update/delete.
 
 ## Output
 

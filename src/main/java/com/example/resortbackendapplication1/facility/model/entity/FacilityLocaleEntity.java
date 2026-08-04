@@ -6,9 +6,12 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Getter
 @Setter
@@ -16,26 +19,50 @@ import org.hibernate.annotations.ColumnDefault;
 @Table(name = "facility_locales")
 public class FacilityLocaleEntity extends AuditableEntity {
 
+    @Setter(AccessLevel.NONE)
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "facility_id", nullable = false)
     private FacilityEntity facilityEntity;
 
+    /** Internal — call via {@link FacilityEntity#addFacilityLocaleEntity}. */
+    public void assignFacility(FacilityEntity facilityEntity) {
+        this.facilityEntity = facilityEntity;
+    }
+
+    /** Internal — call via {@link FacilityEntity#removeFacilityLocaleEntity}. */
+    public void unassignFacility() {
+        this.facilityEntity = null;
+    }
+
+    @Setter(AccessLevel.NONE)
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.RESTRICT)
     @JoinColumn(name = "locale_id", nullable = false)
     private LocaleEntity localeEntity;
+
+    /** Internal — call via {@link LocaleEntity#addFacilityLocaleEntity}. */
+    public void assignLocale(LocaleEntity localeEntity) {
+        this.localeEntity = localeEntity;
+    }
+
+    /** Internal — call via {@link LocaleEntity#removeFacilityLocaleEntity}. */
+    public void unassignLocale() {
+        this.localeEntity = null;
+    }
 
     @NotBlank
     @Size(max = 255)
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "description", length = Integer.MAX_VALUE)
-    private String description;
+    @NotNull
+    @Column(name = "description", nullable = false, length = Integer.MAX_VALUE)
+    private String description = "";
 
     @NotNull
-    @ColumnDefault("1")
+    @ColumnDefault("0")
     @Column(name = "sort_order", nullable = false)
-    private Integer sortOrder;
+    private Integer sortOrder = 0;
 }

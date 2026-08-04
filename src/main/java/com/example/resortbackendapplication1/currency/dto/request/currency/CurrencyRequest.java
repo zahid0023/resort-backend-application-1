@@ -11,9 +11,6 @@ import tools.jackson.databind.annotation.JsonNaming;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class CurrencyRequest {
 
-    @Size(max = 3)
-    private String numericCode;
-
     @NotBlank
     @Size(max = 10)
     private String symbol;

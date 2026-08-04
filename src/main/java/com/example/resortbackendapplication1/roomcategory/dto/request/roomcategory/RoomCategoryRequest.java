@@ -1,6 +1,5 @@
 package com.example.resortbackendapplication1.roomcategory.dto.request.roomcategory;
 
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import tools.jackson.databind.PropertyNamingStrategies;
@@ -11,6 +10,5 @@ import tools.jackson.databind.annotation.JsonNaming;
 public class RoomCategoryRequest {
 
     @NotNull
-    @Min(value = 0, message = "sort_order must be 0 or greater")
     private Integer sortOrder;
 }

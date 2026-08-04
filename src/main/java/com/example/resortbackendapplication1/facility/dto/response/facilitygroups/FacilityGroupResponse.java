@@ -10,7 +10,7 @@ import tools.jackson.databind.annotation.JsonNaming;
 public class FacilityGroupResponse {
     private final FacilityGroupDto data;
 
-    public FacilityGroupResponse(FacilityGroupDto facilityGroup) {
-        this.data = facilityGroup;
+    public FacilityGroupResponse(FacilityGroupDto data) {
+        this.data = data;
     }
 }

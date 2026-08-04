@@ -1,6 +1,7 @@
 package com.example.resortbackendapplication1.address.model.entity;
 
 import com.example.resortbackendapplication1.commons.model.entity.AuditableEntity;
+import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -39,6 +40,11 @@ public class CountryEntity extends AuditableEntity {
     private String phoneCode;
 
     @NotNull
+    @ColumnDefault("''")
+    @Column(name = "flag_url", nullable = false, columnDefinition = "text")
+    private String flagUrl = "";
+
+    @NotNull
     @ColumnDefault("0")
     @Column(name = "sort_order", nullable = false)
     private Integer sortOrder = 0;
@@ -48,6 +54,9 @@ public class CountryEntity extends AuditableEntity {
 
     @OneToMany(mappedBy = "countryEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<CityEntity> cityEntities = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "countryEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<CurrencyEntity> currencyEntities = new LinkedHashSet<>();
 
     // -------------------------------------------------------------------------
     // Country Locale relationship helpers
@@ -71,5 +80,17 @@ public class CountryEntity extends AuditableEntity {
 
     public void removeCityEntity(CityEntity entity) {
         removeChild(cityEntities, entity, (child, ignored) -> child.unassignCountry());
+    }
+
+    // -------------------------------------------------------------------------
+    // Currency relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addCurrencyEntity(CurrencyEntity entity) {
+        addChild(currencyEntities, entity, CurrencyEntity::assignCountry, this);
+    }
+
+    public void removeCurrencyEntity(CurrencyEntity entity) {
+        removeChild(currencyEntities, entity, (child, ignored) -> child.unassignCountry());
     }
 }

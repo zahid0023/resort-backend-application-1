@@ -1,21 +1,17 @@
 package com.example.resortbackendapplication1.price.controller;
 
-import com.example.resortbackendapplication1.commons.utils.LocaleUtils;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
-import com.example.resortbackendapplication1.locale.service.LocaleService;
 import com.example.resortbackendapplication1.price.dto.request.pricetype.CreatePriceTypeRequest;
 import com.example.resortbackendapplication1.price.dto.request.pricetype.PriceTypeFilterRequest;
 import com.example.resortbackendapplication1.price.dto.request.pricetype.UpdatePriceTypeRequest;
-import com.example.resortbackendapplication1.price.dto.request.pricetype.pricetypelocale.CreatePriceTypeLocaleRequest;
 import com.example.resortbackendapplication1.price.model.entity.PriceTypeEntity;
 import com.example.resortbackendapplication1.price.service.PriceTypeService;
+import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.locale.service.LocaleService;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/price-types")
@@ -32,9 +28,8 @@ public class PriceTypeController {
 
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody CreatePriceTypeRequest request) {
-        Map<Long, LocaleEntity> localeEntityMap = LocaleUtils.resolveLocaleMap(
-                request.getLocales(), CreatePriceTypeLocaleRequest::getLocaleId, localeService);
-        return ResponseEntity.status(HttpStatus.CREATED).body(priceTypeService.create(request, localeEntityMap));
+        LocaleEntity localeEntity = localeService.getEntityByCode("en");
+        return ResponseEntity.status(HttpStatus.CREATED).body(priceTypeService.create(request, localeEntity));
     }
 
     @GetMapping("/{id}")
@@ -57,6 +52,7 @@ public class PriceTypeController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
-        return ResponseEntity.ok(priceTypeService.delete(id));
+        PriceTypeEntity entity = priceTypeService.getEntityById(id);
+        return ResponseEntity.ok(priceTypeService.delete(entity));
     }
 }

@@ -1,33 +1,25 @@
 package com.example.resortbackendapplication1.currency.model.mapper;
 
-import com.example.resortbackendapplication1.address.model.entity.CountryEntity;
+import com.example.resortbackendapplication1.commons.context.LocaleContext;
 import com.example.resortbackendapplication1.currency.dto.request.currency.CreateCurrencyRequest;
 import com.example.resortbackendapplication1.currency.dto.request.currency.CurrencyRequest;
 import com.example.resortbackendapplication1.currency.dto.request.currency.UpdateCurrencyRequest;
-import com.example.resortbackendapplication1.currency.dto.request.currency.currencylocale.CreateCurrencyLocaleRequest;
 import com.example.resortbackendapplication1.currency.model.dto.CurrencyDto;
 import com.example.resortbackendapplication1.currency.model.dto.CurrencyLocaleDto;
 import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
 import com.example.resortbackendapplication1.currency.model.entity.CurrencyLocaleEntity;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import lombok.experimental.UtilityClass;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @UtilityClass
 public class CurrencyMapper {
 
-    public CurrencyEntity create(CreateCurrencyRequest request,
-                                 CountryEntity countryEntity,
-                                 Map<Long, LocaleEntity> localeEntityMap) {
+    public CurrencyEntity create(CreateCurrencyRequest request) {
         CurrencyEntity entity = new CurrencyEntity();
         entity.setCode(request.getCode());
-        entity.setCountryEntity(countryEntity);
+        entity.setNumericCode(request.getNumericCode());
         applyCommonFields(entity, request);
-        entity.setCurrencyLocaleEntities(mapLocales(request.getLocales(), entity, localeEntityMap));
         return entity;
     }
 
@@ -36,30 +28,13 @@ public class CurrencyMapper {
     }
 
     private void applyCommonFields(CurrencyEntity entity, CurrencyRequest request) {
-        entity.setNumericCode(request.getNumericCode());
         entity.setSymbol(request.getSymbol());
         entity.setDecimalPlaces(request.getDecimalPlaces());
         entity.setIsDefault(request.getIsDefault());
         entity.setSortOrder(request.getSortOrder());
     }
 
-    private Set<CurrencyLocaleEntity> mapLocales(List<CreateCurrencyLocaleRequest> locales,
-                                                  CurrencyEntity entity,
-                                                  Map<Long, LocaleEntity> localeEntityMap) {
-        if (locales == null || locales.isEmpty()) {
-            return new java.util.LinkedHashSet<>();
-        }
-        return locales.stream()
-                .map(locale -> CurrencyLocaleMapper.create(locale, entity, localeEntityMap.get(locale.getLocaleId())))
-                .collect(Collectors.toSet());
-    }
-
-    public CurrencyDto toDto(CurrencyEntity entity) {
-        List<CurrencyLocaleDto> locales = entity.getCurrencyLocaleEntities().stream()
-                .filter(locale -> Boolean.TRUE.equals(locale.getIsActive()) && Boolean.FALSE.equals(locale.getIsDeleted()))
-                .map(CurrencyLocaleMapper::toDto)
-                .toList();
-
+    public CurrencyDto.CurrencyDtoBuilder toDto(CurrencyEntity entity) {
         return CurrencyDto.builder()
                 .id(entity.getId())
                 .code(entity.getCode())
@@ -68,8 +43,29 @@ public class CurrencyMapper {
                 .decimalPlaces(entity.getDecimalPlaces())
                 .isDefault(entity.getIsDefault())
                 .sortOrder(entity.getSortOrder())
-                .countryId(entity.getCountryEntity().getId())
-                .locales(locales)
-                .build();
+                .locale(singleLocale(entity));
+    }
+
+    private CurrencyLocaleDto singleLocale(CurrencyEntity entity) {
+        CurrencyLocaleEntity matched = matchLocale(entity, LocaleContext.getLocaleId());
+        return matched == null ? null : CurrencyLocaleMapper.toDto(matched);
+    }
+
+    private List<CurrencyLocaleEntity> activeLocales(CurrencyEntity entity) {
+        return entity.getCurrencyLocaleEntities().stream()
+                .filter(currencyLocaleEntity -> Boolean.TRUE.equals(currencyLocaleEntity.getIsActive())
+                        && Boolean.FALSE.equals(currencyLocaleEntity.getIsDeleted()))
+                .toList();
+    }
+
+    private CurrencyLocaleEntity matchLocale(CurrencyEntity entity, Long localeId) {
+        List<CurrencyLocaleEntity> activeLocales = activeLocales(entity);
+        return activeLocales.stream()
+                .filter(currencyLocaleEntity -> currencyLocaleEntity.getLocaleEntity().getId().equals(localeId))
+                .findFirst()
+                .orElseGet(() -> activeLocales.stream()
+                        .filter(currencyLocaleEntity -> "en".equals(currencyLocaleEntity.getLocaleEntity().getCode()))
+                        .findFirst()
+                        .orElse(null));
     }
 }

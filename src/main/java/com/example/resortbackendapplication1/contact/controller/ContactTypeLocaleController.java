@@ -1,17 +1,18 @@
 package com.example.resortbackendapplication1.contact.controller;
 
-import com.example.resortbackendapplication1.contact.dto.request.locale.CreateContactTypeLocaleRequest;
-import com.example.resortbackendapplication1.contact.dto.request.locale.UpdateContactTypeLocaleRequest;
+import com.example.resortbackendapplication1.contact.dto.request.contacttype.locale.CreateContactTypeLocaleRequest;
+import com.example.resortbackendapplication1.contact.dto.request.contacttype.locale.UpdateContactTypeLocaleRequest;
 import com.example.resortbackendapplication1.contact.model.entity.ContactTypeEntity;
 import com.example.resortbackendapplication1.contact.model.entity.ContactTypeLocaleEntity;
 import com.example.resortbackendapplication1.contact.service.ContactTypeLocaleService;
 import com.example.resortbackendapplication1.contact.service.ContactTypeService;
+import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.locale.service.LocaleService;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -31,18 +32,25 @@ public class ContactTypeLocaleController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> create(
             @PathVariable("contact-type-id") Long contactTypeId,
             @Valid @RequestBody CreateContactTypeLocaleRequest request) {
-        ContactTypeEntity contactType = contactTypeService.getEntityById(contactTypeId);
+        ContactTypeEntity contactTypeEntity = contactTypeService.getEntityById(contactTypeId);
         LocaleEntity localeEntity = localeService.getEntityById(request.getLocaleId());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(contactTypeLocaleService.create(contactType, localeEntity, request));
+                .body(contactTypeLocaleService.create(request, contactTypeEntity, localeEntity));
+    }
+
+    @GetMapping
+    public ResponseEntity<?> getAll(
+            @PathVariable("contact-type-id") Long contactTypeId,
+            @RequestParam(value = "localeCode", required = false) String localeCode,
+            @ParameterObject PaginatedRequest paginatedRequest) {
+        contactTypeService.getEntityById(contactTypeId);
+        return ResponseEntity.ok(contactTypeLocaleService.getAll(contactTypeId, localeCode, paginatedRequest));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> update(
             @PathVariable("contact-type-id") Long contactTypeId,
             @PathVariable Long id,
@@ -52,7 +60,6 @@ public class ContactTypeLocaleController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> delete(
             @PathVariable("contact-type-id") Long contactTypeId,
             @PathVariable Long id) {

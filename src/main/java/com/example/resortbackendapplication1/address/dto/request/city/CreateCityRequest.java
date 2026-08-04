@@ -1,17 +1,14 @@
 package com.example.resortbackendapplication1.address.dto.request.city;
 
-import com.example.resortbackendapplication1.address.dto.request.city.locale.CreateCityLocaleRequest;
+import com.example.resortbackendapplication1.address.dto.request.city.locale.CityLocaleRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
-
-import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -26,6 +23,6 @@ public class CreateCityRequest extends CityRequest {
     private Long countryId;
 
     @Valid
-    @NotEmpty
-    private List<CreateCityLocaleRequest> locales;
+    @NotNull
+    private CityLocaleRequest locale;
 }

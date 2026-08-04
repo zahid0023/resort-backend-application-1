@@ -1,7 +1,7 @@
 package com.example.resortbackendapplication1.auth.model.mapper;
 
 import com.example.resortbackendapplication1.auth.dto.request.permission.CreatePermissionRequest;
-import com.example.resortbackendapplication1.auth.model.enitty.PermissionEntity;
+import com.example.resortbackendapplication1.auth.model.entity.PermissionEntity;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass

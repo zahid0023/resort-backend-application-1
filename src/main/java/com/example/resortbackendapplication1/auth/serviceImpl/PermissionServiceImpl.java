@@ -1,14 +1,14 @@
 package com.example.resortbackendapplication1.auth.serviceImpl;
 
 import com.example.resortbackendapplication1.auth.dto.request.permission.CreatePermissionRequest;
-import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
-import com.example.resortbackendapplication1.auth.model.enitty.PermissionEntity;
-import com.example.resortbackendapplication1.auth.model.enitty.UserEntity;
-import com.example.resortbackendapplication1.auth.model.enitty.UserPermissionEntity;
+import com.example.resortbackendapplication1.auth.model.entity.PermissionEntity;
+import com.example.resortbackendapplication1.auth.model.entity.UserEntity;
+import com.example.resortbackendapplication1.auth.model.entity.UserPermissionEntity;
 import com.example.resortbackendapplication1.auth.model.mapper.PermissionMapper;
 import com.example.resortbackendapplication1.auth.repository.PermissionRepository;
 import com.example.resortbackendapplication1.auth.repository.UserPermissionRepository;
 import com.example.resortbackendapplication1.auth.service.PermissionService;
+import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

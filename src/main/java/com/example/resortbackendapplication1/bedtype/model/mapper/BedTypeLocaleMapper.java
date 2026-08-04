@@ -1,24 +1,17 @@
 package com.example.resortbackendapplication1.bedtype.model.mapper;
 
-import com.example.resortbackendapplication1.bedtype.dto.request.bedtype.bedtypelocale.CreateBedTypeLocaleRequest;
-import com.example.resortbackendapplication1.bedtype.dto.request.bedtype.bedtypelocale.BedTypeLocaleRequest;
-import com.example.resortbackendapplication1.bedtype.dto.request.bedtype.bedtypelocale.UpdateBedTypeLocaleRequest;
+import com.example.resortbackendapplication1.bedtype.dto.request.bedtype.locale.BedTypeLocaleRequest;
+import com.example.resortbackendapplication1.bedtype.dto.request.bedtype.locale.UpdateBedTypeLocaleRequest;
 import com.example.resortbackendapplication1.bedtype.model.dto.BedTypeLocaleDto;
-import com.example.resortbackendapplication1.bedtype.model.entity.BedTypeEntity;
 import com.example.resortbackendapplication1.bedtype.model.entity.BedTypeLocaleEntity;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.locale.model.mapper.LocaleMapper;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class BedTypeLocaleMapper {
 
-    public BedTypeLocaleEntity create(CreateBedTypeLocaleRequest request,
-                                      BedTypeEntity bedTypeEntity,
-                                      LocaleEntity localeEntity) {
+    public BedTypeLocaleEntity create(BedTypeLocaleRequest request) {
         BedTypeLocaleEntity entity = new BedTypeLocaleEntity();
-        entity.setBedTypeEntity(bedTypeEntity);
-        entity.setLocaleEntity(localeEntity);
         applyCommonFields(entity, request);
         return entity;
     }

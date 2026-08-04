@@ -1,23 +1,17 @@
 package com.example.resortbackendapplication1.roomcategory.model.mapper;
 
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
-import com.example.resortbackendapplication1.roomcategory.dto.request.roomcategory.roomcategorylocale.CreateRoomCategoryLocaleRequest;
-import com.example.resortbackendapplication1.roomcategory.dto.request.roomcategory.roomcategorylocale.RoomCategoryLocaleRequest;
-import com.example.resortbackendapplication1.roomcategory.dto.request.roomcategory.roomcategorylocale.UpdateRoomCategoryLocaleRequest;
+import com.example.resortbackendapplication1.roomcategory.dto.request.roomcategory.locale.RoomCategoryLocaleRequest;
+import com.example.resortbackendapplication1.roomcategory.dto.request.roomcategory.locale.UpdateRoomCategoryLocaleRequest;
 import com.example.resortbackendapplication1.roomcategory.model.dto.RoomCategoryLocaleDto;
-import com.example.resortbackendapplication1.roomcategory.model.entity.RoomCategoryEntity;
 import com.example.resortbackendapplication1.roomcategory.model.entity.RoomCategoryLocaleEntity;
+import com.example.resortbackendapplication1.locale.model.mapper.LocaleMapper;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class RoomCategoryLocaleMapper {
 
-    public RoomCategoryLocaleEntity create(CreateRoomCategoryLocaleRequest request,
-                                           RoomCategoryEntity roomCategoryEntity,
-                                           LocaleEntity localeEntity) {
+    public RoomCategoryLocaleEntity create(RoomCategoryLocaleRequest request) {
         RoomCategoryLocaleEntity entity = new RoomCategoryLocaleEntity();
-        entity.setRoomCategoryEntity(roomCategoryEntity);
-        entity.setLocaleEntity(localeEntity);
         applyCommonFields(entity, request);
         return entity;
     }
@@ -35,7 +29,7 @@ public class RoomCategoryLocaleMapper {
     public RoomCategoryLocaleDto toDto(RoomCategoryLocaleEntity entity) {
         return RoomCategoryLocaleDto.builder()
                 .id(entity.getId())
-                .localeId(entity.getLocaleEntity().getId())
+                .locale(LocaleMapper.toDto(entity.getLocaleEntity()))
                 .name(entity.getName())
                 .description(entity.getDescription())
                 .sortOrder(entity.getSortOrder())

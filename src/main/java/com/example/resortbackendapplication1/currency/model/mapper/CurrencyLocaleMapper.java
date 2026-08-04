@@ -1,23 +1,17 @@
 package com.example.resortbackendapplication1.currency.model.mapper;
 
-import com.example.resortbackendapplication1.currency.dto.request.currency.currencylocale.CreateCurrencyLocaleRequest;
-import com.example.resortbackendapplication1.currency.dto.request.currency.currencylocale.CurrencyLocaleRequest;
-import com.example.resortbackendapplication1.currency.dto.request.currency.currencylocale.UpdateCurrencyLocaleRequest;
+import com.example.resortbackendapplication1.currency.dto.request.currency.locale.CurrencyLocaleRequest;
+import com.example.resortbackendapplication1.currency.dto.request.currency.locale.UpdateCurrencyLocaleRequest;
 import com.example.resortbackendapplication1.currency.model.dto.CurrencyLocaleDto;
-import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
 import com.example.resortbackendapplication1.currency.model.entity.CurrencyLocaleEntity;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.locale.model.mapper.LocaleMapper;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class CurrencyLocaleMapper {
 
-    public CurrencyLocaleEntity create(CreateCurrencyLocaleRequest request,
-                                       CurrencyEntity currencyEntity,
-                                       LocaleEntity localeEntity) {
+    public CurrencyLocaleEntity create(CurrencyLocaleRequest request) {
         CurrencyLocaleEntity entity = new CurrencyLocaleEntity();
-        entity.setCurrencyEntity(currencyEntity);
-        entity.setLocaleEntity(localeEntity);
         applyCommonFields(entity, request);
         return entity;
     }
@@ -35,7 +29,7 @@ public class CurrencyLocaleMapper {
     public CurrencyLocaleDto toDto(CurrencyLocaleEntity entity) {
         return CurrencyLocaleDto.builder()
                 .id(entity.getId())
-                .localeId(entity.getLocaleEntity().getId())
+                .locale(LocaleMapper.toDto(entity.getLocaleEntity()))
                 .name(entity.getName())
                 .shortName(entity.getShortName())
                 .sortOrder(entity.getSortOrder())

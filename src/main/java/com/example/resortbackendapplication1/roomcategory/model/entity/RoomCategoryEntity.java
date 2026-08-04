@@ -12,6 +12,8 @@ import org.hibernate.annotations.ColumnDefault;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import static com.example.resortbackendapplication1.commons.model.entity.EntityRelationshipHelper.*;
+
 @Getter
 @Setter
 @Entity
@@ -28,6 +30,18 @@ public class RoomCategoryEntity extends AuditableEntity {
     @Column(name = "sort_order", nullable = false)
     private Integer sortOrder = 0;
 
-    @OneToMany(mappedBy = "roomCategoryEntity", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "roomCategoryEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<RoomCategoryLocaleEntity> roomCategoryLocaleEntities = new LinkedHashSet<>();
+
+    // -------------------------------------------------------------------------
+    // RoomCategory Locale relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addRoomCategoryLocaleEntity(RoomCategoryLocaleEntity entity) {
+        addChild(roomCategoryLocaleEntities, entity, RoomCategoryLocaleEntity::assignRoomCategory, this);
+    }
+
+    public void removeRoomCategoryLocaleEntity(RoomCategoryLocaleEntity entity) {
+        removeChild(roomCategoryLocaleEntities, entity, (child, ignored) -> child.unassignRoomCategory());
+    }
 }

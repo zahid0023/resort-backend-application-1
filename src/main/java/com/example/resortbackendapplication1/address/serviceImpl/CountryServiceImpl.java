@@ -14,6 +14,7 @@ import com.example.resortbackendapplication1.address.model.mapper.CountryMapper;
 import com.example.resortbackendapplication1.address.repository.CountryRepository;
 import com.example.resortbackendapplication1.address.service.CountryService;
 import com.example.resortbackendapplication1.address.specification.CountrySpecification;
+import com.example.resortbackendapplication1.commons.context.LocaleContext;
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.commons.utils.Pagination;
@@ -22,10 +23,11 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -43,21 +45,17 @@ public class CountryServiceImpl implements CountryService {
 
     @Transactional
     @Override
-    public SuccessResponse create(CreateCountryRequest request, Map<Long, LocaleEntity> localeEntityMap) {
+    public SuccessResponse create(CreateCountryRequest request, LocaleEntity localeEntity) {
         if (countryRepository.existsByCodeAndIsActiveAndIsDeleted(request.getCode(), true, false)) {
             throw new IllegalStateException("Country with code '" + request.getCode() + "' already exists");
         }
 
         CountryEntity entity = CountryMapper.create(request);
 
-        request.getLocales().forEach(localeReq -> {
-            CountryLocaleEntity countryLocaleEntity = CountryLocaleMapper.create(localeReq);
+        CountryLocaleEntity countryLocaleEntity = CountryLocaleMapper.create(request.getLocale());
+        localeEntity.addCountryLocaleEntity(countryLocaleEntity);
 
-            LocaleEntity localeEntity = localeEntityMap.get(localeReq.getLocaleId());
-            localeEntity.addCountryLocaleEntity(countryLocaleEntity);
-
-            entity.addCountryLocaleEntity(countryLocaleEntity);
-        });
+        entity.addCountryLocaleEntity(countryLocaleEntity);
 
         countryRepository.save(entity);
         log.info("Country created with id: {}", entity.getId());
@@ -73,15 +71,17 @@ public class CountryServiceImpl implements CountryService {
     @Override
     public CountryResponse getById(Long id) {
         CountryEntity entity = getEntityById(id);
-        CountryDto dto = CountryMapper.toDto(entity);
+        CountryDto dto = CountryMapper.toDto(entity).build();
         return new CountryResponse(dto);
     }
 
     @Override
-    public PaginatedResponse<CountryDto> getAll(CountryFilterRequest request, Long localeId) {
+    public PaginatedResponse<CountryDto> getAll(CountryFilterRequest request) {
+        Specification<@NonNull CountryEntity> specification = CountrySpecification.filter(request, LocaleContext.getLocaleId());
+        Pageable pageable = request.toPageable(ALLOWED_SORT_FIELDS, CountrySortField.localeSortFields());
         Page<@NonNull CountryDto> page = countryRepository
-                .findAll(CountrySpecification.filter(request, localeId), request.toPageable(ALLOWED_SORT_FIELDS, CountrySortField.localeSortFields()))
-                .map(entity -> CountryMapper.toDto(entity, localeId));
+                .findAll(specification, pageable)
+                .map(entity -> CountryMapper.toDto(entity).build());
         return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
     }
 
@@ -101,6 +101,15 @@ public class CountryServiceImpl implements CountryService {
         entity.setIsActive(false);
         countryRepository.save(entity);
         log.info("Country soft-deleted with id: {}", entity.getId());
+        return new SuccessResponse(true, entity.getId());
+    }
+
+    @Transactional
+    @Override
+    public SuccessResponse updateFlagImage(CountryEntity entity, String flagUrl) {
+        entity.setFlagUrl(flagUrl);
+        countryRepository.save(entity);
+        log.info("Country flag image updated for id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
     }
 }

@@ -1,6 +1,6 @@
 package com.example.resortbackendapplication1.dayofweek.model.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -8,18 +8,17 @@ import lombok.NoArgsConstructor;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
 
-import java.util.List;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class DayOfWeekDto {
+
     private Long id;
     private String code;
-    private Integer isoDayNumber;
-    private Integer displayOrder;
-    private List<DayOfWeekLocaleDto> locales;
+    private Integer sortOrder;
+
+    private DayOfWeekLocaleDto locale;
 }

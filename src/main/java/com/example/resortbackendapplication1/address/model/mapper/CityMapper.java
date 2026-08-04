@@ -4,8 +4,10 @@ import com.example.resortbackendapplication1.address.dto.request.city.CityReques
 import com.example.resortbackendapplication1.address.dto.request.city.CreateCityRequest;
 import com.example.resortbackendapplication1.address.dto.request.city.UpdateCityRequest;
 import com.example.resortbackendapplication1.address.model.dto.CityDto;
+import com.example.resortbackendapplication1.address.model.dto.CityLocaleDto;
 import com.example.resortbackendapplication1.address.model.entity.CityEntity;
 import com.example.resortbackendapplication1.address.model.entity.CityLocaleEntity;
+import com.example.resortbackendapplication1.commons.context.LocaleContext;
 import lombok.experimental.UtilityClass;
 
 import java.util.List;
@@ -28,33 +30,34 @@ public class CityMapper {
         entity.setSortOrder(request.getSortOrder());
     }
 
-    public CityDto toDto(CityEntity entity) {
+    public CityDto.CityDtoBuilder toDto(CityEntity entity) {
         return CityDto.builder()
                 .id(entity.getId())
-                .country(CountryMapper.toDto(entity.getCountryEntity()))
                 .code(entity.getCode())
                 .sortOrder(entity.getSortOrder())
-                .locales(entity.getCityLocaleEntities().stream()
-                        .map(CityLocaleMapper::toDto)
-                        .toList())
-                .build();
+                .locale(singleLocale(entity));
     }
 
-    public CityDto toDto(CityEntity entity, Long localeId) {
-        CityLocaleEntity matched = entity.getCityLocaleEntities().stream()
+    private CityLocaleDto singleLocale(CityEntity entity) {
+        CityLocaleEntity matched = matchLocale(entity, LocaleContext.getLocaleId());
+        return matched == null ? null : CityLocaleMapper.toDto(matched);
+    }
+
+    private List<CityLocaleEntity> activeLocales(CityEntity entity) {
+        return entity.getCityLocaleEntities().stream()
+                .filter(cityLocaleEntity -> Boolean.TRUE.equals(cityLocaleEntity.getIsActive())
+                        && Boolean.FALSE.equals(cityLocaleEntity.getIsDeleted()))
+                .toList();
+    }
+
+    private CityLocaleEntity matchLocale(CityEntity entity, Long localeId) {
+        List<CityLocaleEntity> activeLocales = activeLocales(entity);
+        return activeLocales.stream()
                 .filter(cityLocaleEntity -> cityLocaleEntity.getLocaleEntity().getId().equals(localeId))
                 .findFirst()
-                .orElseGet(() -> entity.getCityLocaleEntities().stream()
+                .orElseGet(() -> activeLocales.stream()
                         .filter(cityLocaleEntity -> "en".equals(cityLocaleEntity.getLocaleEntity().getCode()))
                         .findFirst()
                         .orElse(null));
-
-        return CityDto.builder()
-                .id(entity.getId())
-                .country(CountryMapper.toDto(entity.getCountryEntity(), localeId))
-                .code(entity.getCode())
-                .sortOrder(entity.getSortOrder())
-                .locales(matched == null ? List.of() : List.of(CityLocaleMapper.toDto(matched)))
-                .build();
     }
 }

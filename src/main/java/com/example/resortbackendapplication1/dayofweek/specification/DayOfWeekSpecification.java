@@ -10,7 +10,7 @@ import org.springframework.data.jpa.domain.Specification;
 @UtilityClass
 public class DayOfWeekSpecification {
 
-    public Specification<@NonNull DayOfWeekEntity> filter(DayOfWeekFilterRequest request) {
-        return SpecificationUtils.build(request);
+    public Specification<@NonNull DayOfWeekEntity> filter(DayOfWeekFilterRequest request, Long localeId) {
+        return SpecificationUtils.build(request, localeId);
     }
 }

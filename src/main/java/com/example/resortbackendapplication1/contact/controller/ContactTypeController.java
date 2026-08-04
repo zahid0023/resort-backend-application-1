@@ -1,10 +1,8 @@
 package com.example.resortbackendapplication1.contact.controller;
 
-import com.example.resortbackendapplication1.commons.utils.LocaleUtils;
-import com.example.resortbackendapplication1.contact.dto.request.ContactTypeFilterRequest;
-import com.example.resortbackendapplication1.contact.dto.request.CreateContactTypeRequest;
-import com.example.resortbackendapplication1.contact.dto.request.UpdateContactTypeRequest;
-import com.example.resortbackendapplication1.contact.dto.request.locale.CreateContactTypeLocaleRequest;
+import com.example.resortbackendapplication1.contact.dto.request.contacttype.ContactTypeFilterRequest;
+import com.example.resortbackendapplication1.contact.dto.request.contacttype.CreateContactTypeRequest;
+import com.example.resortbackendapplication1.contact.dto.request.contacttype.UpdateContactTypeRequest;
 import com.example.resortbackendapplication1.contact.model.entity.ContactTypeEntity;
 import com.example.resortbackendapplication1.contact.service.ContactTypeService;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
@@ -14,8 +12,6 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/contact-types")
@@ -32,10 +28,8 @@ public class ContactTypeController {
 
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody CreateContactTypeRequest request) {
-        Map<Long, LocaleEntity> localeEntityMap = LocaleUtils.resolveLocaleMap(
-                request.getLocales(), CreateContactTypeLocaleRequest::getLocaleId, localeService);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(contactTypeService.create(request, localeEntityMap));
+        LocaleEntity localeEntity = localeService.getEntityByCode("en");
+        return ResponseEntity.status(HttpStatus.CREATED).body(contactTypeService.create(request, localeEntity));
     }
 
     @GetMapping("/{id}")
@@ -58,6 +52,7 @@ public class ContactTypeController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
-        return ResponseEntity.ok(contactTypeService.delete(id));
+        ContactTypeEntity entity = contactTypeService.getEntityById(id);
+        return ResponseEntity.ok(contactTypeService.delete(entity));
     }
 }

@@ -1,9 +1,11 @@
 package com.example.resortbackendapplication1.currency.serviceImpl;
 
+import com.example.resortbackendapplication1.address.model.dto.CountryDto;
 import com.example.resortbackendapplication1.address.model.entity.CountryEntity;
+import com.example.resortbackendapplication1.address.model.mapper.CountryMapper;
+import com.example.resortbackendapplication1.commons.context.LocaleContext;
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
-import com.example.resortbackendapplication1.commons.utils.EntityValidator;
 import com.example.resortbackendapplication1.commons.utils.Pagination;
 import com.example.resortbackendapplication1.currency.dto.request.currency.CreateCurrencyRequest;
 import com.example.resortbackendapplication1.currency.dto.request.currency.CurrencyFilterRequest;
@@ -11,8 +13,10 @@ import com.example.resortbackendapplication1.currency.dto.request.currency.Updat
 import com.example.resortbackendapplication1.currency.dto.response.currencies.CurrencyResponse;
 import com.example.resortbackendapplication1.currency.model.dto.CurrencyDto;
 import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
+import com.example.resortbackendapplication1.currency.model.entity.CurrencyLocaleEntity;
 import com.example.resortbackendapplication1.currency.model.enums.CurrencySearchField;
 import com.example.resortbackendapplication1.currency.model.enums.CurrencySortField;
+import com.example.resortbackendapplication1.currency.model.mapper.CurrencyLocaleMapper;
 import com.example.resortbackendapplication1.currency.model.mapper.CurrencyMapper;
 import com.example.resortbackendapplication1.currency.repository.CurrencyRepository;
 import com.example.resortbackendapplication1.currency.service.CurrencyService;
@@ -22,11 +26,11 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -44,34 +48,51 @@ public class CurrencyServiceImpl implements CurrencyService {
 
     @Transactional
     @Override
-    public SuccessResponse create(CreateCurrencyRequest request,
-                                  CountryEntity countryEntity,
-                                  Map<Long, LocaleEntity> localeEntityMap) {
-        CurrencyEntity entity = CurrencyMapper.create(request, countryEntity, localeEntityMap);
+    public SuccessResponse create(CreateCurrencyRequest request, CountryEntity countryEntity, LocaleEntity localeEntity) {
+        if (currencyRepository.existsByCodeAndIsActiveAndIsDeleted(request.getCode(), true, false)) {
+            throw new IllegalStateException("Currency with code '" + request.getCode() + "' already exists");
+        }
+        if (currencyRepository.existsByNumericCodeAndIsActiveAndIsDeleted(request.getNumericCode(), true, false)) {
+            throw new IllegalStateException("Currency with numeric code '" + request.getNumericCode() + "' already exists");
+        }
+
+        CurrencyEntity entity = CurrencyMapper.create(request);
+        countryEntity.addCurrencyEntity(entity);
+
+        CurrencyLocaleEntity currencyLocaleEntity = CurrencyLocaleMapper.create(request.getLocale());
+        localeEntity.addCurrencyLocaleEntity(currencyLocaleEntity);
+        entity.addCurrencyLocaleEntity(currencyLocaleEntity);
+
         currencyRepository.save(entity);
         log.info("Currency created with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
     }
 
-    @Transactional(readOnly = true)
     @Override
     public CurrencyEntity getEntityById(Long id) {
         return currencyRepository.findByIdAndIsActiveAndIsDeleted(id, true, false)
                 .orElseThrow(() -> new EntityNotFoundException("Currency not found with id: " + id));
     }
 
-    @Transactional(readOnly = true)
     @Override
     public CurrencyResponse getById(Long id) {
-        return new CurrencyResponse(CurrencyMapper.toDto(getEntityById(id)));
+        CurrencyEntity entity = getEntityById(id);
+        CountryDto country = CountryMapper.toDto(entity.getCountryEntity()).build();
+        CurrencyDto dto = CurrencyMapper.toDto(entity)
+                .country(country)
+                .build();
+        return new CurrencyResponse(dto);
     }
 
-    @Transactional(readOnly = true)
     @Override
     public PaginatedResponse<CurrencyDto> getAll(CurrencyFilterRequest request) {
+        Specification<@NonNull CurrencyEntity> specification = CurrencySpecification.filter(request, LocaleContext.getLocaleId());
+        Pageable pageable = request.toPageable(ALLOWED_SORT_FIELDS, CurrencySortField.localeSortFields());
         Page<@NonNull CurrencyDto> page = currencyRepository
-                .findAll(CurrencySpecification.filter(request), request.toPageable(ALLOWED_SORT_FIELDS))
-                .map(CurrencyMapper::toDto);
+                .findAll(specification, pageable)
+                .map(entity -> CurrencyMapper.toDto(entity)
+                        .country(CountryMapper.toDto(entity.getCountryEntity()).build())
+                        .build());
         return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
     }
 
@@ -86,20 +107,11 @@ public class CurrencyServiceImpl implements CurrencyService {
 
     @Transactional
     @Override
-    public SuccessResponse delete(Long id) {
-        CurrencyEntity entity = getEntityById(id);
+    public SuccessResponse delete(CurrencyEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
         currencyRepository.save(entity);
         log.info("Currency soft-deleted with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public List<CurrencyEntity> getAll(Set<Long> ids) {
-        List<CurrencyEntity> entities = currencyRepository.findAllByIdInAndIsActiveAndIsDeleted(ids, true, false);
-        EntityValidator.validateAllFound(ids, entities, CurrencyEntity::getId, "Currency");
-        return entities;
     }
 }

@@ -43,7 +43,7 @@ There is no lint/format command configured beyond the IDE-driven `qodana.yaml` s
 
 Code is organized by **domain module** under `src/main/java/.../resortbackendapplication1/`, not by technical
 layer: `address`, `auth`, `bedtype`, `contact`, `currency`, `dayofweek`, `facility`, `facilitypricetype`,
-`imagehosting`, `locale`, `pagetype`, `price`, `resort`, `resortaccesstype`, `resortbasicinfo`, `resortcontact`,
+`image`, `locale`, `pagetype`, `price`, `resort`, `resortaccesstype`, `resortbasicinfo`, `resortcontact`,
 `resortfacilityprice`, `resortpermissiontype`, `resortroomcategory`, `resortroomcategoryprice`, `roomcategory`,
 `uiblocksection`, `unit`, `unittype`. Each module is internally layered; `commons` holds cross-cutting
 infrastructure shared by every module.
@@ -52,10 +52,13 @@ infrastructure shared by every module.
 
 Every CRUD entity (e.g. `Country`) follows the same file layout and layer responsibilities:
 
-- `controller/` — resolves related entities (parent, locale map, etc.) via the service's `getEntityById`,
-  then delegates to the service, passing entities rather than bare ids
-- `service/` — interface: `create`, `getById`, `getAll(filter[, localeId])`, `update`, `delete`,
-  `getEntityById`
+- `controller/` — resolves related entities (parent, the single `en` locale for create, etc.) via the
+  service's `getEntityById`/`LocaleService.getEntityByCode("en")`, then delegates to the service, passing
+  entities rather than bare ids. Does **not** handle `Accept-Language` itself — that's global (see
+  `commons/filter/LocaleContextFilter.java` below)
+- `service/` — interface: `create`, `getById`, `getAll(filter)`, `update`, `delete`, `getEntityById`. `getAll`
+  does **not** take a `localeId` parameter from the controller — `ServiceImpl` reads
+  `LocaleContext.getLocaleId()` itself
 - `serviceImpl/` — `@Service @Slf4j`, constructor injection, `@Transactional` on writes, **soft delete only**
   (`isDeleted=true`, `isActive=false`, then save — never a hard delete)
 - `repository/` — `JpaRepository`, plus `JpaSpecificationExecutor` when the entity has a filterable list
@@ -66,6 +69,57 @@ Every CRUD entity (e.g. `Country`) follows the same file layout and layer respon
 - `model/mapper/` — `@UtilityClass` (no `static` keyword — Lombok adds it), methods named `create`, `update`,
   `toDto` (not `fromRequest`); immutable/unique fields are set only in `create()`, never in the shared
   `applyCommonFields()` used by both `create()` and `update()`
+
+  **Single-`toDto`-method mapper strategy** (current live shape as of 2026-08-01 — see
+  `address/model/mapper/CountryMapper.java`, `CityMapper.java`, `currency/model/mapper/CurrencyMapper.java`,
+  `unit/model/mapper/UnitTypeMapper.java`, `UnitMapper.java`): every entity mapper exposes **exactly one**
+  `toDto` method — never overloads, never a `toDtoWithout{X}` family. Signature shape:
+
+  ```java
+  public {Entity}Dto toDto({Entity}Entity entity,
+                           boolean includeLocales,
+                           boolean include{EachForeignKeyOrNestedCollectionField}...)
+  ```
+
+    - Basic scalar fields are always present, never gated behind a parameter.
+    - `includeLocales` controls the entity's **own** locale collection only:
+        - `true` → every active translation (`activeLocales(entity).stream().map({Entity}LocaleMapper::toDto).toList()`).
+        - `false` → exactly one translation, via a private `singleLocale(entity)` helper calling
+          `matchLocale(entity, LocaleContext.getLocaleId())`. `matchLocale` already encodes the fallback: match
+          the id `LocaleContext` resolved from the current request's `Accept-Language` (via
+          `commons/filter/LocaleContextFilter.java` → `commons/context/LocaleContext.java`); if no translation
+          exists for that locale, fall back to whichever translation has code `"en"`; if neither exists, an
+          empty list.
+    - Every foreign-key reference (a single nested object, e.g. `City.country`) or nested child collection
+      (e.g. `Country.cities`) gets its own `boolean include{X}` parameter — `true` embeds it via the *other*
+      mapper's `toDto`, `false` sets it to `null`/`List.of()`.
+    - **Nested/embedded calls always pass `includeLocales=false`, never the caller's own value.** Any entity
+      embedded inside another (a city inside `Country.cities`, a country inside `City.country`, a unit type
+      inside `Unit.unitType`, etc.) always shows exactly the one locale matching the current request's
+      `Accept-Language`, regardless of whether the *root* entity being fetched is showing every locale or just
+      one — this is what lets `getById` return every translation of the entity you asked for while every
+      embedded child/parent still shows only one.
+    - Nested calls also always pass `false` for their own further-nested include flags (e.g. `Country` embeds
+      `City` via `CityMapper.toDto(cityEntity, false, false)` — `includeCountry=false`) — this is what stops the
+      object graph from recursing, since a city embedded inside a country never re-embeds that country, and a
+      country embedded inside a city never re-embeds its own cities/currencies.
+    - There is **no `Optional<Long> localeId` parameter anywhere** in a mapper signature (an earlier,
+      now-abandoned intermediate design). `ServiceImpl.getAll` still reads
+      `Long localeId = LocaleContext.getLocaleId()` for the repository `Specification` (DB-level locale-aware
+      sort/search), but never threads that value into the mapper — the mapper always resolves its own
+      single-locale case from `LocaleContext` directly.
+
+  **Call-site convention:** `getById` → `toDto(entity, true, true, true, ...)` (every own locale, every nested
+  field, in full — the "detailed" view). `getAll` → `toDto(entity, false, ...)` (one Accept-Language-matched
+  locale); a ROOT entity's list rows typically exclude their own heavy nested collections
+  (`includeCities=false`/`includeCurrencies=false` for `Country`, `includeUnits=false` for `UnitType`), while a
+  CHILD entity's list rows keep embedding their single parent object (`includeCountry=true` for
+  `City`/`Currency`, `includeUnitType=true` for `Unit`).
+
+  **Worked example** (3 seeded locales `en`/`bn`/`fr`; Bangladesh has `en`+`bn`; United States has `en`+`fr`):
+  `GET /countries/{bangladesh-id}` with `Accept-Language: en` → `locales` has 2 entries (`en`, `bn` — header
+  ignored entirely for `getById`). `GET /countries` with `Accept-Language: bn` → Bangladesh's row shows 1
+  locale (`bn`); United States' row shows 1 locale (`en`, since it has no `bn` translation and falls back).
 - `model/dto/` — plain DTOs built via builder
 - `model/enums/` — `XSortField`, `XSearchField` restrict what's sortable/filterable
 - `dto/request/{entity}/` — `{Entity}Request` (base), `Create{Entity}Request`, `Update{Entity}Request`,
@@ -116,8 +170,17 @@ confirmed).
 - `dto/response/SuccessResponse.java` — standard write response shape `{ success, id }`.
 - `dto/response/ApiErrorResponse.java` — standard error shape, produced by `exception/GlobalExceptionHandler.java`.
 - `utils/EntityValidator.java` — `validateAllFound(ids, entities, getId, "EntityName")` for bulk FK validation.
-- `utils/LocaleUtils.java` — `resolveLocaleMap(locales, getLocaleId, localeService)`, used in controllers to
-  resolve a locale map before delegating to the service.
+- `context/LocaleContext.java` — `ThreadLocal<Long>` holder for the current request's resolved locale id;
+  `filter/LocaleContextFilter.java` (registered in `auth/config/SecurityConfig.java`, runs for every request)
+  resolves `Accept-Language` via `LocaleService.resolveLocaleId(...)`, stores it via
+  `LocaleContext.setLocaleId(...)`, and rejects the request with `400 INVALID_ARGUMENT` if the header is
+  missing/blank — `Accept-Language` is mandatory platform-wide, not just on list endpoints. Mappers read
+  `LocaleContext.getLocaleId()` directly (see the mapper strategy above) rather than having it passed in.
+- Root entities with a locale sub-resource take exactly one locale at `create()` time (a single
+  `{Entity}LocaleRequest`, no `locale_id`), always attached server-side to whichever `Locale` has code `"en"`
+  via `LocaleService.getEntityByCode("en")` — the controller resolves it directly, no map/list resolution
+  helper needed. Additional translations are added afterward via the entity's own
+  `POST /{entities}/{id}/locales` sub-resource, which still takes an explicit `locale_id`.
 - `utils/Filterable.java`, `utils/SpecificationUtils.java`, `utils/SearchType.java`, `utils/LocaleSortable.java`,
   `utils/LocaleJoinSortInfo.java` — the filterable-specification / locale-aware sort-search framework used by
   every module's `specification/` classes. Read the live signatures before using — this is the most

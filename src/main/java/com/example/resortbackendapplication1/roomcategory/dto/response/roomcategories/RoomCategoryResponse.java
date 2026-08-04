@@ -8,10 +8,9 @@ import tools.jackson.databind.annotation.JsonNaming;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class RoomCategoryResponse {
-
     private final RoomCategoryDto data;
 
-    public RoomCategoryResponse(RoomCategoryDto roomCategory) {
-        this.data = roomCategory;
+    public RoomCategoryResponse(RoomCategoryDto data) {
+        this.data = data;
     }
 }

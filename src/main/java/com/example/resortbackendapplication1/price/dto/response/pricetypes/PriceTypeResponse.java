@@ -8,9 +8,9 @@ import tools.jackson.databind.annotation.JsonNaming;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class PriceTypeResponse {
-    private final PriceTypeDto priceType;
+    private final PriceTypeDto data;
 
-    public PriceTypeResponse(PriceTypeDto priceType) {
-        this.priceType = priceType;
+    public PriceTypeResponse(PriceTypeDto data) {
+        this.data = data;
     }
 }

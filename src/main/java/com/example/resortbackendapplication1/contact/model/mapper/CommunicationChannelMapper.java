@@ -1,31 +1,24 @@
 package com.example.resortbackendapplication1.contact.model.mapper;
 
-import com.example.resortbackendapplication1.contact.dto.request.CommunicationChannelRequest;
-import com.example.resortbackendapplication1.contact.dto.request.CreateCommunicationChannelRequest;
-import com.example.resortbackendapplication1.contact.dto.request.UpdateCommunicationChannelRequest;
-import com.example.resortbackendapplication1.contact.dto.request.locale.CreateCommunicationChannelLocaleRequest;
+import com.example.resortbackendapplication1.contact.dto.request.communicationchannel.CommunicationChannelRequest;
+import com.example.resortbackendapplication1.contact.dto.request.communicationchannel.CreateCommunicationChannelRequest;
+import com.example.resortbackendapplication1.contact.dto.request.communicationchannel.UpdateCommunicationChannelRequest;
 import com.example.resortbackendapplication1.contact.model.dto.CommunicationChannelDto;
 import com.example.resortbackendapplication1.contact.model.dto.CommunicationChannelLocaleDto;
 import com.example.resortbackendapplication1.contact.model.entity.CommunicationChannelEntity;
 import com.example.resortbackendapplication1.contact.model.entity.CommunicationChannelLocaleEntity;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.commons.context.LocaleContext;
 import lombok.experimental.UtilityClass;
 
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @UtilityClass
 public class CommunicationChannelMapper {
 
-    public CommunicationChannelEntity create(CreateCommunicationChannelRequest request,
-                                             Map<Long, LocaleEntity> localeEntityMap) {
+    public CommunicationChannelEntity create(CreateCommunicationChannelRequest request) {
         CommunicationChannelEntity entity = new CommunicationChannelEntity();
         entity.setCode(request.getCode());
         applyCommonFields(entity, request);
-        entity.setCommunicationChannelLocaleEntities(mapLocales(request.getLocales(), entity, localeEntityMap));
         return entity;
     }
 
@@ -41,20 +34,7 @@ public class CommunicationChannelMapper {
         entity.setIsClickable(request.getIsClickable());
     }
 
-    private Set<CommunicationChannelLocaleEntity> mapLocales(List<CreateCommunicationChannelLocaleRequest> locales,
-                                                              CommunicationChannelEntity entity,
-                                                              Map<Long, LocaleEntity> localeEntityMap) {
-        if (locales == null || locales.isEmpty()) return new LinkedHashSet<>();
-        return locales.stream()
-                .map(locale -> CommunicationChannelLocaleMapper.create(
-                        locale, entity, localeEntityMap.get(locale.getLocaleId())))
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
-    public CommunicationChannelDto toDto(CommunicationChannelEntity entity) {
-        List<CommunicationChannelLocaleDto> locales = entity.getCommunicationChannelLocaleEntities().stream()
-                .map(CommunicationChannelLocaleMapper::toDto)
-                .toList();
+    public CommunicationChannelDto.CommunicationChannelDtoBuilder toDto(CommunicationChannelEntity entity) {
         return CommunicationChannelDto.builder()
                 .id(entity.getId())
                 .code(entity.getCode())
@@ -63,7 +43,29 @@ public class CommunicationChannelMapper {
                 .isPhone(entity.getIsPhone())
                 .isEmail(entity.getIsEmail())
                 .isClickable(entity.getIsClickable())
-                .locales(locales)
-                .build();
+                .locale(singleLocale(entity));
+    }
+
+    private List<CommunicationChannelLocaleEntity> activeLocales(CommunicationChannelEntity entity) {
+        return entity.getCommunicationChannelLocaleEntities().stream()
+                .filter(communicationChannelLocaleEntity -> Boolean.TRUE.equals(communicationChannelLocaleEntity.getIsActive())
+                        && Boolean.FALSE.equals(communicationChannelLocaleEntity.getIsDeleted()))
+                .toList();
+    }
+
+    private CommunicationChannelLocaleDto singleLocale(CommunicationChannelEntity entity) {
+        CommunicationChannelLocaleEntity matched = matchLocale(entity, LocaleContext.getLocaleId());
+        return matched == null ? null : CommunicationChannelLocaleMapper.toDto(matched);
+    }
+
+    private CommunicationChannelLocaleEntity matchLocale(CommunicationChannelEntity entity, Long localeId) {
+        List<CommunicationChannelLocaleEntity> activeLocales = activeLocales(entity);
+        return activeLocales.stream()
+                .filter(communicationChannelLocaleEntity -> communicationChannelLocaleEntity.getLocaleEntity().getId().equals(localeId))
+                .findFirst()
+                .orElseGet(() -> activeLocales.stream()
+                        .filter(communicationChannelLocaleEntity -> "en".equals(communicationChannelLocaleEntity.getLocaleEntity().getCode()))
+                        .findFirst()
+                        .orElse(null));
     }
 }

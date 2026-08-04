@@ -1,31 +1,33 @@
 package com.example.resortbackendapplication1.contact.serviceImpl;
 
-import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
-import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
-import com.example.resortbackendapplication1.commons.utils.EntityValidator;
-import com.example.resortbackendapplication1.commons.utils.Pagination;
-import com.example.resortbackendapplication1.contact.dto.request.CommunicationChannelFilterRequest;
-import com.example.resortbackendapplication1.contact.dto.request.CreateCommunicationChannelRequest;
-import com.example.resortbackendapplication1.contact.dto.request.UpdateCommunicationChannelRequest;
-import com.example.resortbackendapplication1.contact.dto.response.CommunicationChannelResponse;
+import com.example.resortbackendapplication1.contact.dto.request.communicationchannel.CommunicationChannelFilterRequest;
+import com.example.resortbackendapplication1.contact.dto.request.communicationchannel.CreateCommunicationChannelRequest;
+import com.example.resortbackendapplication1.contact.dto.request.communicationchannel.UpdateCommunicationChannelRequest;
+import com.example.resortbackendapplication1.contact.dto.response.communicationchannels.CommunicationChannelResponse;
 import com.example.resortbackendapplication1.contact.model.dto.CommunicationChannelDto;
 import com.example.resortbackendapplication1.contact.model.entity.CommunicationChannelEntity;
+import com.example.resortbackendapplication1.contact.model.entity.CommunicationChannelLocaleEntity;
 import com.example.resortbackendapplication1.contact.model.enums.CommunicationChannelSearchField;
 import com.example.resortbackendapplication1.contact.model.enums.CommunicationChannelSortField;
+import com.example.resortbackendapplication1.contact.model.mapper.CommunicationChannelLocaleMapper;
 import com.example.resortbackendapplication1.contact.model.mapper.CommunicationChannelMapper;
 import com.example.resortbackendapplication1.contact.repository.CommunicationChannelRepository;
 import com.example.resortbackendapplication1.contact.service.CommunicationChannelService;
 import com.example.resortbackendapplication1.contact.specification.CommunicationChannelSpecification;
+import com.example.resortbackendapplication1.commons.context.LocaleContext;
+import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
+import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
+import com.example.resortbackendapplication1.commons.utils.Pagination;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -43,8 +45,18 @@ public class CommunicationChannelServiceImpl implements CommunicationChannelServ
 
     @Transactional
     @Override
-    public SuccessResponse create(CreateCommunicationChannelRequest request, Map<Long, LocaleEntity> localeEntityMap) {
-        CommunicationChannelEntity entity = CommunicationChannelMapper.create(request, localeEntityMap);
+    public SuccessResponse create(CreateCommunicationChannelRequest request, LocaleEntity localeEntity) {
+        if (communicationChannelRepository.existsByCodeAndIsActiveAndIsDeleted(request.getCode(), true, false)) {
+            throw new IllegalStateException("CommunicationChannel with code '" + request.getCode() + "' already exists");
+        }
+
+        CommunicationChannelEntity entity = CommunicationChannelMapper.create(request);
+
+        CommunicationChannelLocaleEntity communicationChannelLocaleEntity = CommunicationChannelLocaleMapper.create(request.getLocale());
+        localeEntity.addCommunicationChannelLocaleEntity(communicationChannelLocaleEntity);
+
+        entity.addCommunicationChannelLocaleEntity(communicationChannelLocaleEntity);
+
         communicationChannelRepository.save(entity);
         log.info("CommunicationChannel created with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
@@ -59,14 +71,17 @@ public class CommunicationChannelServiceImpl implements CommunicationChannelServ
     @Override
     public CommunicationChannelResponse getById(Long id) {
         CommunicationChannelEntity entity = getEntityById(id);
-        return new CommunicationChannelResponse(CommunicationChannelMapper.toDto(entity));
+        CommunicationChannelDto dto = CommunicationChannelMapper.toDto(entity).build();
+        return new CommunicationChannelResponse(dto);
     }
 
     @Override
     public PaginatedResponse<CommunicationChannelDto> getAll(CommunicationChannelFilterRequest request) {
+        Specification<@NonNull CommunicationChannelEntity> specification = CommunicationChannelSpecification.filter(request, LocaleContext.getLocaleId());
+        Pageable pageable = request.toPageable(ALLOWED_SORT_FIELDS, CommunicationChannelSortField.localeSortFields());
         Page<@NonNull CommunicationChannelDto> page = communicationChannelRepository
-                .findAll(CommunicationChannelSpecification.filter(request), request.toPageable(ALLOWED_SORT_FIELDS))
-                .map(CommunicationChannelMapper::toDto);
+                .findAll(specification, pageable)
+                .map(entity -> CommunicationChannelMapper.toDto(entity).build());
         return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
     }
 
@@ -81,20 +96,11 @@ public class CommunicationChannelServiceImpl implements CommunicationChannelServ
 
     @Transactional
     @Override
-    public SuccessResponse delete(Long id) {
-        CommunicationChannelEntity entity = getEntityById(id);
+    public SuccessResponse delete(CommunicationChannelEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
         communicationChannelRepository.save(entity);
-        log.info("CommunicationChannel soft-deleted with id: {}", id);
-        return new SuccessResponse(true, id);
-    }
-
-    @Override
-    public List<CommunicationChannelEntity> getAll(Set<Long> ids) {
-        List<CommunicationChannelEntity> entities = communicationChannelRepository
-                .findAllByIdInAndIsActiveAndIsDeleted(ids, true, false);
-        EntityValidator.validateAllFound(ids, entities, CommunicationChannelEntity::getId, "CommunicationChannel");
-        return entities;
+        log.info("CommunicationChannel soft-deleted with id: {}", entity.getId());
+        return new SuccessResponse(true, entity.getId());
     }
 }

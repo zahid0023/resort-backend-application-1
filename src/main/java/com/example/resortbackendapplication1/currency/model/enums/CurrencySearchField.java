@@ -1,5 +1,7 @@
 package com.example.resortbackendapplication1.currency.model.enums;
 
+import com.example.resortbackendapplication1.commons.utils.SearchFieldSpec;
+import com.example.resortbackendapplication1.commons.utils.SearchType;
 import com.example.resortbackendapplication1.currency.dto.request.currency.CurrencyFilterRequest;
 import lombok.Getter;
 
@@ -9,22 +11,33 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Getter
-public enum CurrencySearchField {
-    CODE("code", CurrencyFilterRequest::getCode),
-    NUMERIC_CODE("numericCode", CurrencyFilterRequest::getNumericCode),
-    SYMBOL("symbol", CurrencyFilterRequest::getSymbol);
+public enum CurrencySearchField implements SearchFieldSpec<CurrencyFilterRequest> {
+    CODE("code", SearchType.LIKE, false, null, CurrencyFilterRequest::getCode),
+    NUMERIC_CODE("numericCode", SearchType.LIKE, false, null, CurrencyFilterRequest::getNumericCode),
+    NAME("name", SearchType.LIKE, true, "currencyLocaleEntities", CurrencyFilterRequest::getName),
+    SHORT_NAME("shortName", SearchType.LIKE, true, "currencyLocaleEntities", CurrencyFilterRequest::getShortName);
 
     private final String fieldName;
+    private final SearchType searchType;
+    private final boolean localeField;
+    private final String collectionField;
     private final Function<CurrencyFilterRequest, String> valueExtractor;
 
-    CurrencySearchField(String fieldName, Function<CurrencyFilterRequest, String> valueExtractor) {
+    CurrencySearchField(String fieldName, SearchType searchType, boolean localeField,
+                        String collectionField, Function<CurrencyFilterRequest, String> valueExtractor) {
         this.fieldName = fieldName;
+        this.searchType = searchType;
+        this.localeField = localeField;
+        this.collectionField = collectionField;
         this.valueExtractor = valueExtractor;
     }
 
     public static Set<String> allowedFields() {
-        return Arrays.stream(values())
-                .map(CurrencySearchField::getFieldName)
-                .collect(Collectors.toSet());
+        return Arrays.stream(values()).map(CurrencySearchField::getFieldName).collect(Collectors.toSet());
+    }
+
+    public static Set<String> localeSearchFields() {
+        return Arrays.stream(values()).filter(CurrencySearchField::isLocaleField)
+                .map(CurrencySearchField::getFieldName).collect(Collectors.toSet());
     }
 }

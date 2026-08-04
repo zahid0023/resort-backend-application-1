@@ -1,31 +1,33 @@
 package com.example.resortbackendapplication1.roomcategory.serviceImpl;
 
+import com.example.resortbackendapplication1.commons.context.LocaleContext;
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
-import com.example.resortbackendapplication1.commons.utils.EntityValidator;
 import com.example.resortbackendapplication1.commons.utils.Pagination;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.roomcategory.dto.request.roomcategory.CreateRoomCategoryRequest;
 import com.example.resortbackendapplication1.roomcategory.dto.request.roomcategory.RoomCategoryFilterRequest;
 import com.example.resortbackendapplication1.roomcategory.dto.request.roomcategory.UpdateRoomCategoryRequest;
 import com.example.resortbackendapplication1.roomcategory.dto.response.roomcategories.RoomCategoryResponse;
 import com.example.resortbackendapplication1.roomcategory.model.dto.RoomCategoryDto;
 import com.example.resortbackendapplication1.roomcategory.model.entity.RoomCategoryEntity;
+import com.example.resortbackendapplication1.roomcategory.model.entity.RoomCategoryLocaleEntity;
 import com.example.resortbackendapplication1.roomcategory.model.enums.RoomCategorySearchField;
 import com.example.resortbackendapplication1.roomcategory.model.enums.RoomCategorySortField;
+import com.example.resortbackendapplication1.roomcategory.model.mapper.RoomCategoryLocaleMapper;
 import com.example.resortbackendapplication1.roomcategory.model.mapper.RoomCategoryMapper;
 import com.example.resortbackendapplication1.roomcategory.repository.RoomCategoryRepository;
 import com.example.resortbackendapplication1.roomcategory.service.RoomCategoryService;
 import com.example.resortbackendapplication1.roomcategory.specification.RoomCategorySpecification;
+import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -43,8 +45,17 @@ public class RoomCategoryServiceImpl implements RoomCategoryService {
 
     @Transactional
     @Override
-    public SuccessResponse create(CreateRoomCategoryRequest request, Map<Long, LocaleEntity> localeEntityMap) {
-        RoomCategoryEntity entity = RoomCategoryMapper.create(request, localeEntityMap);
+    public SuccessResponse create(CreateRoomCategoryRequest request, LocaleEntity localeEntity) {
+        if (roomCategoryRepository.existsByCodeAndIsActiveAndIsDeleted(request.getCode(), true, false)) {
+            throw new IllegalStateException("RoomCategory with code '" + request.getCode() + "' already exists");
+        }
+
+        RoomCategoryEntity entity = RoomCategoryMapper.create(request);
+
+        RoomCategoryLocaleEntity roomCategoryLocaleEntity = RoomCategoryLocaleMapper.create(request.getLocale());
+        localeEntity.addRoomCategoryLocaleEntity(roomCategoryLocaleEntity);
+        entity.addRoomCategoryLocaleEntity(roomCategoryLocaleEntity);
+
         roomCategoryRepository.save(entity);
         log.info("RoomCategory created with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
@@ -59,15 +70,18 @@ public class RoomCategoryServiceImpl implements RoomCategoryService {
     @Override
     public RoomCategoryResponse getById(Long id) {
         RoomCategoryEntity entity = getEntityById(id);
-        RoomCategoryDto dto = RoomCategoryMapper.toDto(entity);
+        RoomCategoryDto dto = RoomCategoryMapper.toDto(entity).build();
         return new RoomCategoryResponse(dto);
     }
 
     @Override
     public PaginatedResponse<RoomCategoryDto> getAll(RoomCategoryFilterRequest request) {
+        Specification<@NonNull RoomCategoryEntity> specification =
+                RoomCategorySpecification.filter(request, LocaleContext.getLocaleId());
+        Pageable pageable = request.toPageable(ALLOWED_SORT_FIELDS, RoomCategorySortField.localeSortFields());
         Page<@NonNull RoomCategoryDto> page = roomCategoryRepository
-                .findAll(RoomCategorySpecification.filter(request), request.toPageable(ALLOWED_SORT_FIELDS))
-                .map(RoomCategoryMapper::toDto);
+                .findAll(specification, pageable)
+                .map(entity -> RoomCategoryMapper.toDto(entity).build());
         return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
     }
 
@@ -82,19 +96,11 @@ public class RoomCategoryServiceImpl implements RoomCategoryService {
 
     @Transactional
     @Override
-    public SuccessResponse delete(Long id) {
-        RoomCategoryEntity entity = getEntityById(id);
+    public SuccessResponse delete(RoomCategoryEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
         roomCategoryRepository.save(entity);
-        log.info("RoomCategory soft-deleted with id: {}", id);
-        return new SuccessResponse(true, id);
-    }
-
-    @Override
-    public List<RoomCategoryEntity> getAll(Set<Long> ids) {
-        List<RoomCategoryEntity> entities = roomCategoryRepository.findAllByIdInAndIsActiveAndIsDeleted(ids, true, false);
-        EntityValidator.validateAllFound(ids, entities, RoomCategoryEntity::getId, "RoomCategory");
-        return entities;
+        log.info("RoomCategory soft-deleted with id: {}", entity.getId());
+        return new SuccessResponse(true, entity.getId());
     }
 }

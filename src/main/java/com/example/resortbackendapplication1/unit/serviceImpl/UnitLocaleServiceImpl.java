@@ -1,23 +1,31 @@
 package com.example.resortbackendapplication1.unit.serviceImpl;
 
-import com.example.resortbackendapplication1.unit.dto.request.unit.unitlocale.CreateUnitLocaleRequest;
-import com.example.resortbackendapplication1.unit.dto.request.unit.unitlocale.UpdateUnitLocaleRequest;
+import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
+import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
+import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
+import com.example.resortbackendapplication1.commons.utils.Pagination;
+import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.unit.dto.request.unit.locale.CreateUnitLocaleRequest;
+import com.example.resortbackendapplication1.unit.dto.request.unit.locale.UpdateUnitLocaleRequest;
+import com.example.resortbackendapplication1.unit.model.dto.UnitLocaleDto;
 import com.example.resortbackendapplication1.unit.model.entity.UnitEntity;
 import com.example.resortbackendapplication1.unit.model.entity.UnitLocaleEntity;
 import com.example.resortbackendapplication1.unit.model.mapper.UnitLocaleMapper;
 import com.example.resortbackendapplication1.unit.repository.UnitLocaleRepository;
 import com.example.resortbackendapplication1.unit.service.UnitLocaleService;
-import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Set;
 
 @Service
 @Slf4j
 public class UnitLocaleServiceImpl implements UnitLocaleService {
-
     private final UnitLocaleRepository unitLocaleRepository;
 
     public UnitLocaleServiceImpl(UnitLocaleRepository unitLocaleRepository) {
@@ -26,10 +34,17 @@ public class UnitLocaleServiceImpl implements UnitLocaleService {
 
     @Transactional
     @Override
-    public SuccessResponse create(UnitEntity unitEntity,
-                                  LocaleEntity localeEntity,
-                                  CreateUnitLocaleRequest request) {
-        UnitLocaleEntity entity = UnitLocaleMapper.create(request, unitEntity, localeEntity);
+    public SuccessResponse create(CreateUnitLocaleRequest request,
+                                  UnitEntity unitEntity,
+                                  LocaleEntity localeEntity) {
+        if (unitLocaleRepository.existsByUnitEntity_IdAndLocaleEntity_IdAndIsActiveAndIsDeleted(
+                unitEntity.getId(), localeEntity.getId(), true, false)) {
+            throw new IllegalStateException("Unit already has a locale entry for locale id: " + localeEntity.getId());
+        }
+
+        UnitLocaleEntity entity = UnitLocaleMapper.create(request);
+        unitEntity.addUnitLocaleEntity(entity);
+        localeEntity.addUnitLocaleEntity(entity);
         unitLocaleRepository.save(entity);
         log.info("UnitLocale created with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
@@ -37,7 +52,8 @@ public class UnitLocaleServiceImpl implements UnitLocaleService {
 
     @Transactional
     @Override
-    public SuccessResponse update(UnitLocaleEntity entity, UpdateUnitLocaleRequest request) {
+    public SuccessResponse update(UnitLocaleEntity entity,
+                                  UpdateUnitLocaleRequest request) {
         UnitLocaleMapper.update(entity, request);
         unitLocaleRepository.save(entity);
         log.info("UnitLocale updated with id: {}", entity.getId());
@@ -59,5 +75,16 @@ public class UnitLocaleServiceImpl implements UnitLocaleService {
         return unitLocaleRepository
                 .findByUnitEntity_IdAndIdAndIsActiveAndIsDeleted(unitId, id, true, false)
                 .orElseThrow(() -> new EntityNotFoundException("UnitLocale not found with id: " + id));
+    }
+
+    @Override
+    public PaginatedResponse<UnitLocaleDto> getAll(Long unitId, String localeCode, PaginatedRequest paginatedRequest) {
+        Pageable pageable = paginatedRequest.toPageable(Set.of());
+        Page<@NonNull UnitLocaleDto> dtoPage = (localeCode == null || localeCode.isBlank()
+                ? unitLocaleRepository.findByUnitEntity_IdAndIsActiveAndIsDeleted(unitId, true, false, pageable)
+                : unitLocaleRepository.findByUnitEntity_IdAndLocaleEntity_CodeContainingIgnoreCaseAndIsActiveAndIsDeleted(
+                        unitId, localeCode, true, false, pageable))
+                .map(UnitLocaleMapper::toDto);
+        return Pagination.buildPaginatedResponse(dtoPage);
     }
 }

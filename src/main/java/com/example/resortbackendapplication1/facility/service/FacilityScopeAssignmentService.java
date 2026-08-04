@@ -1,20 +1,21 @@
 package com.example.resortbackendapplication1.facility.service;
 
+import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
+import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.facility.model.dto.FacilityScopeAssignmentDto;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeAssignmentEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeEntity;
 
-import java.util.List;
-
 public interface FacilityScopeAssignmentService {
 
-    SuccessResponse assign(FacilityEntity facilityEntity, FacilityScopeEntity facilityScopeEntity);
+    SuccessResponse assign(FacilityScopeEntity facilityScopeEntity,
+                           FacilityEntity facilityEntity);
 
-    SuccessResponse unassign(Long facilityId, Long facilityScopeId);
+    FacilityScopeAssignmentEntity getEntityById(Long facilityScopeId, Long id);
 
-    List<FacilityScopeAssignmentDto> getAll(Long facilityId);
+    PaginatedResponse<FacilityScopeAssignmentDto> getAll(Long facilityScopeId, PaginatedRequest paginatedRequest);
 
-    FacilityScopeAssignmentEntity getEntityById(Long facilityId, Long facilityScopeId);
+    SuccessResponse unassign(FacilityScopeAssignmentEntity entity);
 }

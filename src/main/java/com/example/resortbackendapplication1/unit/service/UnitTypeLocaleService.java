@@ -1,0 +1,26 @@
+package com.example.resortbackendapplication1.unit.service;
+
+import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
+import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
+import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
+import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.unit.dto.request.unittype.locale.CreateUnitTypeLocaleRequest;
+import com.example.resortbackendapplication1.unit.dto.request.unittype.locale.UpdateUnitTypeLocaleRequest;
+import com.example.resortbackendapplication1.unit.model.dto.UnitTypeLocaleDto;
+import com.example.resortbackendapplication1.unit.model.entity.UnitTypeEntity;
+import com.example.resortbackendapplication1.unit.model.entity.UnitTypeLocaleEntity;
+
+public interface UnitTypeLocaleService {
+    SuccessResponse create(CreateUnitTypeLocaleRequest request,
+                           UnitTypeEntity unitTypeEntity,
+                           LocaleEntity localeEntity);
+
+    UnitTypeLocaleEntity getEntityById(Long unitTypeId, Long id);
+
+    PaginatedResponse<UnitTypeLocaleDto> getAll(Long unitTypeId, String localeCode, PaginatedRequest paginatedRequest);
+
+    SuccessResponse update(UnitTypeLocaleEntity entity,
+                           UpdateUnitTypeLocaleRequest request);
+
+    SuccessResponse delete(UnitTypeLocaleEntity entity);
+}

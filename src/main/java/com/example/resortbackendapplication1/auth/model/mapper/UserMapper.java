@@ -1,8 +1,8 @@
 package com.example.resortbackendapplication1.auth.model.mapper;
 
 import com.example.resortbackendapplication1.auth.dto.request.RegistrationRequest;
-import com.example.resortbackendapplication1.auth.model.enitty.RoleEntity;
-import com.example.resortbackendapplication1.auth.model.enitty.UserEntity;
+import com.example.resortbackendapplication1.auth.model.entity.RoleEntity;
+import com.example.resortbackendapplication1.auth.model.entity.UserEntity;
 import lombok.experimental.UtilityClass;
 import org.springframework.security.crypto.password.PasswordEncoder;
 

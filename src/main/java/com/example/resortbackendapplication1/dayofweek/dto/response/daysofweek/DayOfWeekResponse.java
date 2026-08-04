@@ -8,9 +8,9 @@ import tools.jackson.databind.annotation.JsonNaming;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class DayOfWeekResponse {
-    private final DayOfWeekDto dayOfWeek;
+    private final DayOfWeekDto data;
 
-    public DayOfWeekResponse(DayOfWeekDto dayOfWeek) {
-        this.dayOfWeek = dayOfWeek;
+    public DayOfWeekResponse(DayOfWeekDto data) {
+        this.data = data;
     }
 }

@@ -4,6 +4,7 @@ import com.example.resortbackendapplication1.commons.model.entity.AuditableEntit
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -41,7 +42,8 @@ public class CityEntity extends AuditableEntity {
     }
 
     @NotBlank
-    @Size(max = 50)
+    @Size(max = 3)
+    @Pattern(regexp = "^[A-Z]{3}$")
     @Column(name = "code", nullable = false, unique = true, length = 50)
     private String code;
 
@@ -52,10 +54,6 @@ public class CityEntity extends AuditableEntity {
 
     @OneToMany(mappedBy = "cityEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<CityLocaleEntity> cityLocaleEntities = new LinkedHashSet<>();
-
-    // -------------------------------------------------------------------------
-    // City Locale relationship helpers
-    // -------------------------------------------------------------------------
 
     public void addCityLocaleEntity(CityLocaleEntity entity) {
         addChild(cityLocaleEntities, entity, CityLocaleEntity::assignCity, this);

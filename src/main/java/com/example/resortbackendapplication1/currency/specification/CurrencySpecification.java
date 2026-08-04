@@ -10,7 +10,7 @@ import org.springframework.data.jpa.domain.Specification;
 @UtilityClass
 public class CurrencySpecification {
 
-    public Specification<@NonNull CurrencyEntity> filter(CurrencyFilterRequest request) {
-        return SpecificationUtils.build(request);
+    public Specification<@NonNull CurrencyEntity> filter(CurrencyFilterRequest request, Long localeId) {
+        return SpecificationUtils.build(request, localeId);
     }
 }

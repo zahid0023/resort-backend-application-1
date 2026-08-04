@@ -3,12 +3,10 @@ package com.example.resortbackendapplication1.address.controller;
 import com.example.resortbackendapplication1.address.dto.request.city.CityFilterRequest;
 import com.example.resortbackendapplication1.address.dto.request.city.CreateCityRequest;
 import com.example.resortbackendapplication1.address.dto.request.city.UpdateCityRequest;
-import com.example.resortbackendapplication1.address.dto.request.city.locale.CreateCityLocaleRequest;
 import com.example.resortbackendapplication1.address.model.entity.CityEntity;
 import com.example.resortbackendapplication1.address.model.entity.CountryEntity;
 import com.example.resortbackendapplication1.address.service.CityService;
 import com.example.resortbackendapplication1.address.service.CountryService;
-import com.example.resortbackendapplication1.commons.utils.LocaleUtils;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.locale.service.LocaleService;
 import jakarta.validation.Valid;
@@ -16,8 +14,6 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/cities")
@@ -37,10 +33,9 @@ public class CityController {
 
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody CreateCityRequest request) {
-        Map<Long, LocaleEntity> localeEntityMap = LocaleUtils.resolveLocaleMap(
-                request.getLocales(), CreateCityLocaleRequest::getLocaleId, localeService);
         CountryEntity countryEntity = countryService.getEntityById(request.getCountryId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(cityService.create(request, countryEntity, localeEntityMap));
+        LocaleEntity localeEntity = localeService.getEntityByCode("en");
+        return ResponseEntity.status(HttpStatus.CREATED).body(cityService.create(request, countryEntity, localeEntity));
     }
 
     @GetMapping("/{id}")
@@ -49,11 +44,8 @@ public class CityController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getAll(
-            @Valid @ParameterObject CityFilterRequest request,
-            @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
-        Long localeId = localeService.resolveLocaleId(acceptLanguage);
-        return ResponseEntity.ok(cityService.getAll(request, localeId));
+    public ResponseEntity<?> getAll(@Valid @ParameterObject CityFilterRequest request) {
+        return ResponseEntity.ok(cityService.getAll(request));
     }
 
     @PutMapping("/{id}")

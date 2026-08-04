@@ -7,6 +7,7 @@ import com.example.resortbackendapplication1.commons.utils.Pagination;
 import com.example.resortbackendapplication1.locale.dto.request.locale.CreateLocaleRequest;
 import com.example.resortbackendapplication1.locale.dto.request.locale.LocaleFilterRequest;
 import com.example.resortbackendapplication1.locale.dto.request.locale.UpdateLocaleRequest;
+import com.example.resortbackendapplication1.locale.dto.response.locales.LocaleCountResponse;
 import com.example.resortbackendapplication1.locale.dto.response.locales.LocaleResponse;
 import com.example.resortbackendapplication1.locale.model.dto.LocaleDto;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
@@ -67,6 +68,12 @@ public class LocaleServiceImpl implements LocaleService {
         return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
     }
 
+    @Override
+    public LocaleCountResponse getActiveCount() {
+        List<String> codes = localeRepository.findCodeByIsActiveAndIsDeleted(true, false);
+        return new LocaleCountResponse((long) codes.size(), codes);
+    }
+
     @Transactional
     @Override
     public SuccessResponse update(LocaleEntity entity, UpdateLocaleRequest request) {
@@ -79,6 +86,9 @@ public class LocaleServiceImpl implements LocaleService {
     @Transactional
     @Override
     public SuccessResponse delete(LocaleEntity entity) {
+        if ("en".equals(entity.getCode())) {
+            throw new IllegalStateException("The 'en' locale cannot be deleted; it is required as the platform's fallback locale");
+        }
         entity.setIsDeleted(true);
         entity.setIsActive(false);
         localeRepository.save(entity);
@@ -92,6 +102,15 @@ public class LocaleServiceImpl implements LocaleService {
                 .orElseThrow(() -> {
                     log.warn("Locale not found with id: {}", id);
                     return new EntityNotFoundException("Locale not found with id: " + id);
+                });
+    }
+
+    @Override
+    public LocaleEntity getEntityByCode(String code) {
+        return localeRepository.findByCodeAndIsActiveAndIsDeleted(code, true, false)
+                .orElseThrow(() -> {
+                    log.warn("Locale not found with code: {}", code);
+                    return new EntityNotFoundException("Locale not found with code: " + code);
                 });
     }
 

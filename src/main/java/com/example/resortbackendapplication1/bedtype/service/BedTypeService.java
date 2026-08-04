@@ -10,14 +10,10 @@ import com.example.resortbackendapplication1.commons.dto.response.PaginatedRespo
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 public interface BedTypeService {
 
     SuccessResponse create(CreateBedTypeRequest request,
-                           Map<Long, LocaleEntity> localeEntityMap);
+                           LocaleEntity localeEntity);
 
     BedTypeEntity getEntityById(Long id);
 
@@ -28,7 +24,5 @@ public interface BedTypeService {
     SuccessResponse update(BedTypeEntity entity,
                            UpdateBedTypeRequest request);
 
-    SuccessResponse delete(Long id);
-
-    List<BedTypeEntity> getAll(Set<Long> ids);
+    SuccessResponse delete(BedTypeEntity entity);
 }

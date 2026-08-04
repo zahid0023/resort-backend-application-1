@@ -1,23 +1,17 @@
 package com.example.resortbackendapplication1.facility.model.mapper;
 
-import com.example.resortbackendapplication1.facility.dto.request.facilities.facilitylocale.CreateFacilityLocaleRequest;
-import com.example.resortbackendapplication1.facility.dto.request.facilities.facilitylocale.FacilityLocaleRequest;
-import com.example.resortbackendapplication1.facility.dto.request.facilities.facilitylocale.UpdateFacilityLocaleRequest;
+import com.example.resortbackendapplication1.facility.dto.request.facility.locale.FacilityLocaleRequest;
+import com.example.resortbackendapplication1.facility.dto.request.facility.locale.UpdateFacilityLocaleRequest;
 import com.example.resortbackendapplication1.facility.model.dto.FacilityLocaleDto;
-import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityLocaleEntity;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.locale.model.mapper.LocaleMapper;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class FacilityLocaleMapper {
 
-    public FacilityLocaleEntity create(CreateFacilityLocaleRequest request,
-                                       FacilityEntity facilityEntity,
-                                       LocaleEntity localeEntity) {
+    public FacilityLocaleEntity create(FacilityLocaleRequest request) {
         FacilityLocaleEntity entity = new FacilityLocaleEntity();
-        entity.setFacilityEntity(facilityEntity);
-        entity.setLocaleEntity(localeEntity);
         applyCommonFields(entity, request);
         return entity;
     }
@@ -35,7 +29,7 @@ public class FacilityLocaleMapper {
     public FacilityLocaleDto toDto(FacilityLocaleEntity entity) {
         return FacilityLocaleDto.builder()
                 .id(entity.getId())
-                .localeId(entity.getLocaleEntity().getId())
+                .locale(LocaleMapper.toDto(entity.getLocaleEntity()))
                 .name(entity.getName())
                 .description(entity.getDescription())
                 .sortOrder(entity.getSortOrder())

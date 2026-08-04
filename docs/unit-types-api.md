@@ -2,68 +2,64 @@
 
 Base URL: `/api/v1/unit-types`
 
-Unit types classify the kind of measurement a unit belongs to (e.g., Weight, Volume, Length). They serve as a
-top-level grouping for units of measure used across the platform. Display names and descriptions are locale-specific
-and are embedded in every response via the `locales` array. All records support soft-delete — deleted records are
-hidden from all responses.
+Unit types group related units of measure (e.g., "Length", "Weight"), each identified by a unique `code`.
+A unit type's display name and description are locale-specific and are managed through a companion
+sub-resource — Unit Type Locales — reached via `/api/v1/unit-types/{unit-type-id}/locales`. Units
+belonging to a unit type are managed as a fully separate resource, not embedded here — see the
+[Units API](units-api.md), whose own responses embed a summary of their parent unit type. All records
+support soft-delete — deleted records are hidden from all responses.
+
+**`Accept-Language` is required on every endpoint below, with no exceptions** — a request missing (or with
+a blank) `Accept-Language` header is rejected with `400 INVALID_ARGUMENT` before it reaches any endpoint
+(see [Error Responses](#error-responses)). What differs per endpoint is whether the header's *value* is
+actually used to shape the response:
+
+- **`GET /{id}` (Get Unit Type)** and **`GET` (List/Search Unit Types)** — the header's value selects
+  exactly one locale translation for the unit type's `locale` field: an exact match if one exists,
+  otherwise `en`, otherwise `null`.
+- **`GET /{unit-type-id}/locales` (List Unit Type Locales)** — the header must be present, but its value
+  has no effect; this endpoint returns every translation the unit type has (optionally filtered by
+  `localeCode`), not a single Accept-Language-matched one.
+- **`POST`/`PUT`/`DELETE`** — the header must be present but its value has no effect at all.
 
 ---
 
 ## Endpoints
 
-| Method | Path                                             | Description               |
-|--------|--------------------------------------------------|---------------------------|
-| POST   | `/api/v1/unit-types`                             | Create a unit type        |
-| GET    | `/api/v1/unit-types`                             | List / search unit types  |
-| GET    | `/api/v1/unit-types/{id}`                        | Get a unit type           |
-| PUT    | `/api/v1/unit-types/{id}`                        | Update a unit type        |
-| DELETE | `/api/v1/unit-types/{id}`                        | Delete a unit type        |
-| POST   | `/api/v1/unit-types/{unit-type-id}/locales`      | Create a unit type locale |
-| PUT    | `/api/v1/unit-types/{unit-type-id}/locales/{id}` | Update a unit type locale |
-| DELETE | `/api/v1/unit-types/{unit-type-id}/locales/{id}` | Delete a unit type locale |
-
----
-
-## Seeded Codes
-
-The following unit type codes are pre-seeded by the system and cannot be duplicated:
-
-| Code          | Description                              |
-|---------------|------------------------------------------|
-| `WEIGHT`      | Units for measuring mass or weight       |
-| `VOLUME`      | Units for measuring liquid or gas volume |
-| `LENGTH`      | Units for measuring distance or length   |
-| `AREA`        | Units for measuring surface area         |
-| `COUNT`       | Units for counting discrete items        |
-| `TIME`        | Units for measuring duration             |
-| `TEMPERATURE` | Units for measuring temperature          |
-| `ENERGY`      | Units for measuring energy or power      |
-| `PRESSURE`    | Units for measuring pressure             |
-| `OTHER`       | Other miscellaneous unit types           |
+| Method | Path                                            | Description                |
+|--------|--------------------------------------------------|-----------------------------|
+| POST   | `/api/v1/unit-types`                              | Create a unit type          |
+| GET    | `/api/v1/unit-types`                              | List / search unit types    |
+| GET    | `/api/v1/unit-types/{id}`                         | Get a unit type             |
+| PUT    | `/api/v1/unit-types/{id}`                         | Update a unit type          |
+| DELETE | `/api/v1/unit-types/{id}`                         | Delete a unit type          |
+| GET    | `/api/v1/unit-types/{unit-type-id}/locales`       | List a unit type's locales   |
+| POST   | `/api/v1/unit-types/{unit-type-id}/locales`       | Create a unit type locale   |
+| PUT    | `/api/v1/unit-types/{unit-type-id}/locales/{id}`  | Update a unit type locale   |
+| DELETE | `/api/v1/unit-types/{unit-type-id}/locales/{id}`  | Delete a unit type locale   |
 
 ---
 
 ## Data Model
 
-### Unit Type
+### UnitType
 
-| Field        | Type    | Required | Constraints           | Description                                                              |
-|--------------|---------|----------|-----------------------|--------------------------------------------------------------------------|
-| `id`         | Long    | —        | read-only             | Auto-generated identifier                                                |
-| `code`       | String  | Yes      | max 50 chars, unique  | Stable business code (e.g., `WEIGHT`, `VOLUME`). Immutable after create. |
-| `sort_order` | Integer | Yes      | not null, default `0` | Display order in administrative interfaces                               |
-| `locales`    | Array   | —        | read-only here        | All locale translations for this unit type                               |
+| Field        | Type    | Required | Constraints                                                           | Description                                                              |
+|--------------|---------|----------|-------------------------------------------------------------------------|-----------------------------------------------------------------------------|
+| `id`         | Long    | —        | read-only                                                             | Auto-generated identifier                                                |
+| `code`       | String  | Yes      | max 50 chars, unique among active records; set at creation, immutable | Short unit type code (e.g., `LENGTH`)                                    |
+| `sort_order` | Integer | Yes      | default 0                                                             | Display order                                                            |
+| `locale`     | Object  | —        | nullable; see UnitTypeLocale below                                    | The single translation matching the request's `Accept-Language` (falls back to `en`, then `null` if the unit type has no translations at all) |
 
-### Unit Type Locale
+### UnitTypeLocale
 
-| Field         | Type    | Required | Constraints           | Description                                                 |
-|---------------|---------|----------|-----------------------|-------------------------------------------------------------|
-| `id`          | Long    | —        | read-only             | Auto-generated identifier                                   |
-| `locale`      | Object  | —        | read-only in response | Embedded locale object (`id`, `code`, `name`, `sort_order`) |
-| `locale_id`   | Long    | Yes      | not null, must exist  | ID of an existing active locale (request only)              |
-| `name`        | String  | Yes      | max 100 chars         | Localized display name (e.g., `"Weight"`)                   |
-| `description` | String  | No       | unlimited             | Short explanation shown in the UI                           |
-| `sort_order`  | Integer | Yes      | not null              | Display order for this locale entry                         |
+| Field         | Type    | Required | Constraints                                      | Description                                                                    |
+|---------------|---------|----------|--------------------------------------------------|--------------------------------------------------------------------------------|
+| `id`          | Long    | —        | read-only                                        | Auto-generated identifier                                                      |
+| `locale`      | Locale  | —        | read-only, resolved from `locale_id` at creation | The locale this translation is written in (`id`, `code`, `name`, `sort_order`) |
+| `name`        | String  | Yes      | max 100 chars                                    | Localized unit type name                                                       |
+| `description` | String  | Yes      | not null (defaults to `""`)                      | Localized description                                                          |
+| `sort_order`  | Integer | Yes      | default 0                                        | Display order among locale entries                                             |
 
 ---
 
@@ -71,49 +67,49 @@ The following unit type codes are pre-seeded by the system and cannot be duplica
 
 `POST /api/v1/unit-types`
 
-Creates a unit type along with its locale-specific translations in one request. All provided `locale_id` values must
-reference existing, active locales. The `code` is set at creation time and cannot be changed.
+Creates a new unit type together with exactly **one** initial locale translation. `code` must be unique
+among active, non-deleted unit types — attempting to reuse an existing code returns `409 CONFLICT`.
 
-### Request Fields
-
-| Field        | Type    | Required | Validation              |
-|--------------|---------|----------|-------------------------|
-| `code`       | String  | Yes      | Not blank, max 50 chars |
-| `sort_order` | Integer | Yes      | Not null                |
-| `locales`    | Array   | No       | See locale fields below |
-
-**Locale fields (`locales[]`):**
-
-| Field         | Type    | Required | Validation               |
-|---------------|---------|----------|--------------------------|
-| `locale_id`   | Long    | Yes      | Not null, must exist     |
-| `name`        | String  | Yes      | Not blank, max 100 chars |
-| `description` | String  | No       | —                        |
-| `sort_order`  | Integer | Yes      | Not null                 |
+**The initial translation is always attached to the `en` locale, resolved by the server — the request
+carries no `locale_id` at all.** There is no option to submit multiple locales at creation time.
+Additional languages are added afterward via the Unit Type Locales sub-resource below.
 
 ### Request Body
 
 ```json
 {
-  "code": "SPEED",
-  "sort_order": 11,
-  "locales": [
-    {
-      "locale_id": 1,
-      "name": "Speed",
-      "description": "Units for measuring velocity or rate of movement.",
-      "sort_order": 1
-    }
-  ]
+  "code": "LENGTH",
+  "sort_order": 1,
+  "locale": {
+    "name": "Length",
+    "description": "Units measuring distance or length",
+    "sort_order": 1
+  }
 }
 ```
+
+### Request Fields
+
+| Field        | Type    | Required | Validation                                           |
+|--------------|---------|----------|--------------------------------------------------------|
+| `code`       | String  | Yes      | Not blank, max 50 chars, unique among active records |
+| `sort_order` | Integer | Yes      | Not null                                             |
+| `locale`     | Object  | Yes      | Not null; validated (see below) — no `locale_id` field; always resolved to the `en` locale |
+
+**Locale entry (`locale`):**
+
+| Field         | Type    | Required | Validation                |
+|---------------|---------|----------|----------------------------|
+| `name`        | String  | Yes      | Not blank, max 100 chars |
+| `description` | String  | Yes      | Not null                 |
+| `sort_order`  | Integer | Yes      | Not null                 |
 
 ### Response `201 Created`
 
 ```json
 {
   "success": true,
-  "id": 11
+  "id": 1
 }
 ```
 
@@ -123,37 +119,36 @@ reference existing, active locales. The `code` is set at creation time and canno
 
 `GET /api/v1/unit-types/{id}`
 
-Returns a single unit type with all its locale translations. Each locale entry embeds the full locale object.
-The optional `description` field is omitted from the response when not set.
+Returns a single active unit type by its ID. `locale` is the one translation matching the request's
+`Accept-Language` header (falls back to `en`, then `null` if the unit type has no translations at all). To
+fetch every translation a unit type has, use [List Unit Type Locales](#list-unit-type-locales) below.
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description         |
-|-----------|------|----------|---------------------|
-| `id`      | Long | Yes      | ID of the unit type |
+| Parameter | Type | Description          |
+|-----------|------|------------------------|
+| `id`      | Long | ID of the unit type   |
 
 ### Response `200 OK`
 
 ```json
 {
-  "unit_type": {
+  "data": {
     "id": 1,
-    "code": "WEIGHT",
+    "code": "LENGTH",
     "sort_order": 1,
-    "locales": [
-      {
+    "locale": {
+      "id": 1,
+      "locale": {
         "id": 1,
-        "locale": {
-          "id": 1,
-          "code": "en",
-          "name": "English",
-          "sort_order": 1
-        },
-        "name": "Weight",
-        "description": "Units for measuring mass or weight.",
+        "code": "en",
+        "name": "English",
         "sort_order": 1
-      }
-    ]
+      },
+      "name": "Length",
+      "description": "Units measuring distance or length",
+      "sort_order": 1
+    }
   }
 }
 ```
@@ -164,72 +159,67 @@ The optional `description` field is omitted from the response when not set.
 
 `GET /api/v1/unit-types`
 
-Returns a paginated, searchable list of active (non-deleted) unit types. Each item includes all locale translations.
-All filter parameters are optional; omitting them returns all unit types. The `code` filter performs a
-case-insensitive partial match.
+Returns a paginated, filterable list of active (non-deleted) unit types. All filter parameters are
+optional; omitting them returns all unit types. Multiple filters are combined with AND. Each `LIKE`-type
+filter performs a case-insensitive partial match. `Accept-Language` selects each unit type's `locale` field
+the same way as `GET /{id}` (exact match, falls back to `en`, then `null`).
+
+> **Note:** `id` is not a selectable `sortBy` value — passing `?sortBy=id` throws
+> `400 INVALID_ARGUMENT: Invalid sort field: id`. It's used only as the implicit sort when `sortBy` is
+> omitted entirely.
 
 ### Query Parameters
 
-| Parameter  | Type   | Default | Constraints                            | Description                                |
-|------------|--------|---------|----------------------------------------|--------------------------------------------|
-| `code`     | String | —       | —                                      | Filter by code (partial, case-insensitive) |
-| `page`     | int    | `0`     | >= 0                                   | Zero-based page index                      |
-| `size`     | int    | `10`    | 1 – 50                                 | Number of items per page                   |
-| `sort_by`  | String | `id`    | `id`, `code`, `sortOrder`, `createdAt` | Field to sort by                           |
-| `sort_dir` | String | `ASC`   | `ASC`, `DESC`                          | Sort direction                             |
+> **Note:** Query parameters bind directly onto `UnitTypeFilterRequest`'s Java field names, so they are
+> **camelCase** — not the snake_case used in JSON request/response bodies.
+
+| Parameter | Type   | Default | Constraints                        | Description                                                                               |
+|-----------|--------|---------|---------------------------------------|--------------------------------------------------------------------------------------------|
+| `code`    | String | —       | —                                    | Filter by code (partial, case-insensitive)                                                |
+| `name`    | String | —       | —                                    | Filter by locale-specific name (partial, case-insensitive), scoped to the resolved locale |
+| `page`    | int    | `0`     | >= 0                                  | Zero-based page index                                                                      |
+| `size`    | int    | `10`    | 1 – 50                                | Number of items per page                                                                    |
+| `sortBy`  | String | `id` (implicit) | `createdAt`, `code`, `name` (`id` NOT selectable) | Field to sort by                                                        |
+| `sortDir` | String | `ASC`   | `ASC`, `DESC`                        | Sort direction                                                                              |
 
 ### Response `200 OK`
-
-The optional `description` field is omitted per item when not set.
 
 ```json
 {
   "data": [
     {
       "id": 1,
-      "code": "WEIGHT",
+      "code": "LENGTH",
       "sort_order": 1,
-      "locales": [
-        {
+      "locale": {
+        "id": 1,
+        "locale": {
           "id": 1,
-          "locale": {
-            "id": 1,
-            "code": "en",
-            "name": "English",
-            "sort_order": 1
-          },
-          "name": "Weight",
-          "description": "Units for measuring mass or weight.",
+          "code": "en",
+          "name": "English",
           "sort_order": 1
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "code": "VOLUME",
-      "sort_order": 2,
-      "locales": [
-        {
-          "id": 2,
-          "locale": {
-            "id": 1,
-            "code": "en",
-            "name": "English",
-            "sort_order": 1
-          },
-          "name": "Volume",
-          "description": "Units for measuring liquid or gas volume.",
-          "sort_order": 1
-        }
-      ]
+        },
+        "name": "Length",
+        "description": "Units measuring distance or length",
+        "sort_order": 1
+      }
     }
   ],
   "current_page": 0,
   "total_pages": 1,
-  "total_elements": 10,
+  "total_elements": 1,
   "page_size": 10,
   "has_next": false,
-  "has_previous": false
+  "has_previous": false,
+  "sortable_fields": [
+    "createdAt",
+    "code",
+    "name"
+  ],
+  "searchable_fields": [
+    "code",
+    "name"
+  ]
 }
 ```
 
@@ -239,20 +229,14 @@ The optional `description` field is omitted per item when not set.
 
 `PUT /api/v1/unit-types/{id}`
 
-Updates `sort_order`. The `code` field is set at creation time and cannot be changed. Locale translations are managed
-via the unit type locale endpoints.
+Updates `sort_order`. `code` is set at creation and cannot be changed. Locale translations are managed
+separately via the Unit Type Locales sub-resource endpoints below, not through this endpoint.
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description         |
-|-----------|------|----------|---------------------|
-| `id`      | Long | Yes      | ID of the unit type |
-
-### Request Fields
-
-| Field        | Type    | Required | Validation |
-|--------------|---------|----------|------------|
-| `sort_order` | Integer | Yes      | Not null   |
+| Parameter | Type | Description          |
+|-----------|------|------------------------|
+| `id`      | Long | ID of the unit type   |
 
 ### Request Body
 
@@ -261,6 +245,12 @@ via the unit type locale endpoints.
   "sort_order": 2
 }
 ```
+
+### Request Fields
+
+| Field        | Type    | Required | Validation |
+|--------------|---------|----------|--------------|
+| `sort_order` | Integer | Yes      | Not null     |
 
 ### Response `200 OK`
 
@@ -277,13 +267,14 @@ via the unit type locale endpoints.
 
 `DELETE /api/v1/unit-types/{id}`
 
-Soft-deletes the unit type. The record is not removed from the database but will no longer appear in any response.
+Soft-deletes the unit type. The record is not removed from the database but will no longer appear in any
+response.
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description         |
-|-----------|------|----------|---------------------|
-| `id`      | Long | Yes      | ID of the unit type |
+| Parameter | Type | Description          |
+|-----------|------|------------------------|
+| `id`      | Long | ID of the unit type   |
 
 ### Response `200 OK`
 
@@ -298,8 +289,78 @@ Soft-deletes the unit type. The record is not removed from the database but will
 
 ## Unit Type Locales
 
-Unit type locale endpoints manage per-locale translations for a unit type. The `{unit-type-id}` path parameter must
-reference an existing, active unit type.
+Unit Type Locale endpoints manage locale-specific name/description translations for a unit type. The
+`{unit-type-id}` path parameter must reference an existing, active unit type.
+
+---
+
+### List Unit Type Locales
+
+`GET /api/v1/unit-types/{unit-type-id}/locales`
+
+Returns a paginated list of every locale translation belonging to a unit type — this is the only way to
+see more than the single Accept-Language-matched translation returned by `GET /unit-types/{id}` and
+`GET /unit-types`. Optionally filtered to locales whose `code` contains a given substring.
+
+#### Path Parameters
+
+| Parameter      | Type | Description                 |
+|----------------|------|-------------------------------|
+| `unit-type-id` | Long | ID of the parent unit type   |
+
+#### Query Parameters
+
+| Parameter    | Type   | Default | Constraints | Description                                                                                     |
+|--------------|--------|---------|-------------|-------------------------------------------------------------------------------------------------|
+| `localeCode` | String | —       | —           | Filter to locales whose `code` contains this value (partial, case-insensitive), e.g. `en`, `bn` |
+| `page`       | int    | `0`     | >= 0        | Zero-based page index                                                                           |
+| `size`       | int    | `10`    | 1 – 50      | Number of items per page                                                                        |
+
+> **Note:** `sortBy`/`sortDir` are accepted on the request object but there are no sortable fields
+> registered for this endpoint — passing any non-null `sortBy` value throws
+> `400 INVALID_ARGUMENT: Invalid sort field: <value>`. Omit `sortBy` entirely to get the default
+> (sorted by `id` ascending).
+
+#### Response `200 OK`
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "locale": {
+        "id": 1,
+        "code": "en",
+        "name": "English",
+        "sort_order": 1
+      },
+      "name": "Length",
+      "description": "Units measuring distance or length",
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "locale": {
+        "id": 2,
+        "code": "bn",
+        "name": "Bengali",
+        "sort_order": 2
+      },
+      "name": "দৈর্ঘ্য",
+      "description": "",
+      "sort_order": 2
+    }
+  ],
+  "current_page": 0,
+  "total_pages": 1,
+  "total_elements": 2,
+  "page_size": 10,
+  "has_next": false,
+  "has_previous": false,
+  "sortable_fields": null,
+  "searchable_fields": null
+}
+```
 
 ---
 
@@ -307,40 +368,44 @@ reference an existing, active unit type.
 
 `POST /api/v1/unit-types/{unit-type-id}/locales`
 
-Adds a new locale translation to an existing unit type. Each `locale_id` may only be used once per unit type.
+Adds a new locale translation to an existing unit type. `locale_id` must reference an existing, active
+locale — an unknown `locale_id` returns `404 ENTITY_NOT_FOUND`. The combination of unit type and locale
+must be unique — adding a locale the unit type already has a translation for returns `409 CONFLICT`,
+pre-checked at the application level before any write (backed by a DB-level unique constraint as a
+last-resort guard).
 
 #### Path Parameters
 
-| Parameter      | Type | Required | Description         |
-|----------------|------|----------|---------------------|
-| `unit-type-id` | Long | Yes      | ID of the unit type |
-
-#### Request Fields
-
-| Field         | Type    | Required | Validation               |
-|---------------|---------|----------|--------------------------|
-| `locale_id`   | Long    | Yes      | Not null, must exist     |
-| `name`        | String  | Yes      | Not blank, max 100 chars |
-| `description` | String  | No       | —                        |
-| `sort_order`  | Integer | Yes      | Not null                 |
+| Parameter      | Type | Description                 |
+|----------------|------|-------------------------------|
+| `unit-type-id` | Long | ID of the parent unit type   |
 
 #### Request Body
 
 ```json
 {
   "locale_id": 2,
-  "name": "Gewicht",
-  "description": "Einheiten zur Messung von Masse oder Gewicht.",
-  "sort_order": 1
+  "name": "দৈর্ঘ্য",
+  "description": "দূরত্ব পরিমাপের একক",
+  "sort_order": 2
 }
 ```
+
+#### Request Fields
+
+| Field         | Type    | Required | Validation                                  |
+|---------------|---------|----------|-----------------------------------------------|
+| `locale_id`   | Long    | Yes      | Not null; must reference an existing locale |
+| `name`        | String  | Yes      | Not blank, max 100 chars                    |
+| `description` | String  | Yes      | Not null                                    |
+| `sort_order`  | Integer | Yes      | Not null                                    |
 
 #### Response `201 Created`
 
 ```json
 {
   "success": true,
-  "id": 11
+  "id": 2
 }
 ```
 
@@ -350,39 +415,40 @@ Adds a new locale translation to an existing unit type. Each `locale_id` may onl
 
 `PUT /api/v1/unit-types/{unit-type-id}/locales/{id}`
 
-Updates an existing locale translation for a unit type. `locale_id` is set at creation time and cannot be changed.
+Updates `name`, `description`, and `sort_order` for an existing unit type locale translation. The
+associated unit type and locale cannot be changed after creation.
 
 #### Path Parameters
 
-| Parameter      | Type | Required | Description                |
-|----------------|------|----------|----------------------------|
-| `unit-type-id` | Long | Yes      | ID of the unit type        |
-| `id`           | Long | Yes      | ID of the unit type locale |
+| Parameter      | Type | Description                 |
+|----------------|------|-------------------------------|
+| `unit-type-id` | Long | ID of the parent unit type   |
+| `id`           | Long | ID of the unit type locale   |
+
+#### Request Body
+
+```json
+{
+  "name": "দৈর্ঘ্য",
+  "description": "দূরত্ব পরিমাপের একক",
+  "sort_order": 2
+}
+```
 
 #### Request Fields
 
 | Field         | Type    | Required | Validation               |
 |---------------|---------|----------|--------------------------|
 | `name`        | String  | Yes      | Not blank, max 100 chars |
-| `description` | String  | No       | —                        |
+| `description` | String  | Yes      | Not null                 |
 | `sort_order`  | Integer | Yes      | Not null                 |
-
-#### Request Body
-
-```json
-{
-  "name": "Weight",
-  "description": "Units for measuring mass or weight.",
-  "sort_order": 1
-}
-```
 
 #### Response `200 OK`
 
 ```json
 {
   "success": true,
-  "id": 1
+  "id": 2
 }
 ```
 
@@ -392,21 +458,22 @@ Updates an existing locale translation for a unit type. `locale_id` is set at cr
 
 `DELETE /api/v1/unit-types/{unit-type-id}/locales/{id}`
 
-Soft-deletes a unit type locale. The record is not removed from the database but will no longer appear in any response.
+Soft-deletes a unit type locale. The record is not removed from the database but will no longer appear in
+any response.
 
 #### Path Parameters
 
-| Parameter      | Type | Required | Description                |
-|----------------|------|----------|----------------------------|
-| `unit-type-id` | Long | Yes      | ID of the unit type        |
-| `id`           | Long | Yes      | ID of the unit type locale |
+| Parameter      | Type | Description                 |
+|----------------|------|-------------------------------|
+| `unit-type-id` | Long | ID of the parent unit type   |
+| `id`           | Long | ID of the unit type locale   |
 
 #### Response `200 OK`
 
 ```json
 {
   "success": true,
-  "id": 1
+  "id": 2
 }
 ```
 
@@ -425,9 +492,9 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                                                                   |
-|-------------|----------------------------|-----------------------------------------------------------------------------------------|
-| 400         | `VALIDATION_ERROR`         | Missing required fields or constraint violations (e.g. `name` blank, `sort_order` null) |
-| 400         | `INVALID_ARGUMENT`         | Invalid `sort_by` field                                                                 |
-| 404         | `ENTITY_NOT_FOUND`         | Unit type, locale, or unit type locale not found, or already deleted                    |
-| 409         | `DATA_INTEGRITY_VIOLATION` | Duplicate `code` or duplicate `locale_id` for the same unit type                        |
+| HTTP Status | Error Code                 | Cause                                                                                                                                                        |
+|-------------|-----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields; or an unsupported `sortBy` query value |
+| 404         | `ENTITY_NOT_FOUND`         | Unit type not found, unit type locale not found, or the locale referenced by `locale_id` not found (locale creation)                                        |
+| 409         | `CONFLICT`                 | `code` already in use by another active unit type (`create`); or the unit type already has a translation for the given `locale_id` (`create` unit type locale, pre-checked at the application level) |
+| 409         | `DATA_INTEGRITY_VIOLATION` | Last-resort DB-level unique constraint on `unit_type_id` + `locale_id`, should not normally be reachable now that the duplicate is pre-checked at the application level |

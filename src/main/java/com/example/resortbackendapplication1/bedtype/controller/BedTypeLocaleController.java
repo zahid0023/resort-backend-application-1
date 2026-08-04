@@ -1,14 +1,16 @@
 package com.example.resortbackendapplication1.bedtype.controller;
 
-import com.example.resortbackendapplication1.bedtype.dto.request.bedtype.bedtypelocale.CreateBedTypeLocaleRequest;
-import com.example.resortbackendapplication1.bedtype.dto.request.bedtype.bedtypelocale.UpdateBedTypeLocaleRequest;
+import com.example.resortbackendapplication1.bedtype.dto.request.bedtype.locale.CreateBedTypeLocaleRequest;
+import com.example.resortbackendapplication1.bedtype.dto.request.bedtype.locale.UpdateBedTypeLocaleRequest;
 import com.example.resortbackendapplication1.bedtype.model.entity.BedTypeEntity;
 import com.example.resortbackendapplication1.bedtype.model.entity.BedTypeLocaleEntity;
 import com.example.resortbackendapplication1.bedtype.service.BedTypeLocaleService;
 import com.example.resortbackendapplication1.bedtype.service.BedTypeService;
+import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.locale.service.LocaleService;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,10 +35,19 @@ public class BedTypeLocaleController {
     public ResponseEntity<?> create(
             @PathVariable("bed-type-id") Long bedTypeId,
             @Valid @RequestBody CreateBedTypeLocaleRequest request) {
-        BedTypeEntity bedType = bedTypeService.getEntityById(bedTypeId);
+        BedTypeEntity bedTypeEntity = bedTypeService.getEntityById(bedTypeId);
         LocaleEntity localeEntity = localeService.getEntityById(request.getLocaleId());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(bedTypeLocaleService.create(bedType, localeEntity, request));
+                .body(bedTypeLocaleService.create(request, bedTypeEntity, localeEntity));
+    }
+
+    @GetMapping
+    public ResponseEntity<?> getAll(
+            @PathVariable("bed-type-id") Long bedTypeId,
+            @RequestParam(value = "localeCode", required = false) String localeCode,
+            @ParameterObject PaginatedRequest paginatedRequest) {
+        bedTypeService.getEntityById(bedTypeId);
+        return ResponseEntity.ok(bedTypeLocaleService.getAll(bedTypeId, localeCode, paginatedRequest));
     }
 
     @PutMapping("/{id}")

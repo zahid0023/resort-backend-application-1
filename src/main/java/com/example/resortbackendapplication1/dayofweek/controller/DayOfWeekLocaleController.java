@@ -1,7 +1,8 @@
 package com.example.resortbackendapplication1.dayofweek.controller;
 
-import com.example.resortbackendapplication1.dayofweek.dto.request.dayofweek.dayofweeklocale.CreateDayOfWeekLocaleRequest;
-import com.example.resortbackendapplication1.dayofweek.dto.request.dayofweek.dayofweeklocale.UpdateDayOfWeekLocaleRequest;
+import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
+import com.example.resortbackendapplication1.dayofweek.dto.request.dayofweek.locale.CreateDayOfWeekLocaleRequest;
+import com.example.resortbackendapplication1.dayofweek.dto.request.dayofweek.locale.UpdateDayOfWeekLocaleRequest;
 import com.example.resortbackendapplication1.dayofweek.model.entity.DayOfWeekEntity;
 import com.example.resortbackendapplication1.dayofweek.model.entity.DayOfWeekLocaleEntity;
 import com.example.resortbackendapplication1.dayofweek.service.DayOfWeekLocaleService;
@@ -9,6 +10,7 @@ import com.example.resortbackendapplication1.dayofweek.service.DayOfWeekService;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.locale.service.LocaleService;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,10 +35,19 @@ public class DayOfWeekLocaleController {
     public ResponseEntity<?> create(
             @PathVariable("day-of-week-id") Long dayOfWeekId,
             @Valid @RequestBody CreateDayOfWeekLocaleRequest request) {
-        DayOfWeekEntity dayOfWeek = dayOfWeekService.getEntityById(dayOfWeekId);
+        DayOfWeekEntity dayOfWeekEntity = dayOfWeekService.getEntityById(dayOfWeekId);
         LocaleEntity localeEntity = localeService.getEntityById(request.getLocaleId());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(dayOfWeekLocaleService.create(dayOfWeek, localeEntity, request));
+                .body(dayOfWeekLocaleService.create(request, dayOfWeekEntity, localeEntity));
+    }
+
+    @GetMapping
+    public ResponseEntity<?> getAll(
+            @PathVariable("day-of-week-id") Long dayOfWeekId,
+            @RequestParam(value = "localeCode", required = false) String localeCode,
+            @ParameterObject PaginatedRequest paginatedRequest) {
+        dayOfWeekService.getEntityById(dayOfWeekId);
+        return ResponseEntity.ok(dayOfWeekLocaleService.getAll(dayOfWeekId, localeCode, paginatedRequest));
     }
 
     @PutMapping("/{id}")

@@ -1,11 +1,15 @@
 package com.example.resortbackendapplication1.auth.repository;
 
-import com.example.resortbackendapplication1.auth.model.enitty.RoleEntity;
+import com.example.resortbackendapplication1.auth.model.entity.RoleEntity;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.Optional;
 
-public interface RoleRepository extends JpaRepository<@NonNull RoleEntity, @NonNull Long> {
+@SuppressWarnings("unused")
+public interface RoleRepository extends
+        JpaRepository<@NonNull RoleEntity, @NonNull Long>,
+        JpaSpecificationExecutor<@NonNull RoleEntity> {
     Optional<RoleEntity> findByName(String name);
 }

@@ -1,10 +1,9 @@
 package com.example.resortbackendapplication1.price.model.mapper;
 
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.commons.context.LocaleContext;
 import com.example.resortbackendapplication1.price.dto.request.pricetype.CreatePriceTypeRequest;
 import com.example.resortbackendapplication1.price.dto.request.pricetype.PriceTypeRequest;
 import com.example.resortbackendapplication1.price.dto.request.pricetype.UpdatePriceTypeRequest;
-import com.example.resortbackendapplication1.price.dto.request.pricetype.pricetypelocale.CreatePriceTypeLocaleRequest;
 import com.example.resortbackendapplication1.price.model.dto.PriceTypeDto;
 import com.example.resortbackendapplication1.price.model.dto.PriceTypeLocaleDto;
 import com.example.resortbackendapplication1.price.model.entity.PriceTypeEntity;
@@ -12,19 +11,14 @@ import com.example.resortbackendapplication1.price.model.entity.PriceTypeLocaleE
 import lombok.experimental.UtilityClass;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @UtilityClass
 public class PriceTypeMapper {
 
-    public PriceTypeEntity create(CreatePriceTypeRequest request,
-                                  Map<Long, LocaleEntity> localeEntityMap) {
+    public PriceTypeEntity create(CreatePriceTypeRequest request) {
         PriceTypeEntity entity = new PriceTypeEntity();
         entity.setCode(request.getCode());
         applyCommonFields(entity, request);
-        entity.setPriceTypeLocaleEntities(mapLocales(request.getLocales(), entity, localeEntityMap));
         return entity;
     }
 
@@ -36,24 +30,34 @@ public class PriceTypeMapper {
         entity.setSortOrder(request.getSortOrder());
     }
 
-    private Set<PriceTypeLocaleEntity> mapLocales(List<CreatePriceTypeLocaleRequest> locales,
-                                                   PriceTypeEntity entity,
-                                                   Map<Long, LocaleEntity> localeEntityMap) {
-        return locales.stream()
-                .map(locale -> PriceTypeLocaleMapper.create(locale, entity, localeEntityMap.get(locale.getLocaleId())))
-                .collect(Collectors.toSet());
-    }
-
-    public PriceTypeDto toDto(PriceTypeEntity entity) {
-        List<PriceTypeLocaleDto> locales = entity.getPriceTypeLocaleEntities().stream()
-                .map(PriceTypeLocaleMapper::toDto)
-                .toList();
-
+    public PriceTypeDto.PriceTypeDtoBuilder toDto(PriceTypeEntity entity) {
         return PriceTypeDto.builder()
                 .id(entity.getId())
                 .code(entity.getCode())
                 .sortOrder(entity.getSortOrder())
-                .locales(locales)
-                .build();
+                .locale(singleLocale(entity));
+    }
+
+    private PriceTypeLocaleDto singleLocale(PriceTypeEntity entity) {
+        PriceTypeLocaleEntity matched = matchLocale(entity, LocaleContext.getLocaleId());
+        return matched == null ? null : PriceTypeLocaleMapper.toDto(matched);
+    }
+
+    private List<PriceTypeLocaleEntity> activeLocales(PriceTypeEntity entity) {
+        return entity.getPriceTypeLocaleEntities().stream()
+                .filter(priceTypeLocaleEntity -> Boolean.TRUE.equals(priceTypeLocaleEntity.getIsActive())
+                        && Boolean.FALSE.equals(priceTypeLocaleEntity.getIsDeleted()))
+                .toList();
+    }
+
+    private PriceTypeLocaleEntity matchLocale(PriceTypeEntity entity, Long localeId) {
+        List<PriceTypeLocaleEntity> activeLocales = activeLocales(entity);
+        return activeLocales.stream()
+                .filter(priceTypeLocaleEntity -> priceTypeLocaleEntity.getLocaleEntity().getId().equals(localeId))
+                .findFirst()
+                .orElseGet(() -> activeLocales.stream()
+                        .filter(priceTypeLocaleEntity -> "en".equals(priceTypeLocaleEntity.getLocaleEntity().getCode()))
+                        .findFirst()
+                        .orElse(null));
     }
 }

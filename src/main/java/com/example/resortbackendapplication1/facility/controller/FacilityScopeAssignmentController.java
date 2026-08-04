@@ -1,52 +1,58 @@
 package com.example.resortbackendapplication1.facility.controller;
 
-import com.example.resortbackendapplication1.facility.dto.request.facilityscopeassignments.AssignFacilityScopeRequest;
+import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
+import com.example.resortbackendapplication1.facility.dto.request.facilityscopeassignment.CreateFacilityScopeAssignmentRequest;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
+import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeAssignmentEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeEntity;
 import com.example.resortbackendapplication1.facility.service.FacilityScopeAssignmentService;
-import com.example.resortbackendapplication1.facility.service.FacilityService;
 import com.example.resortbackendapplication1.facility.service.FacilityScopeService;
+import com.example.resortbackendapplication1.facility.service.FacilityService;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/facilities/{facility-id}/scope-assignments")
+@RequestMapping("/api/v1/facility-scopes/{facility-scope-id}/facility-assignments")
 public class FacilityScopeAssignmentController {
 
-    private final FacilityService facilityService;
     private final FacilityScopeService facilityScopeService;
-    private final FacilityScopeAssignmentService assignmentService;
+    private final FacilityService facilityService;
+    private final FacilityScopeAssignmentService facilityScopeAssignmentService;
 
-    public FacilityScopeAssignmentController(FacilityService facilityService,
-                                              FacilityScopeService facilityScopeService,
-                                              FacilityScopeAssignmentService assignmentService) {
-        this.facilityService = facilityService;
+    public FacilityScopeAssignmentController(FacilityScopeService facilityScopeService,
+                                              FacilityService facilityService,
+                                              FacilityScopeAssignmentService facilityScopeAssignmentService) {
         this.facilityScopeService = facilityScopeService;
-        this.assignmentService = assignmentService;
+        this.facilityService = facilityService;
+        this.facilityScopeAssignmentService = facilityScopeAssignmentService;
+    }
+
+    @GetMapping
+    public ResponseEntity<?> getAll(
+            @PathVariable("facility-scope-id") Long facilityScopeId,
+            @ParameterObject PaginatedRequest paginatedRequest) {
+        facilityScopeService.getEntityById(facilityScopeId);
+        return ResponseEntity.ok(facilityScopeAssignmentService.getAll(facilityScopeId, paginatedRequest));
     }
 
     @PostMapping
     public ResponseEntity<?> assign(
-            @PathVariable("facility-id") Long facilityId,
-            @Valid @RequestBody AssignFacilityScopeRequest request) {
-        FacilityEntity facilityEntity = facilityService.getEntityById(facilityId);
-        FacilityScopeEntity facilityScopeEntity = facilityScopeService.getEntityById(request.getFacilityScopeId());
+            @PathVariable("facility-scope-id") Long facilityScopeId,
+            @Valid @RequestBody CreateFacilityScopeAssignmentRequest request) {
+        FacilityScopeEntity facilityScopeEntity = facilityScopeService.getEntityById(facilityScopeId);
+        FacilityEntity facilityEntity = facilityService.getEntityById(request.getFacilityId());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(assignmentService.assign(facilityEntity, facilityScopeEntity));
+                .body(facilityScopeAssignmentService.assign(facilityScopeEntity, facilityEntity));
     }
 
-    @DeleteMapping("/{facility-scope-id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<?> unassign(
-            @PathVariable("facility-id") Long facilityId,
-            @PathVariable("facility-scope-id") Long facilityScopeId) {
-        return ResponseEntity.ok(assignmentService.unassign(facilityId, facilityScopeId));
-    }
-
-    @GetMapping
-    public ResponseEntity<?> getAll(@PathVariable("facility-id") Long facilityId) {
-        facilityService.getEntityById(facilityId);
-        return ResponseEntity.ok(assignmentService.getAll(facilityId));
+            @PathVariable("facility-scope-id") Long facilityScopeId,
+            @PathVariable Long id) {
+        FacilityScopeAssignmentEntity entity = facilityScopeAssignmentService.getEntityById(facilityScopeId, id);
+        return ResponseEntity.ok(facilityScopeAssignmentService.unassign(entity));
     }
 }

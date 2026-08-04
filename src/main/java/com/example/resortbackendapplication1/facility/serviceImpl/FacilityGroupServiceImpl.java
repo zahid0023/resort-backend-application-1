@@ -1,36 +1,33 @@
 package com.example.resortbackendapplication1.facility.serviceImpl;
 
+import com.example.resortbackendapplication1.commons.context.LocaleContext;
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
-import com.example.resortbackendapplication1.commons.utils.EntityValidator;
 import com.example.resortbackendapplication1.commons.utils.Pagination;
-import com.example.resortbackendapplication1.facility.dto.request.facilitygroups.CreateFacilityGroupRequest;
-import com.example.resortbackendapplication1.facility.dto.request.facilitygroups.FacilityGroupFilterRequest;
-import com.example.resortbackendapplication1.facility.dto.request.facilitygroups.UpdateFacilityGroupRequest;
+import com.example.resortbackendapplication1.facility.dto.request.facilitygroup.CreateFacilityGroupRequest;
+import com.example.resortbackendapplication1.facility.dto.request.facilitygroup.FacilityGroupFilterRequest;
+import com.example.resortbackendapplication1.facility.dto.request.facilitygroup.UpdateFacilityGroupRequest;
 import com.example.resortbackendapplication1.facility.dto.response.facilitygroups.FacilityGroupResponse;
 import com.example.resortbackendapplication1.facility.model.dto.FacilityGroupDto;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupEntity;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupLocaleEntity;
 import com.example.resortbackendapplication1.facility.model.enums.FacilityGroupSearchField;
 import com.example.resortbackendapplication1.facility.model.enums.FacilityGroupSortField;
-import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupScopeAssignmentEntity;
-import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeEntity;
-import com.example.resortbackendapplication1.facility.model.enums.FacilityScopeCode;
+import com.example.resortbackendapplication1.facility.model.mapper.FacilityGroupLocaleMapper;
 import com.example.resortbackendapplication1.facility.model.mapper.FacilityGroupMapper;
-import com.example.resortbackendapplication1.facility.model.mapper.FacilityGroupScopeAssignmentMapper;
 import com.example.resortbackendapplication1.facility.repository.FacilityGroupRepository;
-import com.example.resortbackendapplication1.facility.repository.FacilityGroupScopeAssignmentRepository;
 import com.example.resortbackendapplication1.facility.service.FacilityGroupService;
 import com.example.resortbackendapplication1.facility.specification.FacilityGroupSpecification;
+import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -41,27 +38,25 @@ public class FacilityGroupServiceImpl implements FacilityGroupService {
     private static final Set<String> ALLOWED_SEARCH_FIELDS = FacilityGroupSearchField.allowedFields();
 
     private final FacilityGroupRepository facilityGroupRepository;
-    private final FacilityGroupScopeAssignmentRepository scopeAssignmentRepository;
 
-    public FacilityGroupServiceImpl(FacilityGroupRepository facilityGroupRepository,
-                                    FacilityGroupScopeAssignmentRepository scopeAssignmentRepository) {
+    public FacilityGroupServiceImpl(FacilityGroupRepository facilityGroupRepository) {
         this.facilityGroupRepository = facilityGroupRepository;
-        this.scopeAssignmentRepository = scopeAssignmentRepository;
     }
 
     @Transactional
     @Override
-    public SuccessResponse create(CreateFacilityGroupRequest request,
-                                  Map<Long, LocaleEntity> localeEntityMap,
-                                  List<FacilityScopeEntity> scopeEntities) {
-        FacilityGroupEntity entity = FacilityGroupMapper.create(request, localeEntityMap);
+    public SuccessResponse create(CreateFacilityGroupRequest request, LocaleEntity localeEntity) {
+        if (facilityGroupRepository.existsByCodeAndIsActiveAndIsDeleted(request.getCode(), true, false)) {
+            throw new IllegalStateException("FacilityGroup with code '" + request.getCode() + "' already exists");
+        }
+
+        FacilityGroupEntity entity = FacilityGroupMapper.create(request);
+
+        FacilityGroupLocaleEntity facilityGroupLocaleEntity = FacilityGroupLocaleMapper.create(request.getLocale());
+        localeEntity.addFacilityGroupLocaleEntity(facilityGroupLocaleEntity);
+        entity.addFacilityGroupLocaleEntity(facilityGroupLocaleEntity);
+
         facilityGroupRepository.save(entity);
-
-        List<FacilityGroupScopeAssignmentEntity> assignments = scopeEntities.stream()
-                .map(scope -> FacilityGroupScopeAssignmentMapper.create(entity, scope))
-                .toList();
-        scopeAssignmentRepository.saveAll(assignments);
-
         log.info("FacilityGroup created with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
     }
@@ -75,15 +70,18 @@ public class FacilityGroupServiceImpl implements FacilityGroupService {
     @Override
     public FacilityGroupResponse getById(Long id) {
         FacilityGroupEntity entity = getEntityById(id);
-        FacilityGroupDto dto = FacilityGroupMapper.toDto(entity);
+        FacilityGroupDto dto = FacilityGroupMapper.toDto(entity).build();
         return new FacilityGroupResponse(dto);
     }
 
     @Override
-    public PaginatedResponse<FacilityGroupDto> getAll(FacilityGroupFilterRequest request, FacilityScopeCode scopeCode) {
+    public PaginatedResponse<FacilityGroupDto> getAll(FacilityGroupFilterRequest request) {
+        Specification<@NonNull FacilityGroupEntity> specification =
+                FacilityGroupSpecification.filter(request, LocaleContext.getLocaleId());
+        Pageable pageable = request.toPageable(ALLOWED_SORT_FIELDS, FacilityGroupSortField.localeSortFields());
         Page<@NonNull FacilityGroupDto> page = facilityGroupRepository
-                .findAll(FacilityGroupSpecification.filter(request, scopeCode), request.toPageable(ALLOWED_SORT_FIELDS))
-                .map(FacilityGroupMapper::toDto);
+                .findAll(specification, pageable)
+                .map(entity -> FacilityGroupMapper.toDto(entity).build());
         return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
     }
 
@@ -98,25 +96,11 @@ public class FacilityGroupServiceImpl implements FacilityGroupService {
 
     @Transactional
     @Override
-    public SuccessResponse delete(Long id) {
-        FacilityGroupEntity entity = getEntityById(id);
-        entity.getFacilityEntities().stream()
-                .filter(f -> Boolean.TRUE.equals(f.getIsActive()) && Boolean.FALSE.equals(f.getIsDeleted()))
-                .forEach(f -> {
-                    f.setIsDeleted(true);
-                    f.setIsActive(false);
-                });
+    public SuccessResponse delete(FacilityGroupEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
         facilityGroupRepository.save(entity);
-        log.info("FacilityGroup soft-deleted with id: {}", id);
-        return new SuccessResponse(true, id);
-    }
-
-    @Override
-    public List<FacilityGroupEntity> getAll(Set<Long> ids) {
-        List<FacilityGroupEntity> entities = facilityGroupRepository.findAllByIdInAndIsActiveAndIsDeleted(ids, true, false);
-        EntityValidator.validateAllFound(ids, entities, FacilityGroupEntity::getId, "FacilityGroup");
-        return entities;
+        log.info("FacilityGroup soft-deleted with id: {}", entity.getId());
+        return new SuccessResponse(true, entity.getId());
     }
 }

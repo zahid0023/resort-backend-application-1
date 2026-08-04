@@ -1,24 +1,17 @@
 package com.example.resortbackendapplication1.price.model.mapper;
 
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
-import com.example.resortbackendapplication1.locale.model.mapper.LocaleMapper;
-import com.example.resortbackendapplication1.price.dto.request.pricetype.pricetypelocale.CreatePriceTypeLocaleRequest;
-import com.example.resortbackendapplication1.price.dto.request.pricetype.pricetypelocale.PriceTypeLocaleRequest;
-import com.example.resortbackendapplication1.price.dto.request.pricetype.pricetypelocale.UpdatePriceTypeLocaleRequest;
+import com.example.resortbackendapplication1.price.dto.request.pricetype.locale.PriceTypeLocaleRequest;
+import com.example.resortbackendapplication1.price.dto.request.pricetype.locale.UpdatePriceTypeLocaleRequest;
 import com.example.resortbackendapplication1.price.model.dto.PriceTypeLocaleDto;
-import com.example.resortbackendapplication1.price.model.entity.PriceTypeEntity;
 import com.example.resortbackendapplication1.price.model.entity.PriceTypeLocaleEntity;
+import com.example.resortbackendapplication1.locale.model.mapper.LocaleMapper;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class PriceTypeLocaleMapper {
 
-    public PriceTypeLocaleEntity create(CreatePriceTypeLocaleRequest request,
-                                        PriceTypeEntity priceTypeEntity,
-                                        LocaleEntity localeEntity) {
+    public PriceTypeLocaleEntity create(PriceTypeLocaleRequest request) {
         PriceTypeLocaleEntity entity = new PriceTypeLocaleEntity();
-        entity.setPriceTypeEntity(priceTypeEntity);
-        entity.setLocaleEntity(localeEntity);
         applyCommonFields(entity, request);
         return entity;
     }

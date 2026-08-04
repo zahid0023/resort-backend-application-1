@@ -8,9 +8,9 @@ import tools.jackson.databind.annotation.JsonNaming;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class BedTypeResponse {
-    private final BedTypeDto bedType;
+    private final BedTypeDto data;
 
-    public BedTypeResponse(BedTypeDto bedType) {
-        this.bedType = bedType;
+    public BedTypeResponse(BedTypeDto data) {
+        this.data = data;
     }
 }

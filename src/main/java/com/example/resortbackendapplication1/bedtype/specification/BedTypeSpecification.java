@@ -10,7 +10,7 @@ import org.springframework.data.jpa.domain.Specification;
 @UtilityClass
 public class BedTypeSpecification {
 
-    public Specification<@NonNull BedTypeEntity> filter(BedTypeFilterRequest request) {
-        return SpecificationUtils.build(request);
+    public Specification<@NonNull BedTypeEntity> filter(BedTypeFilterRequest request, Long localeId) {
+        return SpecificationUtils.build(request, localeId);
     }
 }

@@ -12,6 +12,8 @@ import org.hibernate.annotations.ColumnDefault;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import static com.example.resortbackendapplication1.commons.model.entity.EntityRelationshipHelper.*;
+
 @Getter
 @Setter
 @Entity
@@ -28,6 +30,18 @@ public class BedTypeEntity extends AuditableEntity {
     @Column(name = "sort_order", nullable = false)
     private Integer sortOrder = 0;
 
-    @OneToMany(mappedBy = "bedTypeEntity", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "bedTypeEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<BedTypeLocaleEntity> bedTypeLocaleEntities = new LinkedHashSet<>();
+
+    // -------------------------------------------------------------------------
+    // BedType Locale relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addBedTypeLocaleEntity(BedTypeLocaleEntity entity) {
+        addChild(bedTypeLocaleEntities, entity, BedTypeLocaleEntity::assignBedType, this);
+    }
+
+    public void removeBedTypeLocaleEntity(BedTypeLocaleEntity entity) {
+        removeChild(bedTypeLocaleEntities, entity, (child, ignored) -> child.unassignBedType());
+    }
 }

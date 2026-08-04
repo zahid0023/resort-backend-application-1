@@ -8,9 +8,9 @@ import tools.jackson.databind.annotation.JsonNaming;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class UnitResponse {
-    private final UnitDto unit;
+    private final UnitDto data;
 
-    public UnitResponse(UnitDto unit) {
-        this.unit = unit;
+    public UnitResponse(UnitDto data) {
+        this.data = data;
     }
 }

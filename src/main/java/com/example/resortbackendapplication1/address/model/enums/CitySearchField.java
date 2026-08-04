@@ -1,6 +1,7 @@
 package com.example.resortbackendapplication1.address.model.enums;
 
 import com.example.resortbackendapplication1.address.dto.request.city.CityFilterRequest;
+import com.example.resortbackendapplication1.commons.utils.SearchFieldSpec;
 import com.example.resortbackendapplication1.commons.utils.SearchType;
 import lombok.Getter;
 
@@ -10,7 +11,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Getter
-public enum CitySearchField {
+public enum CitySearchField implements SearchFieldSpec<CityFilterRequest> {
     CODE("code", SearchType.LIKE, false, null, CityFilterRequest::getCode),
     NAME("name", SearchType.LIKE, true, "cityLocaleEntities", CityFilterRequest::getName);
 

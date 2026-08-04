@@ -1,5 +1,6 @@
 package com.example.resortbackendapplication1.currency.model.dto;
 
+import com.example.resortbackendapplication1.locale.model.dto.LocaleDto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,9 +16,14 @@ import tools.jackson.databind.annotation.JsonNaming;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class CurrencyLocaleDto {
+
     private Long id;
-    private Long localeId;
+
+    private LocaleDto locale;
+
     private String name;
+
     private String shortName;
+
     private Integer sortOrder;
 }

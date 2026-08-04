@@ -1,9 +1,9 @@
 package com.example.resortbackendapplication1.auth.service;
 
 import com.example.resortbackendapplication1.auth.dto.request.permission.CreatePermissionRequest;
+import com.example.resortbackendapplication1.auth.model.entity.PermissionEntity;
+import com.example.resortbackendapplication1.auth.model.entity.UserEntity;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
-import com.example.resortbackendapplication1.auth.model.enitty.PermissionEntity;
-import com.example.resortbackendapplication1.auth.model.enitty.UserEntity;
 
 import java.util.List;
 import java.util.Set;

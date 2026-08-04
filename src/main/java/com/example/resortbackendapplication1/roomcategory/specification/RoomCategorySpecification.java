@@ -10,7 +10,7 @@ import org.springframework.data.jpa.domain.Specification;
 @UtilityClass
 public class RoomCategorySpecification {
 
-    public Specification<@NonNull RoomCategoryEntity> filter(RoomCategoryFilterRequest request) {
-        return SpecificationUtils.build(request);
+    public Specification<@NonNull RoomCategoryEntity> filter(RoomCategoryFilterRequest request, Long localeId) {
+        return SpecificationUtils.build(request, localeId);
     }
 }

@@ -7,12 +7,17 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
-public interface UnitRepository extends JpaRepository<@NonNull UnitEntity, @NonNull Long>,
+@SuppressWarnings("unused")
+public interface UnitRepository extends
+        JpaRepository<@NonNull UnitEntity, @NonNull Long>,
         JpaSpecificationExecutor<@NonNull UnitEntity> {
 
     Optional<UnitEntity> findByIdAndIsActiveAndIsDeleted(Long id, Boolean isActive, Boolean isDeleted);
 
-    List<UnitEntity> findAllByIdInAndIsActiveAndIsDeleted(Set<Long> ids, Boolean isActive, Boolean isDeleted);
+    boolean existsByCodeAndIsActiveAndIsDeleted(String code, Boolean isActive, Boolean isDeleted);
+
+    boolean existsBySymbolAndIsActiveAndIsDeleted(String symbol, Boolean isActive, Boolean isDeleted);
+
+    List<UnitEntity> findByUnitTypeEntity_IdAndIsActiveAndIsDeleted(Long unitTypeId, Boolean isActive, Boolean isDeleted);
 }

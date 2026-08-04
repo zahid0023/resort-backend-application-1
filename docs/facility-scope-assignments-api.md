@@ -1,81 +1,174 @@
 # Facility Scope Assignments API
 
-Base URL: `/api/v1/facilities/{facility-id}/scope-assignments`
+Base URL: `/api/v1/facility-scopes/{facility-scope-id}/facility-assignments`
 
-Facility scope assignments link a facility to one or more facility scopes (e.g. `RESORT`, `ROOM_CATEGORY`, `ROOM`),
-defining where that facility can be applied. At least one scope must be provided when creating a facility. Additional
-scopes can be assigned or unassigned individually at any time.
+Facility scope assignments record which facilities (e.g. `RESTAURANT`, `SPA`) apply at which facility scope
+(e.g. `RESORT`, `ROOM_CATEGORY`, `ROOM`). This lets a resort owner fetch only the facilities relevant to the
+scope they're currently working in — a resort, or a room category — instead of being overwhelmed with every
+facility in the system.
 
-Soft-unassigning a scope hides it from all responses without removing the database record. Re-assigning a previously
-unassigned scope reactivates the existing record rather than inserting a new one.
+This is a pure membership/assignment resource: there is no locale sub-resource, no updatable fields, and no
+filtering — an assignment either exists or doesn't. To change an assignment, unassign it and assign a new
+one. All records support soft-delete — deleted records are hidden from all responses.
 
-The `scope_assignments` array is also embedded in the `GET /api/v1/facilities/{id}` response.
+**`Accept-Language` is required on every endpoint below, with no exceptions**, per this platform's global
+rule — a request missing (or with a blank) `Accept-Language` header is rejected with `400 INVALID_ARGUMENT`
+before it reaches any endpoint (see [Error Responses](#error-responses)). Its value has no effect on any of
+these endpoints — `GET` (list) still resolves each embedded `facility.locale` using `Accept-Language` the
+same way `GET /facilities` does, but the header's *presence* is what's enforced here, not a value this
+resource itself branches on.
 
 ---
 
 ## Endpoints
 
-| Method | Path                                                                         | Description                   |
-|--------|------------------------------------------------------------------------------|-------------------------------|
-| POST   | `/api/v1/facilities/{facility-id}/scope-assignments`                         | Assign a scope to a facility  |
-| DELETE | `/api/v1/facilities/{facility-id}/scope-assignments/{facility-scope-id}`     | Unassign a scope              |
-| GET    | `/api/v1/facilities/{facility-id}/scope-assignments`                         | List scope assignments        |
+| Method | Path                                                                     | Description                            |
+|--------|-----------------------------------------------------------------------------|---------------------------------------------|
+| GET    | `/api/v1/facility-scopes/{facility-scope-id}/facility-assignments`          | List facilities assigned to a scope           |
+| POST   | `/api/v1/facility-scopes/{facility-scope-id}/facility-assignments`          | Assign a facility to a scope                  |
+| DELETE | `/api/v1/facility-scopes/{facility-scope-id}/facility-assignments/{id}`     | Unassign a facility from a scope              |
 
 ---
 
 ## Data Model
 
-### Facility Scope Assignment (response)
+### FacilityScopeAssignment
 
-| Field               | Type    | Description                                             |
-|---------------------|---------|---------------------------------------------------------|
-| `facility_scope_id` | Long    | ID of the assigned facility scope                       |
-| `code`              | String  | Scope code (e.g. `RESORT`, `ROOM_CATEGORY`, `ROOM`)     |
-| `sort_order`        | Integer | Display order of the scope                              |
-| `locales`           | Array   | Active locale translations of the scope (see below)     |
+| Field       | Type   | Required | Constraints | Description                                                                                                             |
+|--------------|--------|----------|---------------|--------------------------------------------------------------------------------------------------------------------------|
+| `id`         | Long   | —        | read-only     | Auto-generated identifier of the assignment row                                                                           |
+| `facility`   | Object | —        | read-only     | The assigned facility — same shape as [Facilities](facilities-api.md)'s `Facility` data model, including its own `facility_group` and `locale`-matched translation |
 
-### Scope Locale (nested)
-
-| Field         | Type    | Description                                    |
-|---------------|---------|------------------------------------------------|
-| `id`          | Long    | ID of the locale entry                         |
-| `locale_id`   | Long    | ID of the locale                               |
-| `name`        | String  | Localized name of the scope                    |
-| `description` | String  | Localized description; omitted if null         |
-| `sort_order`  | Integer | Display order of this locale entry             |
+The parent `facility_scope` is never re-embedded on each row — it's already known from the
+`{facility-scope-id}` path segment.
 
 ---
 
-## Assign Scope
+## List Facility Scope Assignments
 
-`POST /api/v1/facilities/{facility-id}/scope-assignments`
+`GET /api/v1/facility-scopes/{facility-scope-id}/facility-assignments`
 
-Assigns a facility scope to the given facility. If the scope was previously unassigned (soft-deleted), the assignment is
-reactivated. If the scope is already actively assigned, a `409 CONFLICT` error is returned.
+Returns a paginated list of every facility assigned to a given facility scope. This is the primary way a
+client discovers "which facilities apply here" for a resort (`RESORT` scope) or a room category
+(`ROOM_CATEGORY` scope), without fetching every facility in the system.
 
 ### Path Parameters
 
-| Parameter     | Type | Description        |
-|---------------|------|--------------------|
-| `facility-id` | Long | ID of the facility |
+| Parameter           | Type | Description               |
+|-----------------------|------|-------------------------------|
+| `facility-scope-id`   | Long | ID of the facility scope     |
 
-### Request Fields
+### Query Parameters
 
-| Field               | Type | Required | Validation           |
-|---------------------|------|----------|----------------------|
-| `facility_scope_id` | Long | Yes      | Not null, must exist |
+| Parameter | Type | Default | Constraints | Description               |
+|-----------|------|---------|---------------|-------------------------------|
+| `page`    | int  | `0`     | >= 0          | Zero-based page index         |
+| `size`    | int  | `10`    | 1 – 50        | Number of items per page      |
+
+> **Note:** `sortBy`/`sortDir` are accepted on the request object but there are no sortable fields
+> registered for this endpoint — passing any non-null `sortBy` value throws
+> `400 INVALID_ARGUMENT: Invalid sort field: <value>`. Omit `sortBy` entirely to get the default
+> (sorted by `id` ascending).
+
+### Response `200 OK`
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "facility": {
+        "id": 1,
+        "facility_group": {
+          "id": 1,
+          "code": "DINING",
+          "sort_order": 1,
+          "icon_type": "LUCIDE",
+          "icon_value": "UtensilsCrossed",
+          "icon_meta": {
+            "size": 24,
+            "color": "#f59e0b",
+            "stroke_width": 1.5
+          },
+          "locale": {
+            "id": 1,
+            "locale": {
+              "id": 1,
+              "code": "en",
+              "name": "English",
+              "sort_order": 1
+            },
+            "name": "Dining",
+            "description": "All food and beverage outlets including restaurants, bars, and room service.",
+            "sort_order": 1
+          }
+        },
+        "code": "RESTAURANT",
+        "sort_order": 1,
+        "icon_type": "LUCIDE",
+        "icon_value": "UtensilsCrossed",
+        "icon_meta": {
+          "size": 24,
+          "color": "#f59e0b"
+        },
+        "locale": {
+          "id": 1,
+          "locale": {
+            "id": 1,
+            "code": "en",
+            "name": "English",
+            "sort_order": 1
+          },
+          "name": "Main Restaurant",
+          "description": "Full-service restaurant with buffet and à la carte options.",
+          "sort_order": 1
+        }
+      }
+    }
+  ],
+  "current_page": 0,
+  "total_pages": 1,
+  "total_elements": 1,
+  "page_size": 10,
+  "has_next": false,
+  "has_previous": false,
+  "sortable_fields": null,
+  "searchable_fields": null
+}
+```
+
+---
+
+## Assign Facility
+
+`POST /api/v1/facility-scopes/{facility-scope-id}/facility-assignments`
+
+Assigns a facility to a facility scope. Both must reference existing, active records — an unknown
+`facility_id` returns `404 ENTITY_NOT_FOUND`. The combination of facility scope and facility must be
+unique — assigning a facility that's already assigned to this scope returns `409 CONFLICT`. This check is
+application-level only; there is no DB-level unique constraint on `(facility_scope_id, facility_id)`.
+
+### Path Parameters
+
+| Parameter           | Type | Description               |
+|-----------------------|------|-------------------------------|
+| `facility-scope-id`   | Long | ID of the facility scope     |
 
 ### Request Body
 
 ```json
 {
-  "facility_scope_id": 2
+  "facility_id": 1
 }
 ```
 
-### Response `201 Created`
+### Request Fields
 
-Returns the `facility_id` as `id`.
+| Field           | Type | Required | Validation                                |
+|------------------|------|----------|-------------------------------------------------|
+| `facility_id`    | Long | Yes      | Not null; must reference an existing facility    |
+
+### Response `201 Created`
 
 ```json
 {
@@ -86,90 +179,27 @@ Returns the `facility_id` as `id`.
 
 ---
 
-## Unassign Scope
+## Unassign Facility
 
-`DELETE /api/v1/facilities/{facility-id}/scope-assignments/{facility-scope-id}`
+`DELETE /api/v1/facility-scopes/{facility-scope-id}/facility-assignments/{id}`
 
-Soft-removes the scope assignment. The record is not deleted from the database but will no longer appear in any
+Soft-deletes an assignment. The record is not removed from the database but will no longer appear in any
 response.
 
 ### Path Parameters
 
-| Parameter           | Type | Description              |
-|---------------------|------|--------------------------|
-| `facility-id`       | Long | ID of the facility       |
-| `facility-scope-id` | Long | ID of the facility scope |
+| Parameter           | Type | Description               |
+|-----------------------|------|-------------------------------|
+| `facility-scope-id`   | Long | ID of the facility scope     |
+| `id`                  | Long | ID of the assignment row     |
 
 ### Response `200 OK`
-
-Returns the `facility_id` as `id`.
 
 ```json
 {
   "success": true,
   "id": 1
 }
-```
-
----
-
-## List Scope Assignments
-
-`GET /api/v1/facilities/{facility-id}/scope-assignments`
-
-Returns all active scope assignments for the given facility. Each entry includes the scope's code, sort order, and all
-active locale translations.
-
-### Path Parameters
-
-| Parameter     | Type | Description        |
-|---------------|------|--------------------|
-| `facility-id` | Long | ID of the facility |
-
-### Response `200 OK`
-
-```json
-[
-  {
-    "facility_scope_id": 1,
-    "code": "RESORT",
-    "sort_order": 1,
-    "locales": [
-      {
-        "id": 1,
-        "locale_id": 1,
-        "name": "Resort",
-        "sort_order": 1
-      }
-    ]
-  },
-  {
-    "facility_scope_id": 2,
-    "code": "ROOM_CATEGORY",
-    "sort_order": 2,
-    "locales": [
-      {
-        "id": 2,
-        "locale_id": 1,
-        "name": "Room Category",
-        "sort_order": 2
-      }
-    ]
-  },
-  {
-    "facility_scope_id": 3,
-    "code": "ROOM",
-    "sort_order": 3,
-    "locales": [
-      {
-        "id": 3,
-        "locale_id": 1,
-        "name": "Room",
-        "sort_order": 3
-      }
-    ]
-  }
-]
 ```
 
 ---
@@ -183,14 +213,12 @@ All errors follow a common structure:
   "request_id": "abc-123",
   "status": 404,
   "error": "ENTITY_NOT_FOUND",
-  "message": "FacilityScopeAssignment not found for facilityId: 1 and facilityScopeId: 99"
+  "message": "FacilityScopeAssignment not found with id: 99"
 }
 ```
 
-| HTTP Status | Error Code              | Cause                                                                         |
-|-------------|-------------------------|-------------------------------------------------------------------------------|
-| 400         | `INVALID_ARGUMENT`      | Missing or null `facility_scope_id`                                           |
-| 404         | `ENTITY_NOT_FOUND`      | Facility or facility scope not found / deleted                                |
-| 404         | `ENTITY_NOT_FOUND`      | Assignment not found on unassign (not assigned or already unassigned)         |
-| 409         | `CONFLICT`              | Scope is already actively assigned to this facility                           |
-| 500         | `INTERNAL_SERVER_ERROR` | Unexpected server error                                                       |
+| HTTP Status | Error Code                 | Cause                                                                                                                             |
+|-------------|-----------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs); an unsupported `sortBy` query value; or `facility_id` missing/null |
+| 404         | `ENTITY_NOT_FOUND`         | Facility scope not found, the facility referenced by `facility_id` not found, or assignment not found                                  |
+| 409         | `CONFLICT`                 | The facility is already assigned to this facility scope (pre-checked at the application level)                                          |

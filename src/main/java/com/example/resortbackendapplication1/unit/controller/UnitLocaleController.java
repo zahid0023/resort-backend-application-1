@@ -1,14 +1,16 @@
 package com.example.resortbackendapplication1.unit.controller;
 
-import com.example.resortbackendapplication1.unit.dto.request.unit.unitlocale.CreateUnitLocaleRequest;
-import com.example.resortbackendapplication1.unit.dto.request.unit.unitlocale.UpdateUnitLocaleRequest;
+import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
+import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.locale.service.LocaleService;
+import com.example.resortbackendapplication1.unit.dto.request.unit.locale.CreateUnitLocaleRequest;
+import com.example.resortbackendapplication1.unit.dto.request.unit.locale.UpdateUnitLocaleRequest;
 import com.example.resortbackendapplication1.unit.model.entity.UnitEntity;
 import com.example.resortbackendapplication1.unit.model.entity.UnitLocaleEntity;
 import com.example.resortbackendapplication1.unit.service.UnitLocaleService;
 import com.example.resortbackendapplication1.unit.service.UnitService;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
-import com.example.resortbackendapplication1.locale.service.LocaleService;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,6 +31,15 @@ public class UnitLocaleController {
         this.localeService = localeService;
     }
 
+    @GetMapping
+    public ResponseEntity<?> getAll(
+            @PathVariable("unit-id") Long unitId,
+            @RequestParam(value = "localeCode", required = false) String localeCode,
+            @ParameterObject PaginatedRequest paginatedRequest) {
+        unitService.getEntityById(unitId);
+        return ResponseEntity.ok(unitLocaleService.getAll(unitId, localeCode, paginatedRequest));
+    }
+
     @PostMapping
     public ResponseEntity<?> create(
             @PathVariable("unit-id") Long unitId,
@@ -36,7 +47,7 @@ public class UnitLocaleController {
         UnitEntity unitEntity = unitService.getEntityById(unitId);
         LocaleEntity localeEntity = localeService.getEntityById(request.getLocaleId());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(unitLocaleService.create(unitEntity, localeEntity, request));
+                .body(unitLocaleService.create(request, unitEntity, localeEntity));
     }
 
     @PutMapping("/{id}")

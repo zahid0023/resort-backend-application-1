@@ -2,30 +2,40 @@
 
 Base URL: `/api/v1/facilities`
 
-Facilities are individual amenities or services that belong to a facility group (e.g., "Outdoor Pool" under "
-Recreation",
-"Sauna" under "Wellness"). Each facility carries an optional icon using the same icon system as facility groups. Display
-names and descriptions are locale-specific and are embedded in every response via the `locales` array. Each facility
-must be assigned at least one facility scope at creation time; scopes can also be managed individually after creation.
-All records support soft-delete — deleted records are hidden from all responses.
+Facilities are the individual amenities a resort offers (e.g. `RESTAURANT`, `SPA`, `SWIMMING_POOL`), each
+belonging to exactly one facility group (`DINING`, `WELLNESS`, ...) and carrying its own icon. A facility's
+display name and description are locale-specific and are managed through a companion sub-resource — Facility
+Locales — reached via `/api/v1/facilities/{facility-id}/locales`. All records support soft-delete — deleted
+records are hidden from all responses.
+
+**`Accept-Language` is required on every endpoint below, with no exceptions** — a request missing (or with
+a blank) `Accept-Language` header is rejected with `400 INVALID_ARGUMENT` before it reaches any endpoint
+(see [Error Responses](#error-responses)). What differs per endpoint is whether the header's *value* is
+actually used to shape the response:
+
+- **`GET /{id}` (Get Facility)** and **`GET` (List/Search Facilities)** — the header's value selects exactly
+  one locale translation for the facility's `locale` field: an exact match if the facility has one,
+  otherwise `en`, otherwise `null`.
+- **`GET /{facility-id}/locales` (List Facility Locales)** — the header must be present, but its value has
+  no effect; this endpoint returns every translation (optionally filtered by `localeCode`), not a single
+  Accept-Language-matched one.
+- **`POST`/`PUT`/`DELETE`** — the header must be present but its value has no effect at all.
 
 ---
 
 ## Endpoints
 
-| Method | Path                                                                     | Description                  |
-|--------|--------------------------------------------------------------------------|------------------------------|
-| POST   | `/api/v1/facilities`                                                     | Create a facility            |
-| GET    | `/api/v1/facilities`                                                     | List / search facilities     |
-| GET    | `/api/v1/facilities/{id}`                                                | Get a facility               |
-| PUT    | `/api/v1/facilities/{id}`                                                | Update a facility            |
-| DELETE | `/api/v1/facilities/{id}`                                                | Delete a facility            |
-| POST   | `/api/v1/facilities/{facility-id}/locales`                               | Add a locale                 |
-| PUT    | `/api/v1/facilities/{facility-id}/locales/{id}`                          | Update a locale              |
-| DELETE | `/api/v1/facilities/{facility-id}/locales/{id}`                          | Delete a locale              |
-| POST   | `/api/v1/facilities/{facility-id}/scope-assignments`                     | Assign a scope to a facility |
-| DELETE | `/api/v1/facilities/{facility-id}/scope-assignments/{facility-scope-id}` | Unassign a scope             |
-| GET    | `/api/v1/facilities/{facility-id}/scope-assignments`                     | List scope assignments       |
+| Method | Path                                          | Description                |
+|--------|-----------------------------------------------|--------------------------------|
+| POST   | `/api/v1/facilities`                           | Create a facility               |
+| GET    | `/api/v1/facilities`                           | List / search facilities        |
+| GET    | `/api/v1/facilities/{id}`                      | Get a facility                  |
+| PUT    | `/api/v1/facilities/{id}`                      | Update a facility               |
+| DELETE | `/api/v1/facilities/{id}`                      | Delete a facility               |
+| GET    | `/api/v1/facilities/{facility-id}/locales`      | List a facility's locales        |
+| POST   | `/api/v1/facilities/{facility-id}/locales`      | Create a facility locale         |
+| PUT    | `/api/v1/facilities/{facility-id}/locales/{id}` | Update a facility locale         |
+| DELETE | `/api/v1/facilities/{facility-id}/locales/{id}` | Delete a facility locale         |
 
 ---
 
@@ -33,45 +43,26 @@ All records support soft-delete — deleted records are hidden from all response
 
 ### Facility
 
-| Field               | Type    | Required | Constraints         | Description                                                                   |
-|---------------------|---------|----------|---------------------|-------------------------------------------------------------------------------|
-| `id`                | Long    | —        | read-only           | Auto-generated identifier                                                     |
-| `facility_group_id` | Long    | Yes      | must exist          | ID of the parent facility group. Not updatable after creation.                |
-| `code`              | String  | Yes      | max 100 chars       | Short unique identifier (e.g., `POOL_OUTDOOR`). Not updatable after creation. |
-| `sort_order`        | Integer | No       | >= 0, default `1`   | Display order                                                                 |
-| `icon_type`         | Enum    | Yes      | see values below    | Determines how `icon_value` is interpreted                                    |
-| `icon_value`        | String  | No       | max 2000 chars      | Icon name or URL; omitted from response if not set                            |
-| `icon_meta`         | Object  | No       | any key-value pairs | Optional rendering hints (size, color, etc.); omitted if not set              |
-| `locales`           | Array   | No       | —                   | Locale entries (included in all responses)                                    |
-| `scope_assignments` | Array   | —        | read-only           | Active scope assignments (included in `getById` only)                         |
+| Field               | Type    | Required | Constraints                                                            | Description                                                                                                                            |
+|----------------------|---------|----------|---------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| `id`                 | Long    | —        | read-only                                                                 | Auto-generated identifier                                                                                                                   |
+| `facility_group`     | Object  | —        | read-only                                                                 | The owning facility group — same shape as [Facility Groups](facility-groups-api.md)'s `FacilityGroup` data model                            |
+| `code`               | String  | Yes      | max 100 chars, unique among active records; set at creation, immutable  | Internal code (e.g. `RESTAURANT`, `SPA`)                                                                                                    |
+| `sort_order`         | Integer | Yes      | default 0                                                                 | Display order                                                                                                                                |
+| `icon_type`          | String  | Yes      | max 100 chars                                                             | Icon library/source (e.g. `LUCIDE`)                                                                                                          |
+| `icon_value`         | String  | No       | nullable                                                                  | Icon name/path within `icon_type`'s library                                                                                                  |
+| `icon_meta`          | Object  | No       | nullable, free-form JSON                                                 | Icon rendering metadata (e.g. `{"size": 24, "color": "#f59e0b"}`)                                                                             |
+| `locale`             | Object  | —        | nullable; see FacilityLocale below                                       | The single translation matching the request's `Accept-Language` (falls back to `en`, then `null` if the facility has no translations at all) |
 
-### Facility Locale
+### FacilityLocale
 
-| Field         | Type    | Required | Constraints   | Description                                      |
-|---------------|---------|----------|---------------|--------------------------------------------------|
-| `id`          | Long    | —        | read-only     | Auto-generated identifier                        |
-| `locale_id`   | Long    | Yes      | must exist    | ID of the locale. Not updatable after creation.  |
-| `name`        | String  | Yes      | max 255 chars | Display name of the facility in this locale      |
-| `description` | String  | No       | unlimited     | Full description in this locale; omitted if null |
-| `sort_order`  | Integer | Yes      | —             | Display order for this locale entry              |
-
-### Facility Scope Assignment
-
-| Field               | Type    | Required | Constraints | Description                                  |
-|---------------------|---------|----------|-------------|----------------------------------------------|
-| `facility_scope_id` | Long    | —        | read-only   | ID of the assigned facility scope            |
-| `code`              | String  | —        | read-only   | Scope code (e.g., `RESORT`, `ROOM_CATEGORY`) |
-| `sort_order`        | Integer | —        | read-only   | Sort order of the scope                      |
-| `locales`           | Array   | —        | read-only   | Locale translations of the scope             |
-
-### `icon_type` values
-
-| Value      | `icon_value` meaning                             | Typical `icon_meta` keys        |
-|------------|--------------------------------------------------|---------------------------------|
-| `LUCIDE`   | Lucide React icon name, e.g. `"Waves"`, `"Wifi"` | `size`, `color`, `stroke_width` |
-| `IMAGE`    | Image URL or storage path                        | `alt`, `width`, `height`        |
-| `SVG`      | Raw SVG string or SVG file URL                   | `viewBox`, `fill`               |
-| `EXTERNAL` | Any external icon ID or URL                      | any custom metadata             |
+| Field         | Type    | Required | Constraints                                                          | Description                                                                    |
+|---------------|---------|----------|-------------------------------------------------------------------------|------------------------------------------------------------------------------------|
+| `id`          | Long    | —        | read-only                                                               | Auto-generated identifier                                                          |
+| `locale`      | Locale  | —        | read-only, resolved from `locale_id` at creation                      | The locale this translation is written in (`id`, `code`, `name`, `sort_order`)     |
+| `name`        | String  | Yes      | max 255 chars, unique among active translations for the same locale   | Localized name of the facility                                                     |
+| `description` | String  | Yes      | not null (defaults to `""`)                                            | Localized description                                                              |
+| `sort_order`  | Integer | Yes      | default 0                                                               | Display order among locale entries                                                 |
 
 ---
 
@@ -79,65 +70,55 @@ All records support soft-delete — deleted records are hidden from all response
 
 `POST /api/v1/facilities`
 
-Creates a facility along with its locale-specific translations and scope assignments in one request. At least one
-`scope_id` is required. All provided `locale_id` and `scope_id` values must reference existing, active records.
+Creates a new facility together with exactly **one** initial locale translation. `code` must be unique among
+active, non-deleted facilities — attempting to reuse an existing code returns `409 CONFLICT`.
+`facility_group_id` must reference an existing, active facility group — an unknown id returns
+`404 ENTITY_NOT_FOUND`.
+
+**The initial translation is always attached to the `en` locale, resolved by the server — the request
+carries no `locale_id` at all.** There is no option to submit multiple locales at creation time.
+Additional languages are added afterward via the Facility Locales sub-resource below.
 
 ### Request Body
 
 ```json
 {
+  "code": "RESTAURANT",
   "facility_group_id": 1,
-  "code": "POOL_OUTDOOR",
   "sort_order": 1,
   "icon_type": "LUCIDE",
-  "icon_value": "Waves",
+  "icon_value": "UtensilsCrossed",
   "icon_meta": {
     "size": 24,
-    "color": "#3b82f6",
-    "stroke_width": 1.5
+    "color": "#f59e0b"
   },
-  "scope_ids": [
-    1,
-    2
-  ],
-  "locales": [
-    {
-      "locale_id": 1,
-      "name": "Outdoor Pool",
-      "description": "A large outdoor swimming pool with sun loungers and a poolside bar.",
-      "sort_order": 1
-    },
-    {
-      "locale_id": 2,
-      "name": "আউটডোর পুল",
-      "description": "সানলাউঞ্জার ও পুলসাইড বার সহ একটি বড় আউটডোর সুইমিং পুল।",
-      "sort_order": 2
-    }
-  ]
+  "locale": {
+    "name": "Main Restaurant",
+    "description": "Full-service restaurant with buffet and à la carte options.",
+    "sort_order": 1
+  }
 }
 ```
 
 ### Request Fields
 
-| Field               | Type    | Required | Validation                                     |
-|---------------------|---------|----------|------------------------------------------------|
-| `facility_group_id` | Long    | Yes      | Not null, must refer to a valid facility group |
-| `code`              | String  | Yes      | Not blank, max 100 chars                       |
-| `sort_order`        | Integer | No       | >= 0                                           |
-| `icon_type`         | Enum    | Yes      | One of: `LUCIDE`, `IMAGE`, `SVG`, `EXTERNAL`   |
-| `icon_value`        | String  | No       | Max 2000 chars                                 |
-| `icon_meta`         | Object  | No       | Any JSON object                                |
-| `scope_ids`         | Array   | Yes      | Not empty; each ID must exist                  |
-| `locales`           | Array   | No       | See locale fields below                        |
+| Field                | Type    | Required | Validation                                                                                 |
+|-----------------------|---------|----------|----------------------------------------------------------------------------------------------|
+| `code`                | String  | Yes      | Not blank, max 100 chars, unique among active records                                        |
+| `facility_group_id`   | Long    | Yes      | Not null; must reference an existing facility group                                          |
+| `sort_order`          | Integer | Yes      | Not null                                                                                       |
+| `icon_type`           | String  | Yes      | Not blank, max 100 chars                                                                       |
+| `icon_value`          | String  | No       | —                                                                                               |
+| `icon_meta`           | Object  | No       | —, free-form JSON object                                                                        |
+| `locale`              | Object  | Yes      | Not null; validated (see below) — no `locale_id` field; always resolved to the `en` locale     |
 
-**Locale fields (`locales[]`):**
+**Locale entry (`locale`):**
 
-| Field         | Type    | Required | Validation               |
-|---------------|---------|----------|--------------------------|
-| `locale_id`   | Long    | Yes      | Not null, must exist     |
-| `name`        | String  | Yes      | Not blank, max 255 chars |
-| `description` | String  | No       | —                        |
-| `sort_order`  | Integer | Yes      | Not null                 |
+| Field         | Type    | Required | Validation                                                          |
+|---------------|---------|----------|-----------------------------------------------------------------------|
+| `name`        | String  | Yes      | Not blank, max 255 chars, unique among active translations for `en`   |
+| `description` | String  | Yes      | Not null                                                               |
+| `sort_order`  | Integer | Yes      | Not null                                                               |
 
 ### Response `201 Created`
 
@@ -154,13 +135,16 @@ Creates a facility along with its locale-specific translations and scope assignm
 
 `GET /api/v1/facilities/{id}`
 
-Returns a single facility with all its locale translations and active scope assignments.
+Returns a single active facility by its ID, with its owning `facility_group` embedded. `locale` is the one
+translation matching the request's `Accept-Language` header (falls back to `en`, then `null` if the facility
+has no translations at all). To fetch every translation a facility has, use
+[List Facility Locales](#list-facility-locales) below.
 
 ### Path Parameters
 
 | Parameter | Type | Description        |
-|-----------|------|--------------------|
-| `id`      | Long | ID of the facility |
+|-----------|------|------------------------|
+| `id`      | Long | ID of the facility     |
 
 ### Response `200 OK`
 
@@ -168,53 +152,50 @@ Returns a single facility with all its locale translations and active scope assi
 {
   "data": {
     "id": 1,
-    "facility_group_id": 1,
-    "code": "POOL_OUTDOOR",
-    "sort_order": 1,
-    "icon_type": "LUCIDE",
-    "icon_value": "Waves",
-    "icon_meta": {
-      "size": 24,
-      "color": "#3b82f6",
-      "stroke_width": 1.5
-    },
-    "locales": [
-      {
+    "facility_group": {
+      "id": 1,
+      "code": "DINING",
+      "sort_order": 1,
+      "icon_type": "LUCIDE",
+      "icon_value": "UtensilsCrossed",
+      "icon_meta": {
+        "size": 24,
+        "color": "#f59e0b",
+        "stroke_width": 1.5
+      },
+      "locale": {
         "id": 1,
-        "locale_id": 1,
-        "name": "Outdoor Pool",
-        "description": "A large outdoor swimming pool with sun loungers and a poolside bar.",
+        "locale": {
+          "id": 1,
+          "code": "en",
+          "name": "English",
+          "sort_order": 1
+        },
+        "name": "Dining",
+        "description": "All food and beverage outlets including restaurants, bars, and room service.",
         "sort_order": 1
       }
-    ],
-    "scope_assignments": [
-      {
-        "facility_scope_id": 1,
-        "code": "RESORT",
-        "sort_order": 1,
-        "locales": [
-          {
-            "id": 1,
-            "locale_id": 1,
-            "name": "Resort",
-            "sort_order": 1
-          }
-        ]
+    },
+    "code": "RESTAURANT",
+    "sort_order": 1,
+    "icon_type": "LUCIDE",
+    "icon_value": "UtensilsCrossed",
+    "icon_meta": {
+      "size": 24,
+      "color": "#f59e0b"
+    },
+    "locale": {
+      "id": 1,
+      "locale": {
+        "id": 1,
+        "code": "en",
+        "name": "English",
+        "sort_order": 1
       },
-      {
-        "facility_scope_id": 2,
-        "code": "ROOM_CATEGORY",
-        "sort_order": 2,
-        "locales": [
-          {
-            "id": 2,
-            "locale_id": 1,
-            "name": "Room Category",
-            "sort_order": 2
-          }
-        ]
-      }
-    ]
+      "name": "Main Restaurant",
+      "description": "Full-service restaurant with buffet and à la carte options.",
+      "sort_order": 1
+    }
   }
 }
 ```
@@ -225,21 +206,31 @@ Returns a single facility with all its locale translations and active scope assi
 
 `GET /api/v1/facilities`
 
-Returns a paginated, filterable list of active (non-deleted) facilities including their locales. Scope assignments are
-not included in list responses — use `GET /api/v1/facilities/{id}` to retrieve them. All filter parameters are
-optional; omitting them returns all facilities. String filters perform a case-insensitive partial match.
+Returns a paginated, filterable list of active (non-deleted) facilities, each with its owning `facility_group`
+embedded. All filter parameters are optional; omitting them returns all facilities. Each `LIKE`-type filter
+performs a case-insensitive partial match. `Accept-Language` selects each facility's `locale` field the same
+way as `GET /{id}` (exact match, falls back to `en`, then `null`).
+
+> **Note:** `id` is not a selectable `sortBy` value — passing `?sortBy=id` throws
+> `400 INVALID_ARGUMENT: Invalid sort field: id`. It's used only as the implicit sort when `sortBy` is
+> omitted entirely.
 
 ### Query Parameters
 
-| Parameter           | Type   | Default | Constraints                                 | Description                                 |
-|---------------------|--------|---------|---------------------------------------------|---------------------------------------------|
-| `scope-code`        | String | —       | required; `RESORT`, `ROOM_CATEGORY`, `ROOM` | Filter to facilities assigned to this scope |
-| `code`              | String | —       | —                                           | Filter by code (partial, case-insensitive)  |
-| `facility-group-id` | Long   | —       | —                                           | Filter by facility group (exact match)      |
-| `page`              | int    | `0`     | >= 0                                        | Zero-based page index                       |
-| `size`              | int    | `10`    | 1 – 50                                      | Number of items per page                    |
-| `sort_by`           | String | `id`    | `id`, `code`, `sortOrder`, `createdAt`      | Field to sort by                            |
-| `sort_dir`          | String | `ASC`   | `ASC`, `DESC`                               | Sort direction                              |
+> **Note:** Query parameters bind directly onto `FacilityFilterRequest`'s Java field names, so they are
+> **camelCase** — not the snake_case used in JSON request/response bodies.
+
+| Parameter            | Type   | Default         | Constraints                                       | Description                                                                                |
+|-----------------------|--------|-----------------|-------------------------------------------------------|-----------------------------------------------------------------------------------------------|
+| `code`                | String | —               | —                                                       | Filter by code (partial, case-insensitive)                                                    |
+| `facilityGroupId`     | Long   | —               | —                                                       | Filter to facilities belonging to a given facility group (exact match)                        |
+| `name`                | String | —               | —                                                       | Filter by locale-specific name (partial, case-insensitive), scoped to the resolved locale     |
+| `page`                | int    | `0`             | >= 0                                                    | Zero-based page index                                                                          |
+| `size`                | int    | `10`            | 1 – 50                                                  | Number of items per page                                                                       |
+| `sortBy`              | String | `id` (implicit) | `createdAt`, `sortOrder`, `code`, `name` (`id` NOT selectable) | Field to sort by                                                                        |
+| `sortDir`             | String | `ASC`           | `ASC`, `DESC`                                           | Sort direction                                                                                  |
+
+> **Note:** `icon_type`, `icon_value`, and `icon_meta` are not filterable or sortable.
 
 ### Response `200 OK`
 
@@ -248,49 +239,68 @@ optional; omitting them returns all facilities. String filters perform a case-in
   "data": [
     {
       "id": 1,
-      "facility_group_id": 1,
-      "code": "POOL_OUTDOOR",
+      "facility_group": {
+        "id": 1,
+        "code": "DINING",
+        "sort_order": 1,
+        "icon_type": "LUCIDE",
+        "icon_value": "UtensilsCrossed",
+        "icon_meta": {
+          "size": 24,
+          "color": "#f59e0b",
+          "stroke_width": 1.5
+        },
+        "locale": {
+          "id": 1,
+          "locale": {
+            "id": 1,
+            "code": "en",
+            "name": "English",
+            "sort_order": 1
+          },
+          "name": "Dining",
+          "description": "All food and beverage outlets including restaurants, bars, and room service.",
+          "sort_order": 1
+        }
+      },
+      "code": "RESTAURANT",
       "sort_order": 1,
       "icon_type": "LUCIDE",
-      "icon_value": "Waves",
+      "icon_value": "UtensilsCrossed",
       "icon_meta": {
         "size": 24,
-        "color": "#3b82f6"
+        "color": "#f59e0b"
       },
-      "locales": [
-        {
+      "locale": {
+        "id": 1,
+        "locale": {
           "id": 1,
-          "locale_id": 1,
-          "name": "Outdoor Pool",
-          "description": "A large outdoor swimming pool with sun loungers and a poolside bar.",
+          "code": "en",
+          "name": "English",
           "sort_order": 1
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "facility_group_id": 1,
-      "code": "POOL_INDOOR",
-      "sort_order": 2,
-      "icon_type": "LUCIDE",
-      "icon_value": "Droplets",
-      "locales": [
-        {
-          "id": 3,
-          "locale_id": 1,
-          "name": "Indoor Pool",
-          "description": "A heated indoor pool available year-round.",
-          "sort_order": 1
-        }
-      ]
+        },
+        "name": "Main Restaurant",
+        "description": "Full-service restaurant with buffet and à la carte options.",
+        "sort_order": 1
+      }
     }
   ],
   "current_page": 0,
   "total_pages": 1,
-  "total_elements": 2,
+  "total_elements": 1,
   "page_size": 10,
   "has_next": false,
-  "has_previous": false
+  "has_previous": false,
+  "sortable_fields": [
+    "createdAt",
+    "sortOrder",
+    "code",
+    "name"
+  ],
+  "searchable_fields": [
+    "code",
+    "name"
+  ]
 }
 ```
 
@@ -300,40 +310,38 @@ optional; omitting them returns all facilities. String filters perform a case-in
 
 `PUT /api/v1/facilities/{id}`
 
-Updates `sort_order`, `icon_type`, `icon_value`, and `icon_meta`. The `code` and `facility_group_id` fields are set at
-creation time and cannot be changed. Locale translations are managed via the locale endpoints. Scope assignments are
-managed via the scope-assignment endpoints.
+Updates `sort_order`, `icon_type`, `icon_value`, and `icon_meta`. `code` and `facility_group_id` are set at
+creation and cannot be changed — to move a facility to a different group, delete it and create a new one.
+Locale translations are managed separately via the Facility Locales sub-resource endpoints below.
 
 ### Path Parameters
 
 | Parameter | Type | Description        |
-|-----------|------|--------------------|
-| `id`      | Long | ID of the facility |
+|-----------|------|------------------------|
+| `id`      | Long | ID of the facility     |
 
 ### Request Body
 
 ```json
 {
-  "sort_order": 1,
+  "sort_order": 2,
   "icon_type": "LUCIDE",
-  "icon_value": "Waves",
+  "icon_value": "UtensilsCrossed",
   "icon_meta": {
-    "size": 28,
-    "color": "#06b6d4"
+    "size": 32,
+    "color": "#f59e0b"
   }
 }
 ```
 
 ### Request Fields
 
-| Field        | Type    | Required | Validation                                   |
-|--------------|---------|----------|----------------------------------------------|
-| `sort_order` | Integer | No       | >= 0 if provided                             |
-| `icon_type`  | Enum    | Yes      | One of: `LUCIDE`, `IMAGE`, `SVG`, `EXTERNAL` |
-| `icon_value` | String  | No       | Max 2000 chars                               |
-| `icon_meta`  | Object  | No       | Any JSON object                              |
-
-> **Note:** `code` and `facility_group_id` are immutable and cannot be changed after creation.
+| Field        | Type    | Required | Validation                |
+|--------------|---------|----------|------------------------------|
+| `sort_order` | Integer | Yes      | Not null                     |
+| `icon_type`  | String  | Yes      | Not blank, max 100 chars      |
+| `icon_value` | String  | No       | —                             |
+| `icon_meta`  | Object  | No       | —, free-form JSON object      |
 
 ### Response `200 OK`
 
@@ -350,13 +358,14 @@ managed via the scope-assignment endpoints.
 
 `DELETE /api/v1/facilities/{id}`
 
-Soft-deletes the facility. The record is not removed from the database but will no longer appear in any response.
+Soft-deletes the facility. The record is not removed from the database but will no longer appear in any
+response.
 
 ### Path Parameters
 
 | Parameter | Type | Description        |
-|-----------|------|--------------------|
-| `id`      | Long | ID of the facility |
+|-----------|------|------------------------|
+| `id`      | Long | ID of the facility     |
 
 ### Response `200 OK`
 
@@ -371,239 +380,183 @@ Soft-deletes the facility. The record is not removed from the database but will 
 
 ## Facility Locales
 
-Facility locale endpoints manage per-locale translations for a facility. The `{facility-id}` path parameter must
-reference an existing, active facility.
+Facility Locale endpoints manage locale-specific name/description translations for a facility. The
+`{facility-id}` path parameter must reference an existing, active facility.
 
 ---
 
-### Add Locale
+### List Facility Locales
+
+`GET /api/v1/facilities/{facility-id}/locales`
+
+Returns a paginated list of every locale translation belonging to a facility — this is the only way to see
+more than the single Accept-Language-matched translation returned by `GET /facilities/{id}` and
+`GET /facilities`. Optionally filtered to locales whose `code` contains a given substring.
+
+#### Path Parameters
+
+| Parameter      | Type | Description               |
+|-----------------|------|-------------------------------|
+| `facility-id`   | Long | ID of the parent facility     |
+
+#### Query Parameters
+
+| Parameter    | Type   | Default | Constraints | Description                                                                                     |
+|--------------|--------|---------|-------------|-----------------------------------------------------------------------------------------------------|
+| `localeCode` | String | —       | —           | Filter to locales whose `code` contains this value (partial, case-insensitive), e.g. `en`, `bn`   |
+| `page`       | int    | `0`     | >= 0        | Zero-based page index                                                                                |
+| `size`       | int    | `10`    | 1 – 50      | Number of items per page                                                                             |
+
+> **Note:** `sortBy`/`sortDir` are accepted on the request object but there are no sortable fields
+> registered for this endpoint — passing any non-null `sortBy` value throws
+> `400 INVALID_ARGUMENT: Invalid sort field: <value>`. Omit `sortBy` entirely to get the default
+> (sorted by `id` ascending).
+
+#### Response `200 OK`
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "locale": {
+        "id": 1,
+        "code": "en",
+        "name": "English",
+        "sort_order": 1
+      },
+      "name": "Main Restaurant",
+      "description": "Full-service restaurant with buffet and à la carte options.",
+      "sort_order": 1
+    }
+  ],
+  "current_page": 0,
+  "total_pages": 1,
+  "total_elements": 1,
+  "page_size": 10,
+  "has_next": false,
+  "has_previous": false,
+  "sortable_fields": null,
+  "searchable_fields": null
+}
+```
+
+---
+
+### Create Facility Locale
 
 `POST /api/v1/facilities/{facility-id}/locales`
 
-Adds a new locale translation to an existing facility.
+Adds a new locale translation to an existing facility. `locale_id` must reference an existing, active
+locale — an unknown `locale_id` returns `404 ENTITY_NOT_FOUND`. The combination of facility and locale must
+be unique — adding a locale the facility already has a translation for returns `409 CONFLICT`. `name` must
+also be unique among active translations for the same locale, regardless of which facility they belong to —
+reusing a name already in use for that locale returns `409 CONFLICT`. Both checks are application-level
+only; the underlying `facility_locales` table has no DB-level unique constraints backing either one.
 
 #### Path Parameters
 
-| Parameter     | Type | Description        |
-|---------------|------|--------------------|
-| `facility-id` | Long | ID of the facility |
+| Parameter      | Type | Description               |
+|-----------------|------|-------------------------------|
+| `facility-id`   | Long | ID of the parent facility     |
 
 #### Request Body
 
 ```json
 {
-  "locale_id": 1,
-  "name": "Outdoor Pool",
-  "description": "A large outdoor swimming pool with sun loungers and a poolside bar.",
+  "locale_id": 2,
+  "name": "প্রধান রেস্টুরেন্ট",
+  "description": "বুফে এবং আ লা কার্ট অপশন সহ ফুল-সার্ভিস রেস্টুরেন্ট।",
   "sort_order": 1
 }
 ```
 
 #### Request Fields
 
-| Field         | Type    | Required | Validation               |
-|---------------|---------|----------|--------------------------|
-| `locale_id`   | Long    | Yes      | Not null, must exist     |
-| `name`        | String  | Yes      | Not blank, max 255 chars |
-| `description` | String  | No       | —                        |
-| `sort_order`  | Integer | Yes      | Not null                 |
+| Field         | Type    | Required | Validation                                                                |
+|---------------|---------|----------|--------------------------------------------------------------------------------|
+| `locale_id`   | Long    | Yes      | Not null; must reference an existing locale                                    |
+| `name`        | String  | Yes      | Not blank, max 255 chars, unique among active translations for `locale_id`      |
+| `description` | String  | Yes      | Not null                                                                        |
+| `sort_order`  | Integer | Yes      | Not null                                                                        |
 
 #### Response `201 Created`
 
 ```json
 {
   "success": true,
-  "id": 1
+  "id": 2
 }
 ```
 
 ---
 
-### Update Locale
+### Update Facility Locale
 
 `PUT /api/v1/facilities/{facility-id}/locales/{id}`
 
-Updates an existing locale translation for a facility. `locale_id` is not updatable.
+Updates `name`, `description`, and `sort_order` for an existing facility locale translation. The associated
+facility and locale cannot be changed after creation. `name` is re-checked for uniqueness among active
+translations for the same locale, excluding this translation itself — renaming it to a name already used by
+another translation in the same locale returns `409 CONFLICT`.
 
 #### Path Parameters
 
-| Parameter     | Type | Description               |
-|---------------|------|---------------------------|
-| `facility-id` | Long | ID of the facility        |
-| `id`          | Long | ID of the facility locale |
+| Parameter      | Type | Description               |
+|-----------------|------|-------------------------------|
+| `facility-id`   | Long | ID of the parent facility     |
+| `id`            | Long | ID of the facility locale      |
 
 #### Request Body
 
 ```json
 {
-  "name": "Outdoor Infinity Pool",
-  "description": "Updated description.",
+  "name": "প্রধান রেস্টুরেন্ট",
+  "description": "বুফে এবং আ লা কার্ট অপশন সহ ফুল-সার্ভিস রেস্টুরেন্ট।",
   "sort_order": 1
 }
 ```
 
 #### Request Fields
 
-| Field         | Type    | Required | Validation               |
-|---------------|---------|----------|--------------------------|
-| `name`        | String  | Yes      | Not blank, max 255 chars |
-| `description` | String  | No       | —                        |
-| `sort_order`  | Integer | Yes      | Not null                 |
+| Field         | Type    | Required | Validation                                                                     |
+|---------------|---------|----------|--------------------------------------------------------------------------------------|
+| `name`        | String  | Yes      | Not blank, max 255 chars, unique among active translations for this locale             |
+| `description` | String  | Yes      | Not null                                                                                |
+| `sort_order`  | Integer | Yes      | Not null                                                                                |
 
 #### Response `200 OK`
 
 ```json
 {
   "success": true,
-  "id": 1
+  "id": 2
 }
 ```
 
 ---
 
-### Delete Locale
+### Delete Facility Locale
 
 `DELETE /api/v1/facilities/{facility-id}/locales/{id}`
 
-Soft-deletes the locale entry. The record is not removed from the database but will no longer appear in any response.
+Soft-deletes a facility locale. The record is not removed from the database but will no longer appear in
+any response.
 
 #### Path Parameters
 
-| Parameter     | Type | Description               |
-|---------------|------|---------------------------|
-| `facility-id` | Long | ID of the facility        |
-| `id`          | Long | ID of the facility locale |
+| Parameter      | Type | Description               |
+|-----------------|------|-------------------------------|
+| `facility-id`   | Long | ID of the parent facility     |
+| `id`            | Long | ID of the facility locale      |
 
 #### Response `200 OK`
 
 ```json
 {
   "success": true,
-  "id": 1
+  "id": 2
 }
-```
-
----
-
-## Facility Scope Assignments
-
-Scope assignment endpoints manage which facility scopes (e.g., `RESORT`, `ROOM_CATEGORY`, `ROOM`) a facility applies
-to. The `{facility-id}` path parameter must reference an existing, active facility.
-
-Assigning a scope that was previously unassigned (soft-deleted) reactivates the existing assignment record.
-
----
-
-### Assign Scope
-
-`POST /api/v1/facilities/{facility-id}/scope-assignments`
-
-Assigns a facility scope to the facility.
-
-#### Path Parameters
-
-| Parameter     | Type | Description        |
-|---------------|------|--------------------|
-| `facility-id` | Long | ID of the facility |
-
-#### Request Body
-
-```json
-{
-  "facility_scope_id": 3
-}
-```
-
-#### Request Fields
-
-| Field               | Type | Required | Validation           |
-|---------------------|------|----------|----------------------|
-| `facility_scope_id` | Long | Yes      | Not null, must exist |
-
-#### Response `201 Created`
-
-Returns the `facility_id` as `id`.
-
-```json
-{
-  "success": true,
-  "id": 1
-}
-```
-
----
-
-### Unassign Scope
-
-`DELETE /api/v1/facilities/{facility-id}/scope-assignments/{facility-scope-id}`
-
-Soft-removes the scope assignment. The record is not deleted from the database but will no longer appear in any
-response.
-
-#### Path Parameters
-
-| Parameter           | Type | Description              |
-|---------------------|------|--------------------------|
-| `facility-id`       | Long | ID of the facility       |
-| `facility-scope-id` | Long | ID of the facility scope |
-
-#### Response `200 OK`
-
-Returns the `facility_id` as `id`.
-
-```json
-{
-  "success": true,
-  "id": 1
-}
-```
-
----
-
-### List Scope Assignments
-
-`GET /api/v1/facilities/{facility-id}/scope-assignments`
-
-Returns all active scope assignments for the given facility, including each scope's code, sort order, and locale
-translations.
-
-#### Path Parameters
-
-| Parameter     | Type | Description        |
-|---------------|------|--------------------|
-| `facility-id` | Long | ID of the facility |
-
-#### Response `200 OK`
-
-```json
-[
-  {
-    "facility_scope_id": 1,
-    "code": "RESORT",
-    "sort_order": 1,
-    "locales": [
-      {
-        "id": 1,
-        "locale_id": 1,
-        "name": "Resort",
-        "sort_order": 1
-      }
-    ]
-  },
-  {
-    "facility_scope_id": 2,
-    "code": "ROOM_CATEGORY",
-    "sort_order": 2,
-    "locales": [
-      {
-        "id": 2,
-        "locale_id": 1,
-        "name": "Room Category",
-        "sort_order": 2
-      }
-    ]
-  }
-]
 ```
 
 ---
@@ -621,11 +574,8 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                                    |
-|-------------|----------------------------|----------------------------------------------------------|
-| 400         | `VALIDATION_ERROR`         | Missing required fields or constraint violations         |
-| 400         | `INVALID_ARGUMENT`         | Invalid sort field or malformed request                  |
-| 404         | `ENTITY_NOT_FOUND`         | Facility, facility group, scope, or assignment not found |
-| 409         | `CONFLICT`                 | Scope is already actively assigned to this facility      |
-| 409         | `DATA_INTEGRITY_VIOLATION` | DB constraint violation (e.g. duplicate code)            |
-| 500         | `INTERNAL_SERVER_ERROR`    | Unexpected server error                                  |
+| HTTP Status | Error Code                 | Cause                                                                                                                                                                                          |
+|-------------|-----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs); missing/invalid required fields; or an unsupported `sortBy` query value                                  |
+| 404         | `ENTITY_NOT_FOUND`         | Facility not found, facility locale not found, the facility group referenced by `facility_group_id` not found (`create`), or the locale referenced by `locale_id` not found (locale creation)     |
+| 409         | `CONFLICT`                 | `code` already in use by another active facility (`create`); the facility already has a translation for the given `locale_id` (`create` locale, pre-checked); or `name` already in use by another active translation for the same locale (`create`/`update` locale, pre-checked) |

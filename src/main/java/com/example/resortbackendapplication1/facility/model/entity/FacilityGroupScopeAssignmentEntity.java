@@ -1,73 +1,47 @@
 package com.example.resortbackendapplication1.facility.model.entity;
 
+import com.example.resortbackendapplication1.commons.model.entity.AuditableEntity;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.time.Instant;
 
 @Getter
 @Setter
 @Entity
-@EntityListeners(AuditingEntityListener.class)
 @Table(name = "facility_group_scope_assignments")
-public class FacilityGroupScopeAssignmentEntity {
+public class FacilityGroupScopeAssignmentEntity extends AuditableEntity {
 
-    @EmbeddedId
-    private FacilityGroupScopeAssignmentId id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("facilityGroupId")
-    @JoinColumn(name = "facility_group_id")
+    @Setter(AccessLevel.NONE)
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "facility_group_id", nullable = false)
     private FacilityGroupEntity facilityGroupEntity;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("facilityScopeId")
-    @JoinColumn(name = "facility_scope_id")
-    private FacilityScopeEntity facilityScopeEntity;
-
-    @CreatedBy
-    @Column(name = "created_by")
-    private Long createdBy;
-
-    @CreatedDate
-    @Column(name = "created_at")
-    private Instant createdAt;
-
-    @LastModifiedBy
-    @Column(name = "updated_by")
-    private Long updatedBy;
-
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private Instant updatedAt;
-
-    @Version
-    @Column(name = "version")
-    private Long version;
-
-    @Column(name = "is_active")
-    private Boolean isActive = true;
-
-    @Column(name = "is_deleted")
-    private Boolean isDeleted = false;
-
-    @Column(name = "deleted_by")
-    private Long deletedBy;
-
-    @PrePersist
-    protected void onCreate() {
-        if (createdBy == null) createdBy = 1L;
-        if (updatedBy == null) updatedBy = createdBy;
+    /** Internal — call via {@link FacilityGroupEntity#addFacilityGroupScopeAssignmentEntity}. */
+    public void assignFacilityGroup(FacilityGroupEntity facilityGroupEntity) {
+        this.facilityGroupEntity = facilityGroupEntity;
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        if (updatedBy == null) updatedBy = createdBy;
+    /** Internal — call via {@link FacilityGroupEntity#removeFacilityGroupScopeAssignmentEntity}. */
+    public void unassignFacilityGroup() {
+        this.facilityGroupEntity = null;
+    }
+
+    @Setter(AccessLevel.NONE)
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "facility_scope_id", nullable = false)
+    private FacilityScopeEntity facilityScopeEntity;
+
+    /** Internal — call via {@link FacilityScopeEntity#addFacilityGroupScopeAssignmentEntity}. */
+    public void assignFacilityScope(FacilityScopeEntity facilityScopeEntity) {
+        this.facilityScopeEntity = facilityScopeEntity;
+    }
+
+    /** Internal — call via {@link FacilityScopeEntity#removeFacilityGroupScopeAssignmentEntity}. */
+    public void unassignFacilityScope() {
+        this.facilityScopeEntity = null;
     }
 }

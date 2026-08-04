@@ -1,7 +1,8 @@
 package com.example.resortbackendapplication1.currency.controller;
 
-import com.example.resortbackendapplication1.currency.dto.request.currency.currencylocale.CreateCurrencyLocaleRequest;
-import com.example.resortbackendapplication1.currency.dto.request.currency.currencylocale.UpdateCurrencyLocaleRequest;
+import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
+import com.example.resortbackendapplication1.currency.dto.request.currency.locale.CreateCurrencyLocaleRequest;
+import com.example.resortbackendapplication1.currency.dto.request.currency.locale.UpdateCurrencyLocaleRequest;
 import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
 import com.example.resortbackendapplication1.currency.model.entity.CurrencyLocaleEntity;
 import com.example.resortbackendapplication1.currency.service.CurrencyLocaleService;
@@ -9,6 +10,7 @@ import com.example.resortbackendapplication1.currency.service.CurrencyService;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.locale.service.LocaleService;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,14 +31,23 @@ public class CurrencyLocaleController {
         this.localeService = localeService;
     }
 
+    @GetMapping
+    public ResponseEntity<?> getAll(
+            @PathVariable("currency-id") Long currencyId,
+            @RequestParam(value = "localeCode", required = false) String localeCode,
+            @ParameterObject PaginatedRequest paginatedRequest) {
+        currencyService.getEntityById(currencyId);
+        return ResponseEntity.ok(currencyLocaleService.getAll(currencyId, localeCode, paginatedRequest));
+    }
+
     @PostMapping
     public ResponseEntity<?> create(
             @PathVariable("currency-id") Long currencyId,
             @Valid @RequestBody CreateCurrencyLocaleRequest request) {
-        CurrencyEntity currency = currencyService.getEntityById(currencyId);
+        CurrencyEntity currencyEntity = currencyService.getEntityById(currencyId);
         LocaleEntity localeEntity = localeService.getEntityById(request.getLocaleId());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(currencyLocaleService.create(currency, localeEntity, request));
+                .body(currencyLocaleService.create(request, currencyEntity, localeEntity));
     }
 
     @PutMapping("/{id}")

@@ -1,30 +1,24 @@
 package com.example.resortbackendapplication1.bedtype.model.mapper;
 
-import com.example.resortbackendapplication1.bedtype.dto.request.bedtype.CreateBedTypeRequest;
 import com.example.resortbackendapplication1.bedtype.dto.request.bedtype.BedTypeRequest;
+import com.example.resortbackendapplication1.bedtype.dto.request.bedtype.CreateBedTypeRequest;
 import com.example.resortbackendapplication1.bedtype.dto.request.bedtype.UpdateBedTypeRequest;
-import com.example.resortbackendapplication1.bedtype.dto.request.bedtype.bedtypelocale.CreateBedTypeLocaleRequest;
 import com.example.resortbackendapplication1.bedtype.model.dto.BedTypeDto;
 import com.example.resortbackendapplication1.bedtype.model.dto.BedTypeLocaleDto;
 import com.example.resortbackendapplication1.bedtype.model.entity.BedTypeEntity;
 import com.example.resortbackendapplication1.bedtype.model.entity.BedTypeLocaleEntity;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.commons.context.LocaleContext;
 import lombok.experimental.UtilityClass;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @UtilityClass
 public class BedTypeMapper {
 
-    public BedTypeEntity create(CreateBedTypeRequest request,
-                                Map<Long, LocaleEntity> localeEntityMap) {
+    public BedTypeEntity create(CreateBedTypeRequest request) {
         BedTypeEntity entity = new BedTypeEntity();
         entity.setCode(request.getCode());
         applyCommonFields(entity, request);
-        entity.setBedTypeLocaleEntities(mapLocales(request.getLocales(), entity, localeEntityMap));
         return entity;
     }
 
@@ -36,24 +30,34 @@ public class BedTypeMapper {
         entity.setSortOrder(request.getSortOrder());
     }
 
-    private Set<BedTypeLocaleEntity> mapLocales(List<CreateBedTypeLocaleRequest> locales,
-                                                 BedTypeEntity entity,
-                                                 Map<Long, LocaleEntity> localeEntityMap) {
-        return locales.stream()
-                .map(locale -> BedTypeLocaleMapper.create(locale, entity, localeEntityMap.get(locale.getLocaleId())))
-                .collect(Collectors.toSet());
-    }
-
-    public BedTypeDto toDto(BedTypeEntity entity) {
-        List<BedTypeLocaleDto> locales = entity.getBedTypeLocaleEntities().stream()
-                .map(BedTypeLocaleMapper::toDto)
-                .toList();
-
+    public BedTypeDto.BedTypeDtoBuilder toDto(BedTypeEntity entity) {
         return BedTypeDto.builder()
                 .id(entity.getId())
                 .code(entity.getCode())
                 .sortOrder(entity.getSortOrder())
-                .locales(locales)
-                .build();
+                .locale(singleLocale(entity));
+    }
+
+    private List<BedTypeLocaleEntity> activeLocales(BedTypeEntity entity) {
+        return entity.getBedTypeLocaleEntities().stream()
+                .filter(bedTypeLocaleEntity -> Boolean.TRUE.equals(bedTypeLocaleEntity.getIsActive())
+                        && Boolean.FALSE.equals(bedTypeLocaleEntity.getIsDeleted()))
+                .toList();
+    }
+
+    private BedTypeLocaleDto singleLocale(BedTypeEntity entity) {
+        BedTypeLocaleEntity matched = matchLocale(entity, LocaleContext.getLocaleId());
+        return matched == null ? null : BedTypeLocaleMapper.toDto(matched);
+    }
+
+    private BedTypeLocaleEntity matchLocale(BedTypeEntity entity, Long localeId) {
+        List<BedTypeLocaleEntity> activeLocales = activeLocales(entity);
+        return activeLocales.stream()
+                .filter(bedTypeLocaleEntity -> bedTypeLocaleEntity.getLocaleEntity().getId().equals(localeId))
+                .findFirst()
+                .orElseGet(() -> activeLocales.stream()
+                        .filter(bedTypeLocaleEntity -> "en".equals(bedTypeLocaleEntity.getLocaleEntity().getCode()))
+                        .findFirst()
+                        .orElse(null));
     }
 }

@@ -1,8 +1,8 @@
 package com.example.resortbackendapplication1.auth.service;
 
 import com.example.resortbackendapplication1.auth.dto.request.RegistrationRequest;
+import com.example.resortbackendapplication1.auth.model.entity.UserEntity;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
-import com.example.resortbackendapplication1.auth.model.enitty.UserEntity;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
 public interface UserService extends UserDetailsService {

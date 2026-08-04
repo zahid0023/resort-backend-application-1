@@ -1,6 +1,6 @@
 package com.example.resortbackendapplication1.unit.dto.request.unit;
 
-import com.example.resortbackendapplication1.unit.dto.request.unit.unitlocale.CreateUnitLocaleRequest;
+import com.example.resortbackendapplication1.unit.dto.request.unit.locale.UnitLocaleRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -10,29 +10,19 @@ import lombok.EqualsAndHashCode;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
 
-import java.math.BigDecimal;
-import java.util.List;
-
 @Data
 @EqualsAndHashCode(callSuper = false)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class CreateUnitRequest extends UnitRequest {
 
-    @NotNull
-    private Long unitTypeId;
-
     @NotBlank
     @Size(max = 50)
     private String code;
 
-    @NotBlank
-    @Size(max = 20)
-    private String symbol;
-
-    private Boolean isBaseUnit;
-
-    private BigDecimal conversionFactor;
+    @NotNull
+    private Long unitTypeId;
 
     @Valid
-    private List<CreateUnitLocaleRequest> locales;
+    @NotNull
+    private UnitLocaleRequest locale;
 }

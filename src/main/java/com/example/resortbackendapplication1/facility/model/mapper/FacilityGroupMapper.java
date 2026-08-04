@@ -1,31 +1,24 @@
 package com.example.resortbackendapplication1.facility.model.mapper;
 
-import com.example.resortbackendapplication1.facility.dto.request.facilitygroups.CreateFacilityGroupRequest;
-import com.example.resortbackendapplication1.facility.dto.request.facilitygroups.FacilityGroupRequest;
-import com.example.resortbackendapplication1.facility.dto.request.facilitygroups.UpdateFacilityGroupRequest;
-import com.example.resortbackendapplication1.facility.dto.request.facilitygroups.facilitygrouplocale.CreateFacilityGroupLocaleRequest;
+import com.example.resortbackendapplication1.commons.context.LocaleContext;
+import com.example.resortbackendapplication1.facility.dto.request.facilitygroup.CreateFacilityGroupRequest;
+import com.example.resortbackendapplication1.facility.dto.request.facilitygroup.FacilityGroupRequest;
+import com.example.resortbackendapplication1.facility.dto.request.facilitygroup.UpdateFacilityGroupRequest;
 import com.example.resortbackendapplication1.facility.model.dto.FacilityGroupDto;
 import com.example.resortbackendapplication1.facility.model.dto.FacilityGroupLocaleDto;
-import com.example.resortbackendapplication1.facility.model.dto.FacilityGroupScopeAssignmentDto;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupLocaleEntity;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import lombok.experimental.UtilityClass;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @UtilityClass
 public class FacilityGroupMapper {
 
-    public FacilityGroupEntity create(CreateFacilityGroupRequest request,
-                                      Map<Long, LocaleEntity> localeEntityMap) {
+    public FacilityGroupEntity create(CreateFacilityGroupRequest request) {
         FacilityGroupEntity entity = new FacilityGroupEntity();
         entity.setCode(request.getCode());
         applyCommonFields(entity, request);
-        entity.setFacilityGroupLocaleEntities(mapLocales(request.getLocales(), entity, localeEntityMap));
         return entity;
     }
 
@@ -40,25 +33,7 @@ public class FacilityGroupMapper {
         entity.setIconMeta(request.getIconMeta());
     }
 
-    private Set<FacilityGroupLocaleEntity> mapLocales(List<CreateFacilityGroupLocaleRequest> locales,
-                                                       FacilityGroupEntity entity,
-                                                       Map<Long, LocaleEntity> localeEntityMap) {
-        if (locales == null || locales.isEmpty()) return new java.util.LinkedHashSet<>();
-        return locales.stream()
-                .map(locale -> FacilityGroupLocaleMapper.create(locale, entity, localeEntityMap.get(locale.getLocaleId())))
-                .collect(Collectors.toSet());
-    }
-
-    public FacilityGroupDto toDto(FacilityGroupEntity entity) {
-        List<FacilityGroupLocaleDto> locales = entity.getFacilityGroupLocaleEntities().stream()
-                .map(FacilityGroupLocaleMapper::toDto)
-                .toList();
-
-        List<FacilityGroupScopeAssignmentDto> scopeAssignments = entity.getFacilityGroupScopeAssignmentEntities().stream()
-                .filter(a -> Boolean.TRUE.equals(a.getIsActive()) && Boolean.FALSE.equals(a.getIsDeleted()))
-                .map(FacilityGroupScopeAssignmentMapper::toDto)
-                .toList();
-
+    public FacilityGroupDto.FacilityGroupDtoBuilder toDto(FacilityGroupEntity entity) {
         return FacilityGroupDto.builder()
                 .id(entity.getId())
                 .code(entity.getCode())
@@ -66,8 +41,29 @@ public class FacilityGroupMapper {
                 .iconType(entity.getIconType())
                 .iconValue(entity.getIconValue())
                 .iconMeta(entity.getIconMeta())
-                .locales(locales)
-                .scopeAssignments(scopeAssignments)
-                .build();
+                .locale(singleLocale(entity));
+    }
+
+    private FacilityGroupLocaleDto singleLocale(FacilityGroupEntity entity) {
+        FacilityGroupLocaleEntity matched = matchLocale(entity, LocaleContext.getLocaleId());
+        return matched == null ? null : FacilityGroupLocaleMapper.toDto(matched);
+    }
+
+    private List<FacilityGroupLocaleEntity> activeLocales(FacilityGroupEntity entity) {
+        return entity.getFacilityGroupLocaleEntities().stream()
+                .filter(facilityGroupLocaleEntity -> Boolean.TRUE.equals(facilityGroupLocaleEntity.getIsActive())
+                        && Boolean.FALSE.equals(facilityGroupLocaleEntity.getIsDeleted()))
+                .toList();
+    }
+
+    private FacilityGroupLocaleEntity matchLocale(FacilityGroupEntity entity, Long localeId) {
+        List<FacilityGroupLocaleEntity> activeLocales = activeLocales(entity);
+        return activeLocales.stream()
+                .filter(facilityGroupLocaleEntity -> facilityGroupLocaleEntity.getLocaleEntity().getId().equals(localeId))
+                .findFirst()
+                .orElseGet(() -> activeLocales.stream()
+                        .filter(facilityGroupLocaleEntity -> "en".equals(facilityGroupLocaleEntity.getLocaleEntity().getCode()))
+                        .findFirst()
+                        .orElse(null));
     }
 }

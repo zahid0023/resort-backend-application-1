@@ -12,6 +12,8 @@ import org.hibernate.annotations.ColumnDefault;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import static com.example.resortbackendapplication1.commons.model.entity.EntityRelationshipHelper.*;
+
 @Getter
 @Setter
 @Entity
@@ -28,6 +30,33 @@ public class PriceTypeEntity extends AuditableEntity {
     @Column(name = "sort_order", nullable = false)
     private Integer sortOrder = 0;
 
-    @OneToMany(mappedBy = "priceTypeEntity", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "priceTypeEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<PriceTypeLocaleEntity> priceTypeLocaleEntities = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "priceTypeEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<PriceTypeScopeAssignmentEntity> priceTypeScopeAssignmentEntities = new LinkedHashSet<>();
+
+    // -------------------------------------------------------------------------
+    // PriceType Locale relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addPriceTypeLocaleEntity(PriceTypeLocaleEntity entity) {
+        addChild(priceTypeLocaleEntities, entity, PriceTypeLocaleEntity::assignPriceType, this);
+    }
+
+    public void removePriceTypeLocaleEntity(PriceTypeLocaleEntity entity) {
+        removeChild(priceTypeLocaleEntities, entity, (child, ignored) -> child.unassignPriceType());
+    }
+
+    // -------------------------------------------------------------------------
+    // PriceTypeScopeAssignment relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addPriceTypeScopeAssignmentEntity(PriceTypeScopeAssignmentEntity entity) {
+        addChild(priceTypeScopeAssignmentEntities, entity, PriceTypeScopeAssignmentEntity::assignPriceType, this);
+    }
+
+    public void removePriceTypeScopeAssignmentEntity(PriceTypeScopeAssignmentEntity entity) {
+        removeChild(priceTypeScopeAssignmentEntities, entity, (child, ignored) -> child.unassignPriceType());
+    }
 }

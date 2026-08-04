@@ -11,19 +11,17 @@ import com.example.resortbackendapplication1.commons.dto.response.PaginatedRespo
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 
-import java.util.Map;
-
 public interface CityService {
 
     SuccessResponse create(CreateCityRequest request,
                            CountryEntity countryEntity,
-                           Map<Long, LocaleEntity> localeEntityMap);
+                           LocaleEntity localeEntity);
 
     CityEntity getEntityById(Long id);
 
     CityResponse getById(Long id);
 
-    PaginatedResponse<CityDto> getAll(CityFilterRequest request, Long localeId);
+    PaginatedResponse<CityDto> getAll(CityFilterRequest request);
 
     SuccessResponse update(CityEntity entity,
                            UpdateCityRequest request);

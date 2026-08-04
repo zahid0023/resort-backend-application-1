@@ -2,38 +2,57 @@
 
 Base URL: `/api/v1/locales`
 
-Locales represent language or regional settings used across the platform (e.g., `en`, `fr`, `bn`). They are referenced
-by country and city locale translations. All records support soft-delete — deleted records are hidden from all
-responses.
+Locales represent language and region identifiers used across the platform. Each locale has a unique
+code (e.g., `en`, `bn`) and a display name. Locales are referenced by country, city, currency, unit,
+and unit type entities to provide their locale-specific translations. All records support soft-delete —
+deleted records are hidden from all responses. The `en` locale specifically cannot be deleted through
+`DELETE /api/v1/locales/{id}` (rejected with `409 CONFLICT`) — it's the platform's required fallback
+whenever a requested locale has no translation.
+
+**`Accept-Language` is required on every endpoint below, with no exceptions** — a request missing (or with
+a blank) `Accept-Language` header is rejected with `400 INVALID_ARGUMENT` before it reaches any endpoint
+(see [Error Responses](#error-responses)). This applies even to `GET /api/v1/locales` itself, the typical
+first call a frontend makes to discover which locales exist (see the
+[Frontend Localization Guide](frontend-localization-guide.md#4-discovering-available-locales)) — send a
+hardcoded default (e.g. `en`) for that bootstrap call if no stored user preference exists yet. No endpoint
+on this resource actually *uses* the header's value (Locale has no locale-of-its-own to scope), so its
+presence is the only thing that's ever checked here.
 
 ---
 
 ## Endpoints
 
-| Method | Path                   | Description           |
-|--------|------------------------|-----------------------|
-| POST   | `/api/v1/locales`      | Create a locale       |
-| GET    | `/api/v1/locales/{id}` | Get a locale          |
-| GET    | `/api/v1/locales`      | List / search locales |
-| PUT    | `/api/v1/locales/{id}` | Update a locale       |
-| DELETE | `/api/v1/locales/{id}` | Delete a locale       |
+| Method | Path                    | Description           |
+|--------|-------------------------|-----------------------|
+| POST   | `/api/v1/locales`       | Create a locale       |
+| GET    | `/api/v1/locales`       | List / search locales |
+| GET    | `/api/v1/locales/{id}`  | Get a locale          |
+| GET    | `/api/v1/locales/count` | Count active locales  |
+| PUT    | `/api/v1/locales/{id}`  | Update a locale       |
+| DELETE | `/api/v1/locales/{id}`  | Delete a locale       |
 
 ---
 
 ## Data Model
 
-| Field        | Type    | Required | Constraints           | Description                               |
-|--------------|---------|----------|-----------------------|-------------------------------------------|
-| `id`         | Long    | —        | read-only             | Auto-generated identifier                 |
-| `code`       | String  | Yes      | max 50 chars          | Short identifier (e.g., `en`, `fr`, `bn`) |
-| `name`       | String  | Yes      | max 255 chars         | Display name (e.g., `English`, `French`)  |
-| `sort_order` | Integer | Yes      | not null, default `0` | Display order                             |
+### Locale
+
+| Field        | Type    | Required | Constraints          | Description                                                |
+|--------------|---------|----------|----------------------|------------------------------------------------------------|
+| `id`         | Long    | —        | read-only            | Auto-generated identifier                                  |
+| `code`       | String  | Yes      | max 50 chars, unique | Locale code (e.g., `en`, `bn`); set at creation, immutable |
+| `name`       | String  | Yes      | max 255 chars        | Display name of the locale (e.g., `English`)               |
+| `sort_order` | Integer | Yes      | not null             | Display order                                              |
 
 ---
 
 ## Create Locale
 
 `POST /api/v1/locales`
+
+Creates a new locale. The `code` field is set at creation and cannot be changed after that. `code`
+must be unique among active, non-deleted locales — attempting to reuse an existing code returns a
+`409 CONFLICT`.
 
 ### Request Body
 
@@ -68,6 +87,8 @@ responses.
 
 `GET /api/v1/locales/{id}`
 
+Returns a single active locale by its ID.
+
 ### Path Parameters
 
 | Parameter | Type | Description      |
@@ -78,7 +99,7 @@ responses.
 
 ```json
 {
-  "locale": {
+  "data": {
     "id": 1,
     "code": "en",
     "name": "English",
@@ -89,23 +110,55 @@ responses.
 
 ---
 
+## Count Active Locales
+
+`GET /api/v1/locales/count`
+
+Returns how many active, non-deleted locales exist, together with each one's `code`. `count` is always
+`codes.length` — both come from the same query, so there's no separate tally to drift out of sync with
+the list.
+
+### Response `200 OK`
+
+```json
+{
+  "data": {
+    "count": 2,
+    "codes": [
+      "en",
+      "bn"
+    ]
+  }
+}
+```
+
+---
+
 ## List / Search Locales
 
 `GET /api/v1/locales`
 
-Returns a paginated, filterable list of active (non-deleted) locales. All filter parameters are optional. Multiple
-filters are combined with AND. Each filter performs a case-insensitive partial match.
+Returns a paginated, filterable list of active (non-deleted) locales. All filter parameters are
+optional; omitting them returns all locales. Multiple filters are combined with AND. Each filter
+performs a case-insensitive partial match.
+
+> **Note:** `id` is not a selectable `sortBy` value — passing `?sortBy=id` throws
+> `400 INVALID_ARGUMENT: Invalid sort field: id`. It's used only as the implicit sort when `sortBy` is
+> omitted entirely.
 
 ### Query Parameters
 
-| Parameter  | Type   | Default | Constraints                                    | Description                                |
-|------------|--------|---------|------------------------------------------------|--------------------------------------------|
-| `code`     | String | —       | —                                              | Filter by code (partial, case-insensitive) |
-| `name`     | String | —       | —                                              | Filter by name (partial, case-insensitive) |
-| `page`     | int    | `0`     | >= 0                                           | Zero-based page index                      |
-| `size`     | int    | `10`    | 1 – 50                                         | Number of items per page                   |
-| `sort_by`  | String | `id`    | `id`, `code`, `name`, `sortOrder`, `createdAt` | Field to sort by                           |
-| `sort_dir` | String | `ASC`   | `ASC`, `DESC`                                  | Sort direction                             |
+> **Note:** Query parameters are **camelCase** (Java field names via Spring's plain `DataBinder`), not
+> the snake_case used in JSON bodies (which goes through Jackson's `@JsonNaming` instead).
+
+| Parameter | Type   | Default         | Constraints                                                    | Description                                        |
+|-----------|--------|-----------------|----------------------------------------------------------------|----------------------------------------------------|
+| `code`    | String | —               | —                                                              | Filter by locale code (partial, case-insensitive)  |
+| `name`    | String | —               | —                                                              | Filter by display name (partial, case-insensitive) |
+| `page`    | int    | `0`             | >= 0                                                           | Zero-based page index                              |
+| `size`    | int    | `10`            | 1 – 50                                                         | Number of items per page                           |
+| `sortBy`  | String | `id` (implicit) | `createdAt`, `sortOrder`, `code`, `name` (`id` NOT selectable) | Field to sort by                                   |
+| `sortDir` | String | `ASC`           | `ASC`, `DESC`                                                  | Sort direction                                     |
 
 ### Response `200 OK`
 
@@ -120,8 +173,8 @@ filters are combined with AND. Each filter performs a case-insensitive partial m
     },
     {
       "id": 2,
-      "code": "fr",
-      "name": "French",
+      "code": "bn",
+      "name": "Bengali",
       "sort_order": 2
     }
   ],
@@ -130,7 +183,17 @@ filters are combined with AND. Each filter performs a case-insensitive partial m
   "total_elements": 2,
   "page_size": 10,
   "has_next": false,
-  "has_previous": false
+  "has_previous": false,
+  "sortable_fields": [
+    "createdAt",
+    "sortOrder",
+    "code",
+    "name"
+  ],
+  "searchable_fields": [
+    "code",
+    "name"
+  ]
 }
 ```
 
@@ -139,6 +202,8 @@ filters are combined with AND. Each filter performs a case-insensitive partial m
 ## Update Locale
 
 `PUT /api/v1/locales/{id}`
+
+Updates `name` and `sort_order`. The `code` field is set at creation and cannot be changed.
 
 ### Path Parameters
 
@@ -150,7 +215,6 @@ filters are combined with AND. Each filter performs a case-insensitive partial m
 
 ```json
 {
-  "code": "en",
   "name": "English (US)",
   "sort_order": 1
 }
@@ -160,7 +224,6 @@ filters are combined with AND. Each filter performs a case-insensitive partial m
 
 | Field        | Type    | Required | Validation               |
 |--------------|---------|----------|--------------------------|
-| `code`       | String  | Yes      | Not blank, max 50 chars  |
 | `name`       | String  | Yes      | Not blank, max 255 chars |
 | `sort_order` | Integer | Yes      | Not null                 |
 
@@ -179,7 +242,8 @@ filters are combined with AND. Each filter performs a case-insensitive partial m
 
 `DELETE /api/v1/locales/{id}`
 
-Soft-deletes the locale. The record is not removed from the database but will no longer appear in any response.
+Soft-deletes the locale. The record is not removed from the database but will no longer appear in
+any response.
 
 ### Path Parameters
 
@@ -211,8 +275,8 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                         |
-|-------------|----------------------------|-----------------------------------------------|
-| 400         | `INVALID_ARGUMENT`         | Missing required fields or invalid sort field |
-| 404         | `ENTITY_NOT_FOUND`         | Locale not found or already deleted           |
-| 409         | `DATA_INTEGRITY_VIOLATION` | Constraint violation (e.g. duplicate code)    |
+| HTTP Status | Error Code         | Cause                                                                                                                                                                         |
+|-------------|--------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 400         | `INVALID_ARGUMENT` | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing required fields; or an unsupported `sortBy` query value |
+| 404         | `ENTITY_NOT_FOUND` | Locale not found, or already deleted                                                                                                                                          |
+| 409         | `CONFLICT`         | `code` already in use by another active locale (checked explicitly in `create`); or an attempt to delete the `en` locale (checked explicitly in `delete`)                     |

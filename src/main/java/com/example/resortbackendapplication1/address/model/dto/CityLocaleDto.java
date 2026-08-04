@@ -16,9 +16,14 @@ import tools.jackson.databind.annotation.JsonNaming;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class CityLocaleDto {
+
     private Long id;
+
     private LocaleDto locale;
+
     private String name;
+
     private String description;
+
     private Integer sortOrder;
 }

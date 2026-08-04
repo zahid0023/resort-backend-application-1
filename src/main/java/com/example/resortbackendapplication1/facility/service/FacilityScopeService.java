@@ -2,16 +2,18 @@ package com.example.resortbackendapplication1.facility.service;
 
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
-import com.example.resortbackendapplication1.facility.dto.request.facilityscopes.FacilityScopeFilterRequest;
-import com.example.resortbackendapplication1.facility.dto.request.facilityscopes.UpdateFacilityScopeRequest;
+import com.example.resortbackendapplication1.facility.dto.request.facilityscope.CreateFacilityScopeRequest;
+import com.example.resortbackendapplication1.facility.dto.request.facilityscope.FacilityScopeFilterRequest;
+import com.example.resortbackendapplication1.facility.dto.request.facilityscope.UpdateFacilityScopeRequest;
 import com.example.resortbackendapplication1.facility.dto.response.facilityscopes.FacilityScopeResponse;
 import com.example.resortbackendapplication1.facility.model.dto.FacilityScopeDto;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeEntity;
-
-import java.util.List;
-import java.util.Set;
+import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 
 public interface FacilityScopeService {
+
+    SuccessResponse create(CreateFacilityScopeRequest request,
+                           LocaleEntity localeEntity);
 
     FacilityScopeEntity getEntityById(Long id);
 
@@ -19,7 +21,8 @@ public interface FacilityScopeService {
 
     PaginatedResponse<FacilityScopeDto> getAll(FacilityScopeFilterRequest request);
 
-    SuccessResponse update(FacilityScopeEntity entity, UpdateFacilityScopeRequest request);
+    SuccessResponse update(FacilityScopeEntity entity,
+                           UpdateFacilityScopeRequest request);
 
-    List<FacilityScopeEntity> getAll(Set<Long> ids);
+    SuccessResponse delete(FacilityScopeEntity entity);
 }

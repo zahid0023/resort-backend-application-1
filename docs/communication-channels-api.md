@@ -2,78 +2,69 @@
 
 Base URL: `/api/v1/communication-channels`
 
-Communication channels represent the mediums through which a resort can be contacted (e.g. Phone, Email, WhatsApp,
-Instagram). They are master data pre-seeded with 12 channels and can be extended by administrators. Names and
-descriptions are locale-specific and embedded in every response via the `locales` array. Boolean flags (`is_phone`,
-`is_email`, `is_url`, `is_clickable`) allow the UI to render and validate contact values appropriately. All records
-support soft-delete — deleted records are hidden from all responses.
+Communication channels represent the kinds of contact methods a resort can expose (e.g. `PHONE`, `MOBILE`,
+`EMAIL`, `WHATSAPP`, `WEBSITE`, `FACEBOOK`, `INSTAGRAM`, `X`, `LINKEDIN`, `TELEGRAM`, `WECHAT`, `FAX`). Each
+channel is identified by a unique `code` and carries three boolean classification flags (`is_url`, `is_phone`,
+`is_email`) plus a UI hint (`is_clickable`) describing how the value should be rendered/handled by clients. A
+channel's display name and description are locale-specific and are managed through a companion sub-resource —
+Communication Channel Locales — reached via `/api/v1/communication-channels/{communication-channel-id}/locales`.
+All records support soft-delete — deleted records are hidden from all responses.
+
+**`Accept-Language` is required on every endpoint below, with no exceptions** — a request missing (or with
+a blank) `Accept-Language` header is rejected with `400 INVALID_ARGUMENT` before it reaches any endpoint
+(see [Error Responses](#error-responses)). What differs per endpoint is whether the header's *value* is
+actually used to shape the response:
+
+- **`GET /{id}` (Get Communication Channel)** and **`GET` (List/Search Communication Channels)** — the
+  header's value selects exactly one locale translation for the channel's `locale` field: an exact match if
+  the channel has one, otherwise `en`, otherwise `null`.
+- **`GET /{communication-channel-id}/locales` (List Communication Channel Locales)** — the header must be
+  present, but its value has no effect; this endpoint returns every translation (optionally filtered by
+  `localeCode`), not a single Accept-Language-matched one.
+- **`POST`/`PUT`/`DELETE`** — the header must be present but its value has no effect at all.
 
 ---
 
 ## Endpoints
 
-| Method | Path                                                       | Description                          |
-|--------|------------------------------------------------------------|--------------------------------------|
-| POST   | `/api/v1/communication-channels`                           | Create a communication channel       |
-| GET    | `/api/v1/communication-channels`                           | List / search communication channels |
-| GET    | `/api/v1/communication-channels/{id}`                      | Get a communication channel          |
-| PUT    | `/api/v1/communication-channels/{id}`                      | Update a communication channel       |
-| DELETE | `/api/v1/communication-channels/{id}`                      | Delete a communication channel       |
-| POST   | `/api/v1/communication-channels/{channel-id}/locales`      | Create a channel locale              |
-| PUT    | `/api/v1/communication-channels/{channel-id}/locales/{id}` | Update a channel locale              |
-| DELETE | `/api/v1/communication-channels/{channel-id}/locales/{id}` | Delete a channel locale              |
+| Method | Path                                                                    | Description                             |
+|--------|----------------------------------------------------------------------------|----------------------------------------------|
+| POST   | `/api/v1/communication-channels`                                            | Create a communication channel                |
+| GET    | `/api/v1/communication-channels`                                            | List / search communication channels          |
+| GET    | `/api/v1/communication-channels/{id}`                                       | Get a communication channel                   |
+| PUT    | `/api/v1/communication-channels/{id}`                                       | Update a communication channel                |
+| DELETE | `/api/v1/communication-channels/{id}`                                       | Delete a communication channel                |
+| GET    | `/api/v1/communication-channels/{communication-channel-id}/locales`         | List a communication channel's locales        |
+| POST   | `/api/v1/communication-channels/{communication-channel-id}/locales`         | Create a communication channel locale         |
+| PUT    | `/api/v1/communication-channels/{communication-channel-id}/locales/{id}`    | Update a communication channel locale         |
+| DELETE | `/api/v1/communication-channels/{communication-channel-id}/locales/{id}`    | Delete a communication channel locale         |
 
 ---
 
 ## Data Model
 
-### Communication Channel
+### CommunicationChannel
 
-| Field          | Type    | Required | Constraints              | Description                                                                 |
-|----------------|---------|----------|--------------------------|-----------------------------------------------------------------------------|
-| `id`           | Long    | —        | read-only                | Auto-generated identifier                                                   |
-| `code`         | String  | Yes      | max 50 chars, unique     | Machine-readable code (e.g. `PHONE`, `EMAIL`); set on create, not updatable |
-| `sort_order`   | Integer | Yes      | >= 0, default `0`        | Display order                                                               |
-| `is_url`       | Boolean | Yes      | not null                 | `true` if the contact value is a URL (e.g. website, social media profile)   |
-| `is_phone`     | Boolean | Yes      | not null                 | `true` if the contact value is a phone number (e.g. PHONE, MOBILE, FAX)     |
-| `is_email`     | Boolean | Yes      | not null                 | `true` if the contact value is an email address                             |
-| `is_clickable` | Boolean | Yes      | not null, default `true` | `true` if the value should be rendered as a clickable link in the UI        |
-| `locales`      | Array   | —        | read-only                | All active locale translations for this channel                             |
+| Field          | Type    | Required | Constraints                                                             | Description                                                                                                                                        |
+|----------------|---------|----------|------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| `id`           | Long    | —        | read-only                                                                     | Auto-generated identifier                                                                                                                              |
+| `code`         | String  | Yes      | max 50 chars, unique among active records; set at creation, immutable        | Internal code (e.g. `PHONE`, `MOBILE`, `EMAIL`, `WHATSAPP`, `WEBSITE`, `FACEBOOK`, `INSTAGRAM`, `X`, `LINKEDIN`, `TELEGRAM`, `WECHAT`, `FAX`)          |
+| `sort_order`   | Integer | Yes      | default 0                                                                     | Display order                                                                                                                                          |
+| `is_url`       | Boolean | Yes      | default `false`                                                               | Whether this channel expects a URL value (e.g. `WEBSITE`, `FACEBOOK`, `INSTAGRAM`)                                                                     |
+| `is_phone`     | Boolean | Yes      | default `false`                                                               | Whether this channel represents a phone number (e.g. `PHONE`, `MOBILE`, `WHATSAPP`)                                                                    |
+| `is_email`     | Boolean | Yes      | default `false`                                                               | Whether this channel represents an email address (e.g. `EMAIL`)                                                                                        |
+| `is_clickable` | Boolean | Yes      | default `true`                                                                | Whether the value should be rendered as a clickable link/action in the UI                                                                              |
+| `locale`       | Object  | —        | nullable; see CommunicationChannelLocale below                               | The single translation matching the request's `Accept-Language` (falls back to `en`, then `null` if the channel has no translations at all)           |
 
-### Communication Channel Locale
+### CommunicationChannelLocale
 
-| Field         | Type    | Required | Constraints           | Description                                                        |
-|---------------|---------|----------|-----------------------|--------------------------------------------------------------------|
-| `id`          | Long    | —        | read-only             | Auto-generated identifier                                          |
-| `locale_id`   | Long    | Yes      | must exist            | ID of an existing active locale; set on create only, not updatable |
-| `name`        | String  | Yes      | max 100 chars         | Localized display name of the channel                              |
-| `description` | String  | No       | unlimited             | Localized description; omitted from response if null               |
-| `sort_order`  | Integer | Yes      | not null, default `0` | Display order for this locale entry                                |
-
-> Each locale may only be added once per channel. The pair `(channel_id, locale_id)` is unique — attempting to
-> add the same locale twice will return `409 DATA_INTEGRITY_VIOLATION`.
-
----
-
-## Pre-seeded Communication Channels
-
-The following 12 channels are seeded automatically (English locale only). Additional locale translations can be
-added via the locale endpoints after seeding.
-
-| Code        | is_phone | is_email | is_url | is_clickable | English Name | English Description                              |
-|-------------|----------|----------|--------|--------------|--------------|--------------------------------------------------|
-| `PHONE`     | true     | false    | false  | true         | Phone        | Fixed-line telephone number for direct calls.    |
-| `MOBILE`    | true     | false    | false  | true         | Mobile       | Mobile phone number for calls and SMS.           |
-| `WHATSAPP`  | true     | false    | false  | true         | WhatsApp     | WhatsApp number for instant messaging and calls. |
-| `EMAIL`     | false    | true     | false  | true         | Email        | Email address for written correspondence.        |
-| `WEBSITE`   | false    | false    | true   | true         | Website      | Official website URL of the resort.              |
-| `FACEBOOK`  | false    | false    | true   | true         | Facebook     | Facebook page or profile URL.                    |
-| `INSTAGRAM` | false    | false    | true   | true         | Instagram    | Instagram profile URL.                           |
-| `X`         | false    | false    | true   | true         | X (Twitter)  | X (formerly Twitter) profile URL.                |
-| `LINKEDIN`  | false    | false    | true   | true         | LinkedIn     | LinkedIn company or profile URL.                 |
-| `TELEGRAM`  | false    | false    | false  | true         | Telegram     | Telegram username or group for messaging.        |
-| `WECHAT`    | false    | false    | false  | false        | WeChat       | WeChat ID for messaging.                         |
-| `FAX`       | true     | false    | false  | false        | Fax          | Fax number for document transmission.            |
+| Field         | Type    | Required | Constraints                                      | Description                                                                    |
+|---------------|---------|----------|---------------------------------------------------|----------------------------------------------------------------------------------|
+| `id`          | Long    | —        | read-only                                        | Auto-generated identifier                                                        |
+| `locale`      | Locale  | —        | read-only, resolved from `locale_id` at creation | The locale this translation is written in (`id`, `code`, `name`, `sort_order`)   |
+| `name`        | String  | Yes      | max 100 chars                                    | Localized display name of the communication channel                              |
+| `description` | String  | Yes      | not null (defaults to `""`)                      | Localized description                                                            |
+| `sort_order`  | Integer | Yes      | default 0                                        | Display order among locale entries                                               |
 
 ---
 
@@ -81,62 +72,58 @@ added via the locale endpoints after seeding.
 
 `POST /api/v1/communication-channels`
 
-Creates a communication channel along with its locale-specific translations in one request. All provided `locale_id`
-values must reference existing, active locales. The `code` value must be unique across all channels.
+Creates a new communication channel together with exactly **one** initial locale translation. `code` must be
+unique among active, non-deleted communication channels — attempting to reuse an existing code returns
+`409 CONFLICT`.
 
-### Request Fields
-
-| Field          | Type    | Required | Validation              |
-|----------------|---------|----------|-------------------------|
-| `code`         | String  | Yes      | Not blank, max 50 chars |
-| `sort_order`   | Integer | Yes      | Not null, >= 0          |
-| `is_url`       | Boolean | Yes      | Not null                |
-| `is_phone`     | Boolean | Yes      | Not null                |
-| `is_email`     | Boolean | Yes      | Not null                |
-| `is_clickable` | Boolean | Yes      | Not null                |
-| `locales`      | Array   | No       | See locale fields below |
-
-**Locale fields (`locales[]`):**
-
-| Field         | Type    | Required | Validation               |
-|---------------|---------|----------|--------------------------|
-| `locale_id`   | Long    | Yes      | Not null, must exist     |
-| `name`        | String  | Yes      | Not blank, max 100 chars |
-| `description` | String  | No       | —                        |
-| `sort_order`  | Integer | Yes      | Not null                 |
+**The initial translation is always attached to the `en` locale, resolved by the server — the request
+carries no `locale_id` at all.** There is no option to submit multiple locales at creation time.
+Additional languages are added afterward via the Communication Channel Locales sub-resource below.
 
 ### Request Body
 
 ```json
 {
-  "code": "VIBER",
-  "sort_order": 13,
+  "code": "WHATSAPP",
+  "sort_order": 3,
   "is_url": false,
   "is_phone": true,
   "is_email": false,
   "is_clickable": true,
-  "locales": [
-    {
-      "locale_id": 1,
-      "name": "Viber",
-      "description": "Viber number for messaging and calls.",
-      "sort_order": 1
-    },
-    {
-      "locale_id": 2,
-      "name": "ভাইবার",
-      "sort_order": 2
-    }
-  ]
+  "locale": {
+    "name": "WhatsApp",
+    "description": "WhatsApp number for instant messaging and calls.",
+    "sort_order": 3
+  }
 }
 ```
+
+### Request Fields
+
+| Field          | Type    | Required | Validation                                                                                 |
+|----------------|---------|----------|------------------------------------------------------------------------------------------------|
+| `code`         | String  | Yes      | Not blank, max 50 chars, unique among active records                                            |
+| `sort_order`   | Integer | Yes      | Not null                                                                                          |
+| `is_url`       | Boolean | Yes      | Not null                                                                                          |
+| `is_phone`     | Boolean | Yes      | Not null                                                                                          |
+| `is_email`     | Boolean | Yes      | Not null                                                                                          |
+| `is_clickable` | Boolean | Yes      | Not null                                                                                          |
+| `locale`       | Object  | Yes      | Not null; validated (see below) — no `locale_id` field; always resolved to the `en` locale        |
+
+**Locale entry (`locale`):**
+
+| Field         | Type    | Required | Validation               |
+|---------------|---------|----------|--------------------------|
+| `name`        | String  | Yes      | Not blank, max 100 chars |
+| `description` | String  | Yes      | Not null                 |
+| `sort_order`  | Integer | Yes      | Not null                 |
 
 ### Response `201 Created`
 
 ```json
 {
   "success": true,
-  "id": 13
+  "id": 3
 }
 ```
 
@@ -146,43 +133,41 @@ values must reference existing, active locales. The `code` value must be unique 
 
 `GET /api/v1/communication-channels/{id}`
 
-Returns a single active (non-deleted) communication channel with all its active locale translations.
+Returns a single active communication channel by its ID. `locale` is the one translation matching the
+request's `Accept-Language` header (falls back to `en`, then `null` if the channel has no translations at
+all). To fetch every translation a channel has, use
+[List Communication Channel Locales](#list-communication-channel-locales) below.
 
 ### Path Parameters
 
 | Parameter | Type | Description                     |
-|-----------|------|---------------------------------|
-| `id`      | Long | ID of the communication channel |
+|-----------|------|-----------------------------------|
+| `id`      | Long | ID of the communication channel   |
 
 ### Response `200 OK`
-
-Optional fields (locale `description`) are omitted from the response when not set.
 
 ```json
 {
   "data": {
-    "id": 1,
-    "code": "PHONE",
-    "sort_order": 1,
+    "id": 3,
+    "code": "WHATSAPP",
+    "sort_order": 3,
     "is_url": false,
     "is_phone": true,
     "is_email": false,
     "is_clickable": true,
-    "locales": [
-      {
+    "locale": {
+      "id": 3,
+      "locale": {
         "id": 1,
-        "locale_id": 1,
-        "name": "Phone",
-        "description": "Fixed-line telephone number for direct calls.",
+        "code": "en",
+        "name": "English",
         "sort_order": 1
       },
-      {
-        "id": 2,
-        "locale_id": 2,
-        "name": "ফোন",
-        "sort_order": 2
-      }
-    ]
+      "name": "WhatsApp",
+      "description": "WhatsApp number for instant messaging and calls.",
+      "sort_order": 3
+    }
   }
 }
 ```
@@ -193,23 +178,37 @@ Optional fields (locale `description`) are omitted from the response when not se
 
 `GET /api/v1/communication-channels`
 
-Returns a paginated, filterable list of active (non-deleted) communication channels. Each item includes all active
-locale translations. All filter parameters are optional; omitting them returns all channels. The `code` filter
-performs a case-insensitive partial match.
+Returns a paginated, filterable list of active (non-deleted) communication channels. All filter parameters
+are optional; omitting them returns all channels. Multiple filters are combined with AND. Each `LIKE`-type
+filter performs a case-insensitive partial match. `Accept-Language` selects each channel's `locale` field the
+same way as `GET /{id}` (exact match, falls back to `en`, then `null`).
+
+> **Note:** `id` is not a selectable `sortBy` value — passing `?sortBy=id` throws
+> `400 INVALID_ARGUMENT: Invalid sort field: id`. It's used only as the implicit sort when `sortBy` is
+> omitted entirely.
 
 ### Query Parameters
 
-| Parameter  | Type   | Default | Constraints                            | Description                                |
-|------------|--------|---------|----------------------------------------|--------------------------------------------|
-| `code`     | String | —       | —                                      | Filter by code (partial, case-insensitive) |
-| `page`     | int    | `0`     | >= 0                                   | Zero-based page index                      |
-| `size`     | int    | `10`    | 1 – 50                                 | Number of items per page                   |
-| `sort_by`  | String | `id`    | `id`, `code`, `sortOrder`, `createdAt` | Field to sort by                           |
-| `sort_dir` | String | `ASC`   | `ASC`, `DESC`                          | Sort direction                             |
+> **Note:** Query parameters bind directly onto `CommunicationChannelFilterRequest`'s Java field names, so
+> they are **camelCase** — not the snake_case used in JSON request/response bodies.
+
+| Parameter | Type   | Default         | Constraints                                | Description                                                                                 |
+|-----------|--------|-----------------|-----------------------------------------------|--------------------------------------------------------------------------------------------------|
+| `code`    | String | —               | —                                              | Filter by code (partial, case-insensitive)                                                       |
+| `name`    | String | —               | —                                              | Filter by locale-specific name (partial, case-insensitive), scoped to the resolved locale        |
+| `page`    | int    | `0`             | >= 0                                           | Zero-based page index                                                                             |
+| `size`    | int    | `10`            | 1 – 50                                         | Number of items per page                                                                          |
+| `sortBy`  | String | `id` (implicit) | `createdAt`, `code`, `name` (`id` NOT selectable) | Field to sort by                                                                              |
+| `sortDir` | String | `ASC`           | `ASC`, `DESC`                                  | Sort direction                                                                                    |
+
+> **Note:** `sort_order`, `is_url`, `is_phone`, `is_email`, and `is_clickable` are not filterable or
+> sortable — only `code` and locale `name` are wired into the search/sort infrastructure for this endpoint.
+> Boolean fields were deliberately left out of the filter: this codebase's shared search infrastructure
+> (`SearchFieldSpec`/`SpecificationUtils`) currently only supports `String`-typed filter values, with no
+> existing precedent for a boolean-typed filter field, so wiring one up would have required changes to
+> shared, cross-entity infrastructure used by every other filterable resource.
 
 ### Response `200 OK`
-
-Optional fields (locale `description`) are omitted when not set.
 
 ```json
 {
@@ -222,41 +221,56 @@ Optional fields (locale `description`) are omitted when not set.
       "is_phone": true,
       "is_email": false,
       "is_clickable": true,
-      "locales": [
-        {
+      "locale": {
+        "id": 1,
+        "locale": {
           "id": 1,
-          "locale_id": 1,
-          "name": "Phone",
-          "description": "Fixed-line telephone number for direct calls.",
+          "code": "en",
+          "name": "English",
           "sort_order": 1
-        }
-      ]
+        },
+        "name": "Phone",
+        "description": "Fixed-line telephone number for direct calls.",
+        "sort_order": 1
+      }
     },
     {
-      "id": 2,
-      "code": "MOBILE",
-      "sort_order": 2,
+      "id": 4,
+      "code": "EMAIL",
+      "sort_order": 4,
       "is_url": false,
-      "is_phone": true,
-      "is_email": false,
+      "is_phone": false,
+      "is_email": true,
       "is_clickable": true,
-      "locales": [
-        {
-          "id": 2,
-          "locale_id": 1,
-          "name": "Mobile",
-          "description": "Mobile phone number for calls and SMS.",
+      "locale": {
+        "id": 4,
+        "locale": {
+          "id": 1,
+          "code": "en",
+          "name": "English",
           "sort_order": 1
-        }
-      ]
+        },
+        "name": "Email",
+        "description": "Email address for written correspondence.",
+        "sort_order": 4
+      }
     }
   ],
   "current_page": 0,
-  "total_pages": 2,
-  "total_elements": 12,
+  "total_pages": 1,
+  "total_elements": 2,
   "page_size": 10,
-  "has_next": true,
-  "has_previous": false
+  "has_next": false,
+  "has_previous": false,
+  "sortable_fields": [
+    "createdAt",
+    "code",
+    "name"
+  ],
+  "searchable_fields": [
+    "code",
+    "name"
+  ]
 }
 ```
 
@@ -266,43 +280,44 @@ Optional fields (locale `description`) are omitted when not set.
 
 `PUT /api/v1/communication-channels/{id}`
 
-Updates `sort_order`, `is_url`, `is_phone`, `is_email`, and `is_clickable`. The `code` field is set at creation time
-and cannot be changed. Locale translations are managed via the channel locale endpoints.
+Updates `sort_order`, `is_url`, `is_phone`, `is_email`, and `is_clickable`. `code` is set at creation and
+cannot be changed. Locale translations are managed separately via the Communication Channel Locales
+sub-resource endpoints below, not through this endpoint.
 
 ### Path Parameters
 
 | Parameter | Type | Description                     |
-|-----------|------|---------------------------------|
-| `id`      | Long | ID of the communication channel |
-
-### Request Fields
-
-| Field          | Type    | Required | Validation     |
-|----------------|---------|----------|----------------|
-| `sort_order`   | Integer | Yes      | Not null, >= 0 |
-| `is_url`       | Boolean | Yes      | Not null       |
-| `is_phone`     | Boolean | Yes      | Not null       |
-| `is_email`     | Boolean | Yes      | Not null       |
-| `is_clickable` | Boolean | Yes      | Not null       |
+|-----------|------|-----------------------------------|
+| `id`      | Long | ID of the communication channel   |
 
 ### Request Body
 
 ```json
 {
-  "sort_order": 1,
+  "sort_order": 3,
   "is_url": false,
   "is_phone": true,
   "is_email": false,
-  "is_clickable": true
+  "is_clickable": false
 }
 ```
+
+### Request Fields
+
+| Field          | Type    | Required | Validation |
+|----------------|---------|----------|------------|
+| `sort_order`   | Integer | Yes      | Not null   |
+| `is_url`       | Boolean | Yes      | Not null   |
+| `is_phone`     | Boolean | Yes      | Not null   |
+| `is_email`     | Boolean | Yes      | Not null   |
+| `is_clickable` | Boolean | Yes      | Not null   |
 
 ### Response `200 OK`
 
 ```json
 {
   "success": true,
-  "id": 1
+  "id": 3
 }
 ```
 
@@ -312,21 +327,21 @@ and cannot be changed. Locale translations are managed via the channel locale en
 
 `DELETE /api/v1/communication-channels/{id}`
 
-Soft-deletes the communication channel. The record is not removed from the database but will no longer appear in any
-response.
+Soft-deletes the communication channel. The record is not removed from the database but will no longer
+appear in any response.
 
 ### Path Parameters
 
 | Parameter | Type | Description                     |
-|-----------|------|---------------------------------|
-| `id`      | Long | ID of the communication channel |
+|-----------|------|-----------------------------------|
+| `id`      | Long | ID of the communication channel   |
 
 ### Response `200 OK`
 
 ```json
 {
   "success": true,
-  "id": 1
+  "id": 3
 }
 ```
 
@@ -334,119 +349,193 @@ response.
 
 ## Communication Channel Locales
 
-Channel locale endpoints manage per-locale translations for a communication channel. The `{channel-id}` path parameter
-must reference an existing, active communication channel. All write operations on locale endpoints require the `ADMIN`
-role.
+Communication Channel Locale endpoints manage locale-specific name/description translations for a
+communication channel. The `{communication-channel-id}` path parameter must reference an existing, active
+communication channel.
 
 ---
 
-### Create Channel Locale
+### List Communication Channel Locales
 
-`POST /api/v1/communication-channels/{channel-id}/locales`
+`GET /api/v1/communication-channels/{communication-channel-id}/locales`
 
-Adds a new locale translation to an existing communication channel. The `locale_id` must not already be registered
-for this channel. Requires `ADMIN` role.
+Returns a paginated list of every locale translation belonging to a communication channel — this is the
+only way to see more than the single Accept-Language-matched translation returned by
+`GET /communication-channels/{id}` and `GET /communication-channels`. Optionally filtered to locales whose
+`code` contains a given substring.
 
 #### Path Parameters
 
-| Parameter    | Type | Description                     |
-|--------------|------|---------------------------------|
-| `channel-id` | Long | ID of the communication channel |
+| Parameter                  | Type | Description                          |
+|------------------------------|------|-----------------------------------------|
+| `communication-channel-id`   | Long | ID of the parent communication channel  |
 
-#### Request Fields
+#### Query Parameters
 
-| Field         | Type    | Required | Validation               |
-|---------------|---------|----------|--------------------------|
-| `locale_id`   | Long    | Yes      | Not null, must exist     |
-| `name`        | String  | Yes      | Not blank, max 100 chars |
-| `description` | String  | No       | —                        |
-| `sort_order`  | Integer | Yes      | Not null                 |
+| Parameter    | Type   | Default | Constraints | Description                                                                                     |
+|--------------|--------|---------|-------------|-----------------------------------------------------------------------------------------------------|
+| `localeCode` | String | —       | —           | Filter to locales whose `code` contains this value (partial, case-insensitive), e.g. `en`, `bn`     |
+| `page`       | int    | `0`     | >= 0        | Zero-based page index                                                                                |
+| `size`       | int    | `10`    | 1 – 50      | Number of items per page                                                                             |
+
+> **Note:** `sortBy`/`sortDir` are accepted on the request object but there are no sortable fields
+> registered for this endpoint — passing any non-null `sortBy` value throws
+> `400 INVALID_ARGUMENT: Invalid sort field: <value>`. Omit `sortBy` entirely to get the default
+> (sorted by `id` ascending).
+
+#### Response `200 OK`
+
+```json
+{
+  "data": [
+    {
+      "id": 3,
+      "locale": {
+        "id": 1,
+        "code": "en",
+        "name": "English",
+        "sort_order": 1
+      },
+      "name": "WhatsApp",
+      "description": "WhatsApp number for instant messaging and calls.",
+      "sort_order": 3
+    },
+    {
+      "id": 14,
+      "locale": {
+        "id": 2,
+        "code": "bn",
+        "name": "Bengali",
+        "sort_order": 2
+      },
+      "name": "হোয়াটসঅ্যাপ",
+      "description": "",
+      "sort_order": 1
+    }
+  ],
+  "current_page": 0,
+  "total_pages": 1,
+  "total_elements": 2,
+  "page_size": 10,
+  "has_next": false,
+  "has_previous": false,
+  "sortable_fields": null,
+  "searchable_fields": null
+}
+```
+
+---
+
+### Create Communication Channel Locale
+
+`POST /api/v1/communication-channels/{communication-channel-id}/locales`
+
+Adds a new locale translation to an existing communication channel. `locale_id` must reference an existing,
+active locale — an unknown `locale_id` returns `404 ENTITY_NOT_FOUND`. The combination of communication
+channel and locale must be unique — adding a locale the channel already has a translation for returns
+`409 CONFLICT`, pre-checked at the application level before any write (backed by a DB-level unique constraint
+on `(communication_channel_id, locale_id)` as a last-resort guard).
+
+#### Path Parameters
+
+| Parameter                  | Type | Description                          |
+|------------------------------|------|-----------------------------------------|
+| `communication-channel-id`   | Long | ID of the parent communication channel  |
 
 #### Request Body
 
 ```json
 {
   "locale_id": 2,
-  "name": "ফোন",
-  "description": "সরাসরি কলের জন্য ফিক্সড-লাইন টেলিফোন নম্বর।",
-  "sort_order": 2
+  "name": "হোয়াটসঅ্যাপ",
+  "description": "তাৎক্ষণিক বার্তা এবং কলের জন্য হোয়াটসঅ্যাপ নম্বর।",
+  "sort_order": 1
 }
 ```
+
+#### Request Fields
+
+| Field         | Type    | Required | Validation                                  |
+|---------------|---------|----------|-----------------------------------------------|
+| `locale_id`   | Long    | Yes      | Not null; must reference an existing locale    |
+| `name`        | String  | Yes      | Not blank, max 100 chars                       |
+| `description` | String  | Yes      | Not null                                        |
+| `sort_order`  | Integer | Yes      | Not null                                        |
 
 #### Response `201 Created`
 
 ```json
 {
   "success": true,
-  "id": 25
+  "id": 14
 }
 ```
 
 ---
 
-### Update Channel Locale
+### Update Communication Channel Locale
 
-`PUT /api/v1/communication-channels/{channel-id}/locales/{id}`
+`PUT /api/v1/communication-channels/{communication-channel-id}/locales/{id}`
 
-Updates an existing locale translation for a communication channel. The `locale_id` is set on creation and cannot be
-changed. Requires `ADMIN` role.
+Updates `name`, `description`, and `sort_order` for an existing communication channel locale translation.
+The associated communication channel and locale cannot be changed after creation.
 
 #### Path Parameters
 
-| Parameter    | Type | Description                     |
-|--------------|------|---------------------------------|
-| `channel-id` | Long | ID of the communication channel |
-| `id`         | Long | ID of the channel locale        |
+| Parameter                  | Type | Description                           |
+|------------------------------|------|------------------------------------------|
+| `communication-channel-id`   | Long | ID of the parent communication channel   |
+| `id`                        | Long | ID of the communication channel locale   |
+
+#### Request Body
+
+```json
+{
+  "name": "হোয়াটসঅ্যাপ",
+  "description": "তাৎক্ষণিক বার্তা এবং কলের জন্য হোয়াটসঅ্যাপ নম্বর।",
+  "sort_order": 1
+}
+```
 
 #### Request Fields
 
 | Field         | Type    | Required | Validation               |
 |---------------|---------|----------|--------------------------|
 | `name`        | String  | Yes      | Not blank, max 100 chars |
-| `description` | String  | No       | —                        |
+| `description` | String  | Yes      | Not null                 |
 | `sort_order`  | Integer | Yes      | Not null                 |
-
-#### Request Body
-
-```json
-{
-  "name": "Phone",
-  "description": "Updated description for the phone channel.",
-  "sort_order": 1
-}
-```
 
 #### Response `200 OK`
 
 ```json
 {
   "success": true,
-  "id": 1
+  "id": 14
 }
 ```
 
 ---
 
-### Delete Channel Locale
+### Delete Communication Channel Locale
 
-`DELETE /api/v1/communication-channels/{channel-id}/locales/{id}`
+`DELETE /api/v1/communication-channels/{communication-channel-id}/locales/{id}`
 
-Soft-deletes a channel locale. The record is not removed from the database but will no longer appear in any response.
-Requires `ADMIN` role.
+Soft-deletes a communication channel locale. The record is not removed from the database but will no longer
+appear in any response.
 
 #### Path Parameters
 
-| Parameter    | Type | Description                     |
-|--------------|------|---------------------------------|
-| `channel-id` | Long | ID of the communication channel |
-| `id`         | Long | ID of the channel locale        |
+| Parameter                  | Type | Description                           |
+|------------------------------|------|------------------------------------------|
+| `communication-channel-id`   | Long | ID of the parent communication channel   |
+| `id`                        | Long | ID of the communication channel locale   |
 
 #### Response `200 OK`
 
 ```json
 {
   "success": true,
-  "id": 1
+  "id": 14
 }
 ```
 
@@ -465,9 +554,9 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                                                             |
-|-------------|----------------------------|-----------------------------------------------------------------------------------|
-| 400         | `INVALID_ARGUMENT`         | Missing required fields, invalid sort field, or `sort_order` less than 0          |
-| 403         | `FORBIDDEN`                | Locale write operations attempted without `ADMIN` role                            |
-| 404         | `ENTITY_NOT_FOUND`         | Channel or locale not found, or already deleted                                   |
-| 409         | `DATA_INTEGRITY_VIOLATION` | Duplicate `code` on channel create, or duplicate `locale_id` for the same channel |
+| HTTP Status | Error Code                 | Cause                                                                                                                                                     |
+|-------------|-----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields; or an unsupported `sortBy` query value |
+| 404         | `ENTITY_NOT_FOUND`         | Communication channel not found, communication channel locale not found, or the locale referenced by `locale_id` not found (locale creation)               |
+| 409         | `CONFLICT`                 | `code` already in use by another active communication channel (`create`); or the communication channel already has a translation for the given `locale_id` (`create` locale, pre-checked at the application level) |
+| 409         | `DATA_INTEGRITY_VIOLATION` | Last-resort DB-level unique constraint on `communication_channel_id` + `locale_id`, should not normally be reachable now that the duplicate is pre-checked at the application level |

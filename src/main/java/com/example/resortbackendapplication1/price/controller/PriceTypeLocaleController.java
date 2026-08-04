@@ -1,14 +1,16 @@
 package com.example.resortbackendapplication1.price.controller;
 
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
-import com.example.resortbackendapplication1.locale.service.LocaleService;
-import com.example.resortbackendapplication1.price.dto.request.pricetype.pricetypelocale.CreatePriceTypeLocaleRequest;
-import com.example.resortbackendapplication1.price.dto.request.pricetype.pricetypelocale.UpdatePriceTypeLocaleRequest;
+import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
+import com.example.resortbackendapplication1.price.dto.request.pricetype.locale.CreatePriceTypeLocaleRequest;
+import com.example.resortbackendapplication1.price.dto.request.pricetype.locale.UpdatePriceTypeLocaleRequest;
 import com.example.resortbackendapplication1.price.model.entity.PriceTypeEntity;
 import com.example.resortbackendapplication1.price.model.entity.PriceTypeLocaleEntity;
 import com.example.resortbackendapplication1.price.service.PriceTypeLocaleService;
 import com.example.resortbackendapplication1.price.service.PriceTypeService;
+import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.locale.service.LocaleService;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,14 +31,23 @@ public class PriceTypeLocaleController {
         this.localeService = localeService;
     }
 
+    @GetMapping
+    public ResponseEntity<?> getAll(
+            @PathVariable("price-type-id") Long priceTypeId,
+            @RequestParam(value = "localeCode", required = false) String localeCode,
+            @ParameterObject PaginatedRequest paginatedRequest) {
+        priceTypeService.getEntityById(priceTypeId);
+        return ResponseEntity.ok(priceTypeLocaleService.getAll(priceTypeId, localeCode, paginatedRequest));
+    }
+
     @PostMapping
     public ResponseEntity<?> create(
             @PathVariable("price-type-id") Long priceTypeId,
             @Valid @RequestBody CreatePriceTypeLocaleRequest request) {
-        PriceTypeEntity priceType = priceTypeService.getEntityById(priceTypeId);
+        PriceTypeEntity priceTypeEntity = priceTypeService.getEntityById(priceTypeId);
         LocaleEntity localeEntity = localeService.getEntityById(request.getLocaleId());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(priceTypeLocaleService.create(priceType, localeEntity, request));
+                .body(priceTypeLocaleService.create(request, priceTypeEntity, localeEntity));
     }
 
     @PutMapping("/{id}")

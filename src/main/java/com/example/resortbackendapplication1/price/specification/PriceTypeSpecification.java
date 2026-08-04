@@ -10,7 +10,7 @@ import org.springframework.data.jpa.domain.Specification;
 @UtilityClass
 public class PriceTypeSpecification {
 
-    public Specification<@NonNull PriceTypeEntity> filter(PriceTypeFilterRequest request) {
-        return SpecificationUtils.build(request);
+    public Specification<@NonNull PriceTypeEntity> filter(PriceTypeFilterRequest request, Long localeId) {
+        return SpecificationUtils.build(request, localeId);
     }
 }

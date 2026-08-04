@@ -1,28 +1,34 @@
 package com.example.resortbackendapplication1.currency.model.enums;
 
+import lombok.Getter;
+
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Getter
 public enum CurrencySortField {
-    ID("id"),
-    CODE("code"),
-    SORT_ORDER("sortOrder"),
-    CREATED_AT("createdAt");
+
+    CREATED_AT("createdAt", false),
+    CODE("code", false),
+    NUMERIC_CODE("numericCode", false),
+    NAME("name", true),
+    SHORT_NAME("shortName", true);
 
     private final String fieldName;
+    private final boolean localeField;
 
-    CurrencySortField(String fieldName) {
+    CurrencySortField(String fieldName, boolean localeField) {
         this.fieldName = fieldName;
-    }
-
-    public String getFieldName() {
-        return fieldName;
+        this.localeField = localeField;
     }
 
     public static Set<String> allowedFields() {
-        return Arrays.stream(values())
-                .map(CurrencySortField::getFieldName)
-                .collect(Collectors.toSet());
+        return Arrays.stream(values()).map(CurrencySortField::getFieldName).collect(Collectors.toSet());
+    }
+
+    public static Set<String> localeSortFields() {
+        return Arrays.stream(values()).filter(CurrencySortField::isLocaleField)
+                .map(CurrencySortField::getFieldName).collect(Collectors.toSet());
     }
 }

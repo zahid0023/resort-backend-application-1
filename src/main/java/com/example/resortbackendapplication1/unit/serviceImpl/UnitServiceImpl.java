@@ -1,32 +1,36 @@
 package com.example.resortbackendapplication1.unit.serviceImpl;
 
+import com.example.resortbackendapplication1.commons.context.LocaleContext;
+import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
+import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
+import com.example.resortbackendapplication1.commons.utils.Pagination;
+import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.unit.dto.request.unit.CreateUnitRequest;
 import com.example.resortbackendapplication1.unit.dto.request.unit.UnitFilterRequest;
 import com.example.resortbackendapplication1.unit.dto.request.unit.UpdateUnitRequest;
 import com.example.resortbackendapplication1.unit.dto.response.units.UnitResponse;
 import com.example.resortbackendapplication1.unit.model.dto.UnitDto;
+import com.example.resortbackendapplication1.unit.model.dto.UnitTypeDto;
 import com.example.resortbackendapplication1.unit.model.entity.UnitEntity;
+import com.example.resortbackendapplication1.unit.model.entity.UnitLocaleEntity;
+import com.example.resortbackendapplication1.unit.model.entity.UnitTypeEntity;
 import com.example.resortbackendapplication1.unit.model.enums.UnitSearchField;
 import com.example.resortbackendapplication1.unit.model.enums.UnitSortField;
+import com.example.resortbackendapplication1.unit.model.mapper.UnitLocaleMapper;
 import com.example.resortbackendapplication1.unit.model.mapper.UnitMapper;
+import com.example.resortbackendapplication1.unit.model.mapper.UnitTypeMapper;
 import com.example.resortbackendapplication1.unit.repository.UnitRepository;
 import com.example.resortbackendapplication1.unit.service.UnitService;
 import com.example.resortbackendapplication1.unit.specification.UnitSpecification;
-import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
-import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
-import com.example.resortbackendapplication1.commons.utils.EntityValidator;
-import com.example.resortbackendapplication1.commons.utils.Pagination;
-import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
-import com.example.resortbackendapplication1.unittype.model.entity.UnitTypeEntity;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -44,47 +48,23 @@ public class UnitServiceImpl implements UnitService {
 
     @Transactional
     @Override
-    public SuccessResponse create(CreateUnitRequest request,
-                                  UnitTypeEntity unitTypeEntity,
-                                  Map<Long, LocaleEntity> localeEntityMap) {
-        UnitEntity entity = UnitMapper.create(request, unitTypeEntity, localeEntityMap);
+    public SuccessResponse create(CreateUnitRequest request, UnitTypeEntity unitTypeEntity, LocaleEntity localeEntity) {
+        if (unitRepository.existsByCodeAndIsActiveAndIsDeleted(request.getCode(), true, false)) {
+            throw new IllegalStateException("Unit with code '" + request.getCode() + "' already exists");
+        }
+        if (unitRepository.existsBySymbolAndIsActiveAndIsDeleted(request.getSymbol(), true, false)) {
+            throw new IllegalStateException("Unit with symbol '" + request.getSymbol() + "' already exists");
+        }
+
+        UnitEntity entity = UnitMapper.create(request);
+        unitTypeEntity.addUnitEntity(entity);
+
+        UnitLocaleEntity unitLocaleEntity = UnitLocaleMapper.create(request.getLocale());
+        localeEntity.addUnitLocaleEntity(unitLocaleEntity);
+        entity.addUnitLocaleEntity(unitLocaleEntity);
+
         unitRepository.save(entity);
         log.info("Unit created with id: {}", entity.getId());
-        return new SuccessResponse(true, entity.getId());
-    }
-
-    @Override
-    public UnitResponse getById(Long id) {
-        UnitEntity entity = getEntityById(id);
-        UnitDto dto = UnitMapper.toDto(entity);
-        return new UnitResponse(dto);
-    }
-
-    @Override
-    public PaginatedResponse<UnitDto> getAll(UnitFilterRequest request, Long unitTypeId) {
-        Page<@NonNull UnitDto> page = unitRepository
-                .findAll(UnitSpecification.filter(request, unitTypeId), request.toPageable(ALLOWED_SORT_FIELDS))
-                .map(UnitMapper::toDto);
-        return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
-    }
-
-    @Transactional
-    @Override
-    public SuccessResponse update(UnitEntity entity, UpdateUnitRequest request) {
-        UnitMapper.update(entity, request);
-        unitRepository.save(entity);
-        log.info("Unit updated with id: {}", entity.getId());
-        return new SuccessResponse(true, entity.getId());
-    }
-
-    @Transactional
-    @Override
-    public SuccessResponse delete(Long id) {
-        UnitEntity entity = getEntityById(id);
-        entity.setIsDeleted(true);
-        entity.setIsActive(false);
-        unitRepository.save(entity);
-        log.info("Unit soft-deleted with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
     }
 
@@ -95,9 +75,48 @@ public class UnitServiceImpl implements UnitService {
     }
 
     @Override
-    public List<UnitEntity> getAll(Set<Long> ids) {
-        List<UnitEntity> entities = unitRepository.findAllByIdInAndIsActiveAndIsDeleted(ids, true, false);
-        EntityValidator.validateAllFound(ids, entities, UnitEntity::getId, "Unit");
-        return entities;
+    public UnitResponse getById(Long id) {
+        UnitEntity entity = getEntityById(id);
+        UnitTypeDto unitType = UnitTypeMapper.toDto(entity.getUnitTypeEntity()).build();
+        UnitDto dto = UnitMapper.toDto(entity)
+                .unitType(unitType)
+                .build();
+        return new UnitResponse(dto);
+    }
+
+    @Override
+    public PaginatedResponse<UnitDto> getAll(UnitFilterRequest request) {
+        Specification<@NonNull UnitEntity> specification = UnitSpecification.filter(request, LocaleContext.getLocaleId());
+        Pageable pageable = request.toPageable(ALLOWED_SORT_FIELDS, UnitSortField.localeSortFields());
+        Page<@NonNull UnitDto> page = unitRepository
+                .findAll(specification, pageable)
+                .map(entity -> UnitMapper.toDto(entity)
+                        .unitType(UnitTypeMapper.toDto(entity.getUnitTypeEntity()).build())
+                        .build());
+        return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
+    }
+
+    @Transactional
+    @Override
+    public SuccessResponse update(UnitEntity entity, UpdateUnitRequest request) {
+        if (!entity.getSymbol().equals(request.getSymbol())
+                && unitRepository.existsBySymbolAndIsActiveAndIsDeleted(request.getSymbol(), true, false)) {
+            throw new IllegalStateException("Unit with symbol '" + request.getSymbol() + "' already exists");
+        }
+
+        UnitMapper.update(entity, request);
+        unitRepository.save(entity);
+        log.info("Unit updated with id: {}", entity.getId());
+        return new SuccessResponse(true, entity.getId());
+    }
+
+    @Transactional
+    @Override
+    public SuccessResponse delete(UnitEntity entity) {
+        entity.setIsDeleted(true);
+        entity.setIsActive(false);
+        unitRepository.save(entity);
+        log.info("Unit soft-deleted with id: {}", entity.getId());
+        return new SuccessResponse(true, entity.getId());
     }
 }

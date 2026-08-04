@@ -11,4 +11,5 @@ public class BedTypeRequest {
 
     @NotNull
     private Integer sortOrder;
+
 }

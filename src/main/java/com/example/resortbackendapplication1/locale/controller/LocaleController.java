@@ -31,6 +31,11 @@ public class LocaleController {
         return ResponseEntity.ok(localeService.getById(id));
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<?> getActiveCount() {
+        return ResponseEntity.ok(localeService.getActiveCount());
+    }
+
     @GetMapping
     public ResponseEntity<?> getAll(@Valid @ParameterObject LocaleFilterRequest request) {
         return ResponseEntity.ok(localeService.getAll(request));
