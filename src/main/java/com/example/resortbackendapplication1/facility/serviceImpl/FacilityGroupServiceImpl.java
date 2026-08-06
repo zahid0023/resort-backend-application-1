@@ -9,15 +9,21 @@ import com.example.resortbackendapplication1.facility.dto.request.facilitygroup.
 import com.example.resortbackendapplication1.facility.dto.request.facilitygroup.UpdateFacilityGroupRequest;
 import com.example.resortbackendapplication1.facility.dto.response.facilitygroups.FacilityGroupResponse;
 import com.example.resortbackendapplication1.facility.model.dto.FacilityGroupDto;
+import com.example.resortbackendapplication1.facility.model.dto.FacilityScopeDto;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupLocaleEntity;
+import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupScopeAssignmentEntity;
+import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeEntity;
 import com.example.resortbackendapplication1.facility.model.enums.FacilityGroupSearchField;
 import com.example.resortbackendapplication1.facility.model.enums.FacilityGroupSortField;
 import com.example.resortbackendapplication1.facility.model.mapper.FacilityGroupLocaleMapper;
 import com.example.resortbackendapplication1.facility.model.mapper.FacilityGroupMapper;
+import com.example.resortbackendapplication1.facility.model.mapper.FacilityGroupScopeAssignmentMapper;
+import com.example.resortbackendapplication1.facility.model.mapper.FacilityScopeMapper;
 import com.example.resortbackendapplication1.facility.repository.FacilityGroupRepository;
 import com.example.resortbackendapplication1.facility.service.FacilityGroupService;
 import com.example.resortbackendapplication1.facility.specification.FacilityGroupSpecification;
+import com.example.resortbackendapplication1.commons.utils.EntityValidator;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +34,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -45,12 +52,20 @@ public class FacilityGroupServiceImpl implements FacilityGroupService {
 
     @Transactional
     @Override
-    public SuccessResponse create(CreateFacilityGroupRequest request, LocaleEntity localeEntity) {
+    public SuccessResponse create(CreateFacilityGroupRequest request,
+                                  List<FacilityScopeEntity> facilityScopeEntities,
+                                  LocaleEntity localeEntity) {
         if (facilityGroupRepository.existsByCodeAndIsActiveAndIsDeleted(request.getCode(), true, false)) {
             throw new IllegalStateException("FacilityGroup with code '" + request.getCode() + "' already exists");
         }
 
         FacilityGroupEntity entity = FacilityGroupMapper.create(request);
+
+        for (FacilityScopeEntity facilityScopeEntity : facilityScopeEntities) {
+            FacilityGroupScopeAssignmentEntity assignmentEntity = FacilityGroupScopeAssignmentMapper.create();
+            facilityScopeEntity.addFacilityGroupScopeAssignmentEntity(assignmentEntity);
+            entity.addFacilityGroupScopeAssignmentEntity(assignmentEntity);
+        }
 
         FacilityGroupLocaleEntity facilityGroupLocaleEntity = FacilityGroupLocaleMapper.create(request.getLocale());
         localeEntity.addFacilityGroupLocaleEntity(facilityGroupLocaleEntity);
@@ -68,9 +83,18 @@ public class FacilityGroupServiceImpl implements FacilityGroupService {
     }
 
     @Override
+    public List<FacilityGroupEntity> getAll(Set<Long> ids) {
+        List<FacilityGroupEntity> facilityGroupEntities = facilityGroupRepository.findAllByIdInAndIsActiveAndIsDeleted(ids, true, false);
+        EntityValidator.validateAllFound(ids, facilityGroupEntities, FacilityGroupEntity::getId, "FacilityGroup");
+        return facilityGroupEntities;
+    }
+
+    @Override
     public FacilityGroupResponse getById(Long id) {
         FacilityGroupEntity entity = getEntityById(id);
-        FacilityGroupDto dto = FacilityGroupMapper.toDto(entity).build();
+        FacilityGroupDto dto = FacilityGroupMapper.toDto(entity)
+                .facilityScopes(mapFacilityScopes(entity))
+                .build();
         return new FacilityGroupResponse(dto);
     }
 
@@ -81,8 +105,19 @@ public class FacilityGroupServiceImpl implements FacilityGroupService {
         Pageable pageable = request.toPageable(ALLOWED_SORT_FIELDS, FacilityGroupSortField.localeSortFields());
         Page<@NonNull FacilityGroupDto> page = facilityGroupRepository
                 .findAll(specification, pageable)
-                .map(entity -> FacilityGroupMapper.toDto(entity).build());
+                .map(entity -> FacilityGroupMapper.toDto(entity)
+                        .facilityScopes(mapFacilityScopes(entity))
+                        .build());
         return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
+    }
+
+    private List<FacilityScopeDto> mapFacilityScopes(FacilityGroupEntity entity) {
+        return entity.getFacilityGroupScopeAssignmentEntities().stream()
+                .filter(assignment -> Boolean.TRUE.equals(assignment.getIsActive())
+                        && Boolean.FALSE.equals(assignment.getIsDeleted()))
+                .map(FacilityGroupScopeAssignmentEntity::getFacilityScopeEntity)
+                .map(facilityScopeEntity -> FacilityScopeMapper.toDto(facilityScopeEntity).build())
+                .toList();
     }
 
     @Transactional

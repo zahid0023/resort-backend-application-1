@@ -8,6 +8,7 @@ import com.example.resortbackendapplication1.price.dto.request.pricetypescope.lo
 import com.example.resortbackendapplication1.price.model.dto.PriceTypeScopeLocaleDto;
 import com.example.resortbackendapplication1.price.model.entity.PriceTypeScopeEntity;
 import com.example.resortbackendapplication1.price.model.entity.PriceTypeScopeLocaleEntity;
+import com.example.resortbackendapplication1.locale.dto.response.locales.LocaleCountResponse;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 
 public interface PriceTypeScopeLocaleService {
@@ -18,6 +19,8 @@ public interface PriceTypeScopeLocaleService {
     PriceTypeScopeLocaleEntity getEntityById(Long priceTypeScopeId, Long id);
 
     PaginatedResponse<PriceTypeScopeLocaleDto> getAll(Long priceTypeScopeId, String localeCode, PaginatedRequest paginatedRequest);
+
+    LocaleCountResponse getCount(Long priceTypeScopeId);
 
     SuccessResponse update(PriceTypeScopeLocaleEntity entity,
                            UpdatePriceTypeScopeLocaleRequest request);

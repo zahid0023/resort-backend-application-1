@@ -6,7 +6,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
 import java.util.Optional;
 
 @SuppressWarnings("unused")
@@ -56,5 +58,13 @@ public interface PriceTypeScopeLocaleRepository extends
             Boolean isActive,
             Boolean isDeleted,
             Pageable pageable
+    );
+
+    @Query("select ptsle.localeEntity.code from PriceTypeScopeLocaleEntity ptsle " +
+            "where ptsle.priceTypeScopeEntity.id = :priceTypeScopeId and ptsle.isActive = :isActive and ptsle.isDeleted = :isDeleted")
+    List<String> findLocaleEntity_CodeByPriceTypeScopeEntity_IdAndIsActiveAndIsDeleted(
+            Long priceTypeScopeId,
+            Boolean isActive,
+            Boolean isDeleted
     );
 }

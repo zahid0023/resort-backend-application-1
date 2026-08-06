@@ -26,17 +26,18 @@ actually used to shape the response:
 
 ## Endpoints
 
-| Method | Path                                    | Description             |
-|--------|------------------------------------------|-------------------------|
-| POST   | `/api/v1/cities`                        | Create a city            |
-| GET    | `/api/v1/cities`                        | List / search cities     |
-| GET    | `/api/v1/cities/{id}`                   | Get a city                |
-| PUT    | `/api/v1/cities/{id}`                   | Update a city              |
-| DELETE | `/api/v1/cities/{id}`                   | Delete a city                |
-| GET    | `/api/v1/cities/{city-id}/locales`      | List a city's locales          |
-| POST   | `/api/v1/cities/{city-id}/locales`      | Create a city locale             |
-| PUT    | `/api/v1/cities/{city-id}/locales/{id}` | Update a city locale               |
-| DELETE | `/api/v1/cities/{city-id}/locales/{id}` | Delete a city locale                 |
+| Method | Path                                     | Description            |
+|--------|------------------------------------------|------------------------|
+| POST   | `/api/v1/cities`                         | Create a city          |
+| GET    | `/api/v1/cities`                         | List / search cities   |
+| GET    | `/api/v1/cities/{id}`                    | Get a city             |
+| PUT    | `/api/v1/cities/{id}`                    | Update a city          |
+| DELETE | `/api/v1/cities/{id}`                    | Delete a city          |
+| GET    | `/api/v1/cities/{city-id}/locales`       | List a city's locales  |
+| GET    | `/api/v1/cities/{city-id}/locales/count` | Count a city's locales |
+| POST   | `/api/v1/cities/{city-id}/locales`       | Create a city locale   |
+| PUT    | `/api/v1/cities/{city-id}/locales/{id}`  | Update a city locale   |
+| DELETE | `/api/v1/cities/{city-id}/locales/{id}`  | Delete a city locale   |
 
 ---
 
@@ -44,13 +45,13 @@ actually used to shape the response:
 
 ### City
 
-| Field        | Type    | Required | Constraints                                                                             | Description                                                                                                       |
-|--------------|---------|----------|------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
-| `id`         | Long    | —        | read-only                                                                                | Auto-generated identifier                                                                                          |
-| `country`    | Country | —        | read-only; embedded parent summary (single Accept-Language-matched `locale`, same shape as `GET /countries/{id}`) | The parent country this city belongs to                                                        |
-| `code`       | String  | Yes      | not blank, max 50 chars at the request level; unique among active records; set at creation, immutable — see note below | Short city code (e.g., `DHK`)                                                     |
-| `sort_order` | Integer | Yes      | default 0                                                                                | Display order                                                                                                       |
-| `locale`     | Object  | —        | nullable; see CityLocale below                                                          | The single translation matching the request's `Accept-Language` (falls back to `en`, then `null` if the city has no translations at all) |
+| Field        | Type    | Required | Constraints                                                                                                            | Description                                                                                                                              |
+|--------------|---------|----------|------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| `id`         | Long    | —        | read-only                                                                                                              | Auto-generated identifier                                                                                                                |
+| `country`    | Country | —        | read-only; embedded parent summary (single Accept-Language-matched `locale`, same shape as `GET /countries/{id}`)      | The parent country this city belongs to                                                                                                  |
+| `code`       | String  | Yes      | not blank, max 50 chars at the request level; unique among active records; set at creation, immutable — see note below | Short city code (e.g., `DHK`)                                                                                                            |
+| `sort_order` | Integer | Yes      | default 0                                                                                                              | Display order                                                                                                                            |
+| `locale`     | Object  | —        | nullable; see CityLocale below                                                                                         | The single translation matching the request's `Accept-Language` (falls back to `en`, then `null` if the city has no translations at all) |
 
 > **Note:** The request only requires `code` to be non-blank and at most 50 characters
 > (`CreateCityRequest`). The `cities` table column is actually `char(3)` and unique, and `CityEntity` itself
@@ -63,7 +64,7 @@ actually used to shape the response:
 ### CityLocale
 
 | Field         | Type    | Required | Constraints                                      | Description                                                                    |
-|---------------|---------|----------|---------------------------------------------------|----------------------------------------------------------------------------------|
+|---------------|---------|----------|--------------------------------------------------|--------------------------------------------------------------------------------|
 | `id`          | Long    | —        | read-only                                        | Auto-generated identifier                                                      |
 | `locale`      | Locale  | —        | read-only, resolved from `locale_id` at creation | The locale this translation is written in (`id`, `code`, `name`, `sort_order`) |
 | `name`        | String  | Yes      | max 255 chars                                    | Localized city name                                                            |
@@ -102,12 +103,12 @@ Additional languages are added afterward via the City Locales sub-resource below
 
 ### Request Fields
 
-| Field        | Type    | Required | Validation                                                                                 |
-|--------------|---------|----------|----------------------------------------------------------------------------------------------|
+| Field        | Type    | Required | Validation                                                                                                                           |
+|--------------|---------|----------|--------------------------------------------------------------------------------------------------------------------------------------|
 | `code`       | String  | Yes      | Not blank, max 50 chars, unique among active records — see the note above about stricter format expectations not being enforced here |
-| `country_id` | Long    | Yes      | Not null; must reference an existing, active country                                       |
-| `sort_order` | Integer | Yes      | Not null                                                                                   |
-| `locale`     | Object  | Yes      | Not null; validated (see below) — no `locale_id` field; always resolved to the `en` locale |
+| `country_id` | Long    | Yes      | Not null; must reference an existing, active country                                                                                 |
+| `sort_order` | Integer | Yes      | Not null                                                                                                                             |
+| `locale`     | Object  | Yes      | Not null; validated (see below) — no `locale_id` field; always resolved to the `en` locale                                           |
 
 **Locale entry (`locale`):**
 
@@ -212,15 +213,15 @@ same for each city's embedded `country.locale`.
 > **Note:** Query parameters bind directly onto `CityFilterRequest`'s Java field names, so they are
 > **camelCase** — not the snake_case used in JSON request/response bodies.
 
-| Parameter   | Type   | Default | Constraints                                    | Description                                                                               |
-|-------------|--------|---------|-------------------------------------------------|----------------------------------------------------------------------------------------------|
-| `code`      | String | —       | —                                              | Filter by code (partial, case-insensitive)                                                |
-| `countryId` | Long   | —       | —                                              | Filter by parent country ID (exact match)                                                 |
-| `name`      | String | —       | —                                              | Filter by locale-specific name (partial, case-insensitive), scoped to the resolved locale |
-| `page`      | int    | `0`     | >= 0                                            | Zero-based page index                                                                     |
-| `size`      | int    | `10`    | 1 – 50                                          | Number of items per page                                                                  |
-| `sortBy`    | String | `id` (implicit) | `createdAt`, `sortOrder`, `code`, `name` (`id` NOT selectable) | Field to sort by                                                            |
-| `sortDir`   | String | `ASC`   | `ASC`, `DESC`                                    | Sort direction                                                                            |
+| Parameter   | Type   | Default         | Constraints                                                    | Description                                                                               |
+|-------------|--------|-----------------|----------------------------------------------------------------|-------------------------------------------------------------------------------------------|
+| `code`      | String | —               | —                                                              | Filter by code (partial, case-insensitive)                                                |
+| `countryId` | Long   | —               | —                                                              | Filter by parent country ID (exact match)                                                 |
+| `name`      | String | —               | —                                                              | Filter by locale-specific name (partial, case-insensitive), scoped to the resolved locale |
+| `page`      | int    | `0`             | >= 0                                                           | Zero-based page index                                                                     |
+| `size`      | int    | `10`            | 1 – 50                                                         | Number of items per page                                                                  |
+| `sortBy`    | String | `id` (implicit) | `createdAt`, `sortOrder`, `code`, `name` (`id` NOT selectable) | Field to sort by                                                                          |
+| `sortDir`   | String | `ASC`           | `ASC`, `DESC`                                                  | Sort direction                                                                            |
 
 ### Response `200 OK`
 
@@ -366,13 +367,13 @@ more than the single Accept-Language-matched translation returned by `GET /citie
 #### Path Parameters
 
 | Parameter | Type | Description           |
-|-----------|------|------------------------|
+|-----------|------|-----------------------|
 | `city-id` | Long | ID of the parent city |
 
 #### Query Parameters
 
 | Parameter    | Type   | Default | Constraints | Description                                                                                     |
-|--------------|--------|---------|-------------|-----------------------------------------------------------------------------------------------------|
+|--------------|--------|---------|-------------|-------------------------------------------------------------------------------------------------|
 | `localeCode` | String | —       | —           | Filter to locales whose `code` contains this value (partial, case-insensitive), e.g. `en`, `bn` |
 | `page`       | int    | `0`     | >= 0        | Zero-based page index                                                                           |
 | `size`       | int    | `10`    | 1 – 50      | Number of items per page                                                                        |
@@ -425,6 +426,37 @@ more than the single Accept-Language-matched translation returned by `GET /citie
 
 ---
 
+### Count City Locales
+
+`GET /api/v1/cities/{city-id}/locales/count`
+
+Returns how many active locale translations a city currently has, plus the `code` of each one. Compare
+this against [`GET /api/v1/locales/count`](locales-api.md) (the platform-wide list of active locale codes)
+to determine which languages the city is still missing and can add a translation for via
+[Create City Locale](#create-city-locale) — e.g. if the platform has `en`, `bn`, `es` and this endpoint
+returns `en`, `bn` for the city, `es` is still available; if it returns all three, every platform locale
+already has a translation and `POST .../locales` for any of them will fail with `409 CONFLICT`.
+
+#### Path Parameters
+
+| Parameter | Type | Description           |
+|-----------|------|-----------------------|
+| `city-id` | Long | ID of the parent city |
+
+#### Response `200 OK`
+
+```json
+{
+  "count": 2,
+  "codes": [
+    "en",
+    "bn"
+  ]
+}
+```
+
+---
+
 ### Create City Locale
 
 `POST /api/v1/cities/{city-id}/locales`
@@ -438,7 +470,7 @@ last-resort guard).
 #### Path Parameters
 
 | Parameter | Type | Description           |
-|-----------|------|------------------------|
+|-----------|------|-----------------------|
 | `city-id` | Long | ID of the parent city |
 
 #### Request Body
@@ -455,7 +487,7 @@ last-resort guard).
 #### Request Fields
 
 | Field         | Type    | Required | Validation                                  |
-|---------------|---------|----------|------------------------------------------------|
+|---------------|---------|----------|---------------------------------------------|
 | `locale_id`   | Long    | Yes      | Not null; must reference an existing locale |
 | `name`        | String  | Yes      | Not blank, max 255 chars                    |
 | `description` | String  | Yes      | Not null                                    |
@@ -482,7 +514,7 @@ city and locale cannot be changed after creation.
 #### Path Parameters
 
 | Parameter | Type | Description           |
-|-----------|------|------------------------|
+|-----------|------|-----------------------|
 | `city-id` | Long | ID of the parent city |
 | `id`      | Long | ID of the city locale |
 
@@ -525,7 +557,7 @@ response.
 #### Path Parameters
 
 | Parameter | Type | Description           |
-|-----------|------|------------------------|
+|-----------|------|-----------------------|
 | `city-id` | Long | ID of the parent city |
 | `id`      | Long | ID of the city locale |
 
@@ -554,7 +586,7 @@ All errors follow a common structure:
 ```
 
 | HTTP Status | Error Code                 | Cause                                                                                                                                                                                            |
-|-------------|-----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|-------------|----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields; or an unsupported `sortBy` query value            |
 | 404         | `ENTITY_NOT_FOUND`         | City not found, city locale not found, country referenced by `country_id` not found (city creation), or the locale referenced by `locale_id` not found (locale creation)                         |
 | 409         | `CONFLICT`                 | `code` already in use by another active city (checked explicitly in city `create`), or the city already has a translation for the given `locale_id` (checked explicitly in city locale `create`) |

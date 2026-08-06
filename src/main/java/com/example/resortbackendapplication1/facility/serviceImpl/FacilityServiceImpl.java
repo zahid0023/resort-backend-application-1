@@ -10,14 +10,21 @@ import com.example.resortbackendapplication1.facility.dto.request.facility.Updat
 import com.example.resortbackendapplication1.facility.dto.response.facilities.FacilityResponse;
 import com.example.resortbackendapplication1.facility.model.dto.FacilityDto;
 import com.example.resortbackendapplication1.facility.model.dto.FacilityGroupDto;
+import com.example.resortbackendapplication1.facility.model.dto.FacilityScopeDto;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupEntity;
+import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupFacilityAssignmentEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityLocaleEntity;
+import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeAssignmentEntity;
+import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeEntity;
 import com.example.resortbackendapplication1.facility.model.enums.FacilitySearchField;
 import com.example.resortbackendapplication1.facility.model.enums.FacilitySortField;
+import com.example.resortbackendapplication1.facility.model.mapper.FacilityGroupFacilityAssignmentMapper;
 import com.example.resortbackendapplication1.facility.model.mapper.FacilityGroupMapper;
 import com.example.resortbackendapplication1.facility.model.mapper.FacilityLocaleMapper;
 import com.example.resortbackendapplication1.facility.model.mapper.FacilityMapper;
+import com.example.resortbackendapplication1.facility.model.mapper.FacilityScopeAssignmentMapper;
+import com.example.resortbackendapplication1.facility.model.mapper.FacilityScopeMapper;
 import com.example.resortbackendapplication1.facility.repository.FacilityRepository;
 import com.example.resortbackendapplication1.facility.service.FacilityService;
 import com.example.resortbackendapplication1.facility.specification.FacilitySpecification;
@@ -31,6 +38,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -49,14 +57,26 @@ public class FacilityServiceImpl implements FacilityService {
     @Transactional
     @Override
     public SuccessResponse create(CreateFacilityRequest request,
-                                  FacilityGroupEntity facilityGroupEntity,
+                                  List<FacilityGroupEntity> facilityGroupEntities,
+                                  List<FacilityScopeEntity> facilityScopeEntities,
                                   LocaleEntity localeEntity) {
         if (facilityRepository.existsByCodeAndIsActiveAndIsDeleted(request.getCode(), true, false)) {
             throw new IllegalStateException("Facility with code '" + request.getCode() + "' already exists");
         }
 
         FacilityEntity entity = FacilityMapper.create(request);
-        facilityGroupEntity.addFacilityEntity(entity);
+
+        for (FacilityGroupEntity facilityGroupEntity : facilityGroupEntities) {
+            FacilityGroupFacilityAssignmentEntity assignmentEntity = FacilityGroupFacilityAssignmentMapper.create();
+            facilityGroupEntity.addFacilityGroupFacilityAssignmentEntity(assignmentEntity);
+            entity.addFacilityGroupFacilityAssignmentEntity(assignmentEntity);
+        }
+
+        for (FacilityScopeEntity facilityScopeEntity : facilityScopeEntities) {
+            FacilityScopeAssignmentEntity assignmentEntity = FacilityScopeAssignmentMapper.create();
+            facilityScopeEntity.addFacilityScopeAssignmentEntity(assignmentEntity);
+            entity.addFacilityScopeAssignmentEntity(assignmentEntity);
+        }
 
         FacilityLocaleEntity facilityLocaleEntity = FacilityLocaleMapper.create(request.getLocale());
         localeEntity.addFacilityLocaleEntity(facilityLocaleEntity);
@@ -77,9 +97,9 @@ public class FacilityServiceImpl implements FacilityService {
     @Override
     public FacilityResponse getById(Long id) {
         FacilityEntity entity = getEntityById(id);
-        FacilityGroupDto facilityGroup = FacilityGroupMapper.toDto(entity.getFacilityGroupEntity()).build();
         FacilityDto dto = FacilityMapper.toDto(entity)
-                .facilityGroup(facilityGroup)
+                .facilityGroups(mapFacilityGroups(entity))
+                .facilityScopes(mapFacilityScopes(entity))
                 .build();
         return new FacilityResponse(dto);
     }
@@ -91,9 +111,28 @@ public class FacilityServiceImpl implements FacilityService {
         Page<@NonNull FacilityDto> page = facilityRepository
                 .findAll(specification, pageable)
                 .map(entity -> FacilityMapper.toDto(entity)
-                        .facilityGroup(FacilityGroupMapper.toDto(entity.getFacilityGroupEntity()).build())
+                        .facilityGroups(mapFacilityGroups(entity))
+                        .facilityScopes(mapFacilityScopes(entity))
                         .build());
         return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
+    }
+
+    private List<FacilityGroupDto> mapFacilityGroups(FacilityEntity entity) {
+        return entity.getFacilityGroupFacilityAssignmentEntities().stream()
+                .filter(assignment -> Boolean.TRUE.equals(assignment.getIsActive())
+                        && Boolean.FALSE.equals(assignment.getIsDeleted()))
+                .map(FacilityGroupFacilityAssignmentEntity::getFacilityGroupEntity)
+                .map(facilityGroupEntity -> FacilityGroupMapper.toDto(facilityGroupEntity).build())
+                .toList();
+    }
+
+    private List<FacilityScopeDto> mapFacilityScopes(FacilityEntity entity) {
+        return entity.getFacilityScopeAssignmentEntities().stream()
+                .filter(assignment -> Boolean.TRUE.equals(assignment.getIsActive())
+                        && Boolean.FALSE.equals(assignment.getIsDeleted()))
+                .map(FacilityScopeAssignmentEntity::getFacilityScopeEntity)
+                .map(facilityScopeEntity -> FacilityScopeMapper.toDto(facilityScopeEntity).build())
+                .toList();
     }
 
     @Transactional

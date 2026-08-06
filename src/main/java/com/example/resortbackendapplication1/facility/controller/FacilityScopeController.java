@@ -37,6 +37,11 @@ public class FacilityScopeController {
         return ResponseEntity.ok(facilityScopeService.getById(id));
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<?> getActiveCount() {
+        return ResponseEntity.ok(facilityScopeService.getActiveCount());
+    }
+
     @GetMapping
     public ResponseEntity<?> getAll(@Valid @ParameterObject FacilityScopeFilterRequest request) {
         return ResponseEntity.ok(facilityScopeService.getAll(request));

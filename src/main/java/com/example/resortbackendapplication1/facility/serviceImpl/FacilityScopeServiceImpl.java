@@ -7,6 +7,7 @@ import com.example.resortbackendapplication1.commons.utils.Pagination;
 import com.example.resortbackendapplication1.facility.dto.request.facilityscope.CreateFacilityScopeRequest;
 import com.example.resortbackendapplication1.facility.dto.request.facilityscope.FacilityScopeFilterRequest;
 import com.example.resortbackendapplication1.facility.dto.request.facilityscope.UpdateFacilityScopeRequest;
+import com.example.resortbackendapplication1.facility.dto.response.facilityscopes.FacilityScopeCountResponse;
 import com.example.resortbackendapplication1.facility.dto.response.facilityscopes.FacilityScopeResponse;
 import com.example.resortbackendapplication1.facility.model.dto.FacilityScopeDto;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeEntity;
@@ -18,6 +19,7 @@ import com.example.resortbackendapplication1.facility.model.mapper.FacilityScope
 import com.example.resortbackendapplication1.facility.repository.FacilityScopeRepository;
 import com.example.resortbackendapplication1.facility.service.FacilityScopeService;
 import com.example.resortbackendapplication1.facility.specification.FacilityScopeSpecification;
+import com.example.resortbackendapplication1.commons.utils.EntityValidator;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +30,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -68,6 +71,13 @@ public class FacilityScopeServiceImpl implements FacilityScopeService {
     }
 
     @Override
+    public List<FacilityScopeEntity> getAll(Set<Long> ids) {
+        List<FacilityScopeEntity> facilityScopeEntities = facilityScopeRepository.findAllByIdInAndIsActiveAndIsDeleted(ids, true, false);
+        EntityValidator.validateAllFound(ids, facilityScopeEntities, FacilityScopeEntity::getId, "FacilityScope");
+        return facilityScopeEntities;
+    }
+
+    @Override
     public FacilityScopeResponse getById(Long id) {
         FacilityScopeEntity entity = getEntityById(id);
         FacilityScopeDto dto = FacilityScopeMapper.toDto(entity).build();
@@ -83,6 +93,12 @@ public class FacilityScopeServiceImpl implements FacilityScopeService {
                 .findAll(specification, pageable)
                 .map(entity -> FacilityScopeMapper.toDto(entity).build());
         return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
+    }
+
+    @Override
+    public FacilityScopeCountResponse getActiveCount() {
+        List<String> codes = facilityScopeRepository.findCodeByIsActiveAndIsDeleted(true, false);
+        return new FacilityScopeCountResponse((long) codes.size(), codes);
     }
 
     @Transactional

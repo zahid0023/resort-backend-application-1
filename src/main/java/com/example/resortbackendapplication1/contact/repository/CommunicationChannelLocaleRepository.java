@@ -6,7 +6,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
 import java.util.Optional;
 
 @SuppressWarnings("unused")
@@ -41,5 +43,13 @@ public interface CommunicationChannelLocaleRepository extends
             Boolean isActive,
             Boolean isDeleted,
             Pageable pageable
+    );
+
+    @Query("select ccle.localeEntity.code from CommunicationChannelLocaleEntity ccle " +
+            "where ccle.communicationChannelEntity.id = :communicationChannelId and ccle.isActive = :isActive and ccle.isDeleted = :isDeleted")
+    List<String> findLocaleEntity_CodeByCommunicationChannelEntity_IdAndIsActiveAndIsDeleted(
+            Long communicationChannelId,
+            Boolean isActive,
+            Boolean isDeleted
     );
 }

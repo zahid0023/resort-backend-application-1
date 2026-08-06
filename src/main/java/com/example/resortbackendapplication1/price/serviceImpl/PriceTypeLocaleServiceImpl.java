@@ -12,6 +12,7 @@ import com.example.resortbackendapplication1.price.model.entity.PriceTypeLocaleE
 import com.example.resortbackendapplication1.price.model.mapper.PriceTypeLocaleMapper;
 import com.example.resortbackendapplication1.price.repository.PriceTypeLocaleRepository;
 import com.example.resortbackendapplication1.price.service.PriceTypeLocaleService;
+import com.example.resortbackendapplication1.locale.dto.response.locales.LocaleCountResponse;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -99,5 +101,12 @@ public class PriceTypeLocaleServiceImpl implements PriceTypeLocaleService {
                         priceTypeId, localeCode, true, false, pageable))
                 .map(PriceTypeLocaleMapper::toDto);
         return Pagination.buildPaginatedResponse(dtoPage);
+    }
+
+    @Override
+    public LocaleCountResponse getCount(Long priceTypeId) {
+        List<String> codes = priceTypeLocaleRepository
+                .findLocaleEntity_CodeByPriceTypeEntity_IdAndIsActiveAndIsDeleted(priceTypeId, true, false);
+        return new LocaleCountResponse((long) codes.size(), codes);
     }
 }

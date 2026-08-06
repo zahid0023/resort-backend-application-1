@@ -40,6 +40,12 @@ public class RoomCategoryLocaleController {
         return ResponseEntity.ok(roomCategoryLocaleService.getAll(roomCategoryId, localeCode, paginatedRequest));
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<?> getCount(@PathVariable("room-category-id") Long roomCategoryId) {
+        roomCategoryService.getEntityById(roomCategoryId);
+        return ResponseEntity.ok(roomCategoryLocaleService.getCount(roomCategoryId));
+    }
+
     @PostMapping
     public ResponseEntity<?> create(
             @PathVariable("room-category-id") Long roomCategoryId,

@@ -28,17 +28,18 @@ actually used to shape the response:
 
 ## Endpoints
 
-| Method | Path                                            | Description               |
+| Method | Path                                             | Description                |
 |--------|--------------------------------------------------|----------------------------|
-| POST   | `/api/v1/currencies`                            | Create a currency          |
-| GET    | `/api/v1/currencies`                            | List / search currencies    |
-| GET    | `/api/v1/currencies/{id}`                       | Get a currency               |
-| PUT    | `/api/v1/currencies/{id}`                       | Update a currency               |
-| DELETE | `/api/v1/currencies/{id}`                       | Delete a currency                 |
-| GET    | `/api/v1/currencies/{currency-id}/locales`      | List a currency's locales            |
-| POST   | `/api/v1/currencies/{currency-id}/locales`      | Create a currency locale               |
-| PUT    | `/api/v1/currencies/{currency-id}/locales/{id}` | Update a currency locale                 |
-| DELETE | `/api/v1/currencies/{currency-id}/locales/{id}` | Delete a currency locale                   |
+| POST   | `/api/v1/currencies`                             | Create a currency          |
+| GET    | `/api/v1/currencies`                             | List / search currencies   |
+| GET    | `/api/v1/currencies/{id}`                        | Get a currency             |
+| PUT    | `/api/v1/currencies/{id}`                        | Update a currency          |
+| DELETE | `/api/v1/currencies/{id}`                        | Delete a currency          |
+| GET    | `/api/v1/currencies/{currency-id}/locales`       | List a currency's locales  |
+| GET    | `/api/v1/currencies/{currency-id}/locales/count` | Count a currency's locales |
+| POST   | `/api/v1/currencies/{currency-id}/locales`       | Create a currency locale   |
+| PUT    | `/api/v1/currencies/{currency-id}/locales/{id}`  | Update a currency locale   |
+| DELETE | `/api/v1/currencies/{currency-id}/locales/{id}`  | Delete a currency locale   |
 
 ---
 
@@ -46,22 +47,22 @@ actually used to shape the response:
 
 ### Currency
 
-| Field            | Type    | Required | Constraints                                                                                   | Description                                                                                                                                   |
-|------------------|---------|----------|-------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
-| `id`             | Long    | —        | read-only                                                                                     | Auto-generated identifier                                                                                                                     |
-| `country`        | Country | —        | read-only; embedded parent summary (single Accept-Language-matched `locale`, same shape as `GET /countries/{id}`) | The parent country this currency belongs to                                                                                |
-| `code`           | String  | Yes      | max 3 chars, must match `^[A-Z]{3}$`, unique among active records; set at creation, immutable | ISO 4217 alphabetic code (e.g., `BDT`)                                                                                                        |
-| `numeric_code`   | String  | Yes      | max 3 chars, must match `^[0-9]{3}$`, unique among active records; set at creation, immutable | ISO 4217 numeric code (e.g., `050`)                                                                                                           |
-| `symbol`         | String  | Yes      | max 10 chars                                                                                  | Currency symbol (e.g., `৳`)                                                                                                                   |
-| `decimal_places` | Integer | Yes      | default 2                                                                                     | Number of decimal places (e.g., 2 for USD, 0 for JPY)                                                                                         |
-| `is_default`     | Boolean | Yes      | default false                                                                                 | Whether this is the platform default currency                                                                                                 |
-| `sort_order`     | Integer | Yes      | default 0                                                                                     | Display order                                                                                                                                 |
-| `locale`         | Object  | —        | nullable; see CurrencyLocale below                                                            | The single translation matching the request's `Accept-Language` (falls back to `en`, then `null` if the currency has no translations at all) |
+| Field            | Type    | Required | Constraints                                                                                                       | Description                                                                                                                                  |
+|------------------|---------|----------|-------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| `id`             | Long    | —        | read-only                                                                                                         | Auto-generated identifier                                                                                                                    |
+| `country`        | Country | —        | read-only; embedded parent summary (single Accept-Language-matched `locale`, same shape as `GET /countries/{id}`) | The parent country this currency belongs to                                                                                                  |
+| `code`           | String  | Yes      | max 3 chars, must match `^[A-Z]{3}$`, unique among active records; set at creation, immutable                     | ISO 4217 alphabetic code (e.g., `BDT`)                                                                                                       |
+| `numeric_code`   | String  | Yes      | max 3 chars, must match `^[0-9]{3}$`, unique among active records; set at creation, immutable                     | ISO 4217 numeric code (e.g., `050`)                                                                                                          |
+| `symbol`         | String  | Yes      | max 10 chars                                                                                                      | Currency symbol (e.g., `৳`)                                                                                                                  |
+| `decimal_places` | Integer | Yes      | default 2                                                                                                         | Number of decimal places (e.g., 2 for USD, 0 for JPY)                                                                                        |
+| `is_default`     | Boolean | Yes      | default false                                                                                                     | Whether this is the platform default currency                                                                                                |
+| `sort_order`     | Integer | Yes      | default 0                                                                                                         | Display order                                                                                                                                |
+| `locale`         | Object  | —        | nullable; see CurrencyLocale below                                                                                | The single translation matching the request's `Accept-Language` (falls back to `en`, then `null` if the currency has no translations at all) |
 
 ### CurrencyLocale
 
 | Field        | Type    | Required | Constraints                                      | Description                                                                    |
-|--------------|---------|----------|-----------------------------------------------------|--------------------------------------------------------------------------------|
+|--------------|---------|----------|--------------------------------------------------|--------------------------------------------------------------------------------|
 | `id`         | Long    | —        | read-only                                        | Auto-generated identifier                                                      |
 | `locale`     | Locale  | —        | read-only, resolved from `locale_id` at creation | The locale this translation is written in (`id`, `code`, `name`, `sort_order`) |
 | `name`       | String  | Yes      | max 200 chars                                    | Localized currency name (e.g., `Bangladeshi Taka`)                             |
@@ -105,7 +106,7 @@ Additional languages are added afterward via the Currency Locales sub-resource b
 ### Request Fields
 
 | Field            | Type    | Required | Validation                                                                                 |
-|------------------|---------|----------|------------------------------------------------------------------------------------------------|
+|------------------|---------|----------|--------------------------------------------------------------------------------------------|
 | `code`           | String  | Yes      | Not blank, max 3 chars, must match `^[A-Z]{3}$`, unique among active records               |
 | `numeric_code`   | String  | Yes      | Not blank, max 3 chars, must match `^[0-9]{3}$`, unique among active records               |
 | `country_id`     | Long    | Yes      | Not null; must reference an existing, active country                                       |
@@ -146,7 +147,7 @@ a currency has, use [List Currency Locales](#list-currency-locales) below.
 ### Path Parameters
 
 | Parameter | Type | Description        |
-|-----------|------|----------------------|
+|-----------|------|--------------------|
 | `id`      | Long | ID of the currency |
 
 ### Response `200 OK`
@@ -316,7 +317,7 @@ Locales sub-resource endpoints below, not through this endpoint.
 ### Path Parameters
 
 | Parameter | Type | Description        |
-|-----------|------|-----------------------|
+|-----------|------|--------------------|
 | `id`      | Long | ID of the currency |
 
 ### Request Body
@@ -333,7 +334,7 @@ Locales sub-resource endpoints below, not through this endpoint.
 ### Request Fields
 
 | Field            | Type    | Required | Validation              |
-|------------------|---------|----------|---------------------------|
+|------------------|---------|----------|-------------------------|
 | `symbol`         | String  | Yes      | Not blank, max 10 chars |
 | `decimal_places` | Integer | Yes      | Not null                |
 | `is_default`     | Boolean | Yes      | Not null                |
@@ -360,7 +361,7 @@ response.
 ### Path Parameters
 
 | Parameter | Type | Description        |
-|-----------|------|-----------------------|
+|-----------|------|--------------------|
 | `id`      | Long | ID of the currency |
 
 ### Response `200 OK`
@@ -391,8 +392,8 @@ more than the single Accept-Language-matched translation returned by `GET /curre
 
 #### Path Parameters
 
-| Parameter     | Type | Description                |
-|---------------|------|------------------------------|
+| Parameter     | Type | Description               |
+|---------------|------|---------------------------|
 | `currency-id` | Long | ID of the parent currency |
 
 #### Query Parameters
@@ -451,6 +452,38 @@ more than the single Accept-Language-matched translation returned by `GET /curre
 
 ---
 
+### Count Currency Locales
+
+`GET /api/v1/currencies/{currency-id}/locales/count`
+
+Returns how many active locale translations a currency currently has, plus the `code` of each one. Compare
+this against [`GET /api/v1/locales/count`](locales-api.md) (the platform-wide list of active locale codes)
+to determine which languages the currency is still missing and can add a translation for via
+[Create Currency Locale](#create-currency-locale) — e.g. if the platform has `en`, `bn`, `es` and this
+endpoint returns `en`, `bn` for the currency, `es` is still available; if it returns all three, every
+platform locale already has a translation and `POST .../locales` for any of them will fail with
+`409 CONFLICT`.
+
+#### Path Parameters
+
+| Parameter     | Type | Description               |
+|---------------|------|---------------------------|
+| `currency-id` | Long | ID of the parent currency |
+
+#### Response `200 OK`
+
+```json
+{
+  "count": 2,
+  "codes": [
+    "en",
+    "bn"
+  ]
+}
+```
+
+---
+
 ### Create Currency Locale
 
 `POST /api/v1/currencies/{currency-id}/locales`
@@ -464,7 +497,7 @@ at the application level before any write (backed by a DB-level unique constrain
 #### Path Parameters
 
 | Parameter     | Type | Description               |
-|---------------|------|-----------------------------|
+|---------------|------|---------------------------|
 | `currency-id` | Long | ID of the parent currency |
 
 #### Request Body
@@ -481,7 +514,7 @@ at the application level before any write (backed by a DB-level unique constrain
 #### Request Fields
 
 | Field        | Type    | Required | Validation                                  |
-|--------------|---------|----------|-----------------------------------------------|
+|--------------|---------|----------|---------------------------------------------|
 | `locale_id`  | Long    | Yes      | Not null; must reference an existing locale |
 | `name`       | String  | Yes      | Not blank, max 200 chars                    |
 | `short_name` | String  | No       | Max 100 chars                               |
@@ -508,7 +541,7 @@ currency and locale cannot be changed after creation.
 #### Path Parameters
 
 | Parameter     | Type | Description               |
-|---------------|------|-----------------------------|
+|---------------|------|---------------------------|
 | `currency-id` | Long | ID of the parent currency |
 | `id`          | Long | ID of the currency locale |
 
@@ -551,7 +584,7 @@ response.
 #### Path Parameters
 
 | Parameter     | Type | Description               |
-|---------------|------|-----------------------------|
+|---------------|------|---------------------------|
 | `currency-id` | Long | ID of the parent currency |
 | `id`          | Long | ID of the currency locale |
 
@@ -580,8 +613,8 @@ All errors follow a common structure:
 ```
 
 | HTTP Status | Error Code                 | Cause                                                                                                                                                                                                                              |
-|-------------|-----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|-------------|----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields; or an unsupported `sortBy` query value                                              |
 | 404         | `ENTITY_NOT_FOUND`         | Currency not found, currency locale not found, country referenced by `country_id` not found (currency creation), or the locale referenced by `locale_id` not found (locale creation)                                               |
 | 409         | `CONFLICT`                 | `code` or `numeric_code` already in use by another active currency (checked explicitly in currency `create`), or the currency already has a translation for the given `locale_id` (checked explicitly in currency locale `create`) |
-| 409         | `DATA_INTEGRITY_VIOLATION` | Last-resort DB-level unique constraint on `currency_id` + `locale_id`, should not normally be reachable now that the duplicate is pre-checked at the application level                                                              |
+| 409         | `DATA_INTEGRITY_VIOLATION` | Last-resort DB-level unique constraint on `currency_id` + `locale_id`, should not normally be reachable now that the duplicate is pre-checked at the application level                                                             |

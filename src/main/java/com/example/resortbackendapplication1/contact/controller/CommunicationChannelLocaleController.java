@@ -50,6 +50,12 @@ public class CommunicationChannelLocaleController {
         return ResponseEntity.ok(communicationChannelLocaleService.getAll(communicationChannelId, localeCode, paginatedRequest));
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<?> getCount(@PathVariable("communication-channel-id") Long communicationChannelId) {
+        communicationChannelService.getEntityById(communicationChannelId);
+        return ResponseEntity.ok(communicationChannelLocaleService.getCount(communicationChannelId));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<?> update(
             @PathVariable("communication-channel-id") Long communicationChannelId,

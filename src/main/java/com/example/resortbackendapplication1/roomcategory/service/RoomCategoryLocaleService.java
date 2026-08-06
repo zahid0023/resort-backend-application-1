@@ -8,6 +8,7 @@ import com.example.resortbackendapplication1.roomcategory.dto.request.roomcatego
 import com.example.resortbackendapplication1.roomcategory.model.dto.RoomCategoryLocaleDto;
 import com.example.resortbackendapplication1.roomcategory.model.entity.RoomCategoryEntity;
 import com.example.resortbackendapplication1.roomcategory.model.entity.RoomCategoryLocaleEntity;
+import com.example.resortbackendapplication1.locale.dto.response.locales.LocaleCountResponse;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 
 public interface RoomCategoryLocaleService {
@@ -18,6 +19,8 @@ public interface RoomCategoryLocaleService {
     RoomCategoryLocaleEntity getEntityById(Long roomCategoryId, Long id);
 
     PaginatedResponse<RoomCategoryLocaleDto> getAll(Long roomCategoryId, String localeCode, PaginatedRequest paginatedRequest);
+
+    LocaleCountResponse getCount(Long roomCategoryId);
 
     SuccessResponse update(RoomCategoryLocaleEntity entity,
                            UpdateRoomCategoryLocaleRequest request);

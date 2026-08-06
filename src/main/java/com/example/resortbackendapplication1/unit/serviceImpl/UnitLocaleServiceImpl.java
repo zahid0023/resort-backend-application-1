@@ -4,6 +4,7 @@ import com.example.resortbackendapplication1.commons.dto.request.PaginatedReques
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.commons.utils.Pagination;
+import com.example.resortbackendapplication1.locale.dto.response.locales.LocaleCountResponse;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.unit.dto.request.unit.locale.CreateUnitLocaleRequest;
 import com.example.resortbackendapplication1.unit.dto.request.unit.locale.UpdateUnitLocaleRequest;
@@ -21,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -86,5 +88,12 @@ public class UnitLocaleServiceImpl implements UnitLocaleService {
                         unitId, localeCode, true, false, pageable))
                 .map(UnitLocaleMapper::toDto);
         return Pagination.buildPaginatedResponse(dtoPage);
+    }
+
+    @Override
+    public LocaleCountResponse getCount(Long unitId) {
+        List<String> codes = unitLocaleRepository
+                .findLocaleEntity_CodeByUnitEntity_IdAndIsActiveAndIsDeleted(unitId, true, false);
+        return new LocaleCountResponse((long) codes.size(), codes);
     }
 }

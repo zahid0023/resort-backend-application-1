@@ -34,6 +34,7 @@ actually used to shape the response:
 | PUT    | `/api/v1/price-type-scopes/{id}`                                     | Update a price type scope                 |
 | DELETE | `/api/v1/price-type-scopes/{id}`                                     | Delete a price type scope                 |
 | GET    | `/api/v1/price-type-scopes/{price-type-scope-id}/locales`            | List a price type scope's locales          |
+| GET    | `/api/v1/price-type-scopes/{price-type-scope-id}/locales/count`      | Count a price type scope's locales         |
 | POST   | `/api/v1/price-type-scopes/{price-type-scope-id}/locales`            | Create a price type scope locale           |
 | PUT    | `/api/v1/price-type-scopes/{price-type-scope-id}/locales/{id}`       | Update a price type scope locale           |
 | DELETE | `/api/v1/price-type-scopes/{price-type-scope-id}/locales/{id}`       | Delete a price type scope locale           |
@@ -370,6 +371,35 @@ contains a given substring.
   "has_previous": false,
   "sortable_fields": null,
   "searchable_fields": null
+}
+```
+
+---
+
+### Count Price Type Scope Locales
+
+`GET /api/v1/price-type-scopes/{price-type-scope-id}/locales/count`
+
+Returns how many active locale translations a price type scope currently has, plus the `code` of each
+one. Compare this against [`GET /api/v1/locales/count`](locales-api.md) (the platform-wide list of active
+locale codes) to determine which languages the price type scope is still missing and can add a
+translation for via [Create Price Type Scope Locale](#create-price-type-scope-locale) — e.g. if the
+platform has `en`, `bn`, `es` and this endpoint returns `en`, `bn` for the price type scope, `es` is still
+available; if it returns all three, every platform locale already has a translation and
+`POST .../locales` for any of them will fail with `409 CONFLICT`.
+
+#### Path Parameters
+
+| Parameter             | Type | Description                        |
+|------------------------|------|---------------------------------------|
+| `price-type-scope-id`  | Long | ID of the parent price type scope    |
+
+#### Response `200 OK`
+
+```json
+{
+  "count": 2,
+  "codes": ["en", "bn"]
 }
 ```
 

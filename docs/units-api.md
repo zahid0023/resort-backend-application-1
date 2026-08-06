@@ -35,6 +35,7 @@ actually used to shape the response:
 | PUT    | `/api/v1/units/{id}`                     | Update a unit                    |
 | DELETE | `/api/v1/units/{id}`                     | Delete a unit                       |
 | GET    | `/api/v1/units/{unit-id}/locales`        | List a unit's locales                  |
+| GET    | `/api/v1/units/{unit-id}/locales/count`  | Count a unit's locales                  |
 | POST   | `/api/v1/units/{unit-id}/locales`        | Create a unit locale                      |
 | PUT    | `/api/v1/units/{unit-id}/locales/{id}`   | Update a unit locale                         |
 | DELETE | `/api/v1/units/{unit-id}/locales/{id}`   | Delete a unit locale                            |
@@ -442,6 +443,34 @@ Optionally filtered to locales whose `code` contains a given substring.
   "has_previous": false,
   "sortable_fields": null,
   "searchable_fields": null
+}
+```
+
+---
+
+### Count Unit Locales
+
+`GET /api/v1/units/{unit-id}/locales/count`
+
+Returns how many active locale translations a unit currently has, plus the `code` of each one. Compare
+this against [`GET /api/v1/locales/count`](locales-api.md) (the platform-wide list of active locale codes)
+to determine which languages the unit is still missing and can add a translation for via
+[Create Unit Locale](#create-unit-locale) — e.g. if the platform has `en`, `bn`, `es` and this endpoint
+returns `en`, `bn` for the unit, `es` is still available; if it returns all three, every platform locale
+already has a translation and `POST .../locales` for any of them will fail with `409 CONFLICT`.
+
+#### Path Parameters
+
+| Parameter | Type | Description           |
+|-----------|------|-------------------------|
+| `unit-id` | Long | ID of the parent unit  |
+
+#### Response `200 OK`
+
+```json
+{
+  "count": 2,
+  "codes": ["en", "bn"]
 }
 ```
 

@@ -1,41 +1,41 @@
 create table if not exists facility_scopes
 (
-    id          bigserial primary key,
+    id         bigserial primary key,
 
-    code        varchar(50)                   not null unique,
-    sort_order  integer                       not null default 0,
+    code       varchar(50)                  not null unique,
+    sort_order integer                      not null default 0,
 
-    created_by  bigint references users (id) not null,
-    created_at  timestamp with time zone      not null default current_timestamp,
-    updated_by  bigint references users (id) not null,
-    updated_at  timestamp with time zone      not null default current_timestamp,
-    version     bigint                        not null default 0,
-    is_active   boolean                       not null default true,
-    is_deleted  boolean                       not null default false,
-    deleted_by  bigint references users (id),
-    deleted_at  timestamp with time zone
+    created_by bigint references users (id) not null,
+    created_at timestamp with time zone     not null default current_timestamp,
+    updated_by bigint references users (id) not null,
+    updated_at timestamp with time zone     not null default current_timestamp,
+    version    bigint                       not null default 0,
+    is_active  boolean                      not null default true,
+    is_deleted boolean                      not null default false,
+    deleted_by bigint references users (id),
+    deleted_at timestamp with time zone
 );
 
 create table if not exists facility_scope_locales
 (
-    id                 bigserial primary key,
+    id                bigserial primary key,
 
-    facility_scope_id  bigint references facility_scopes (id) not null,
-    locale_id          bigint references locales (id)         not null,
+    facility_scope_id bigint references facility_scopes (id) not null,
+    locale_id         bigint references locales (id)         not null,
 
-    name               varchar(100)                            not null,
-    description        text                                    not null default '',
-    sort_order         integer                                 not null default 0,
+    name              varchar(100)                           not null,
+    description       text                                   not null default '',
+    sort_order        integer                                not null default 0,
 
-    created_by         bigint references users (id)            not null,
-    created_at         timestamp with time zone                not null default current_timestamp,
-    updated_by         bigint references users (id)            not null,
-    updated_at         timestamp with time zone                not null default current_timestamp,
-    version            bigint                                  not null default 0,
-    is_active          boolean                                 not null default true,
-    is_deleted         boolean                                 not null default false,
-    deleted_by         bigint references users (id),
-    deleted_at         timestamp with time zone,
+    created_by        bigint references users (id)           not null,
+    created_at        timestamp with time zone               not null default current_timestamp,
+    updated_by        bigint references users (id)           not null,
+    updated_at        timestamp with time zone               not null default current_timestamp,
+    version           bigint                                 not null default 0,
+    is_active         boolean                                not null default true,
+    is_deleted        boolean                                not null default false,
+    deleted_by        bigint references users (id),
+    deleted_at        timestamp with time zone,
 
     constraint uq_facility_scope_locale
         unique (facility_scope_id, locale_id)

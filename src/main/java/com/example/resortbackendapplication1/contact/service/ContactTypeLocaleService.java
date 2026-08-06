@@ -8,6 +8,7 @@ import com.example.resortbackendapplication1.contact.model.entity.ContactTypeLoc
 import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
+import com.example.resortbackendapplication1.locale.dto.response.locales.LocaleCountResponse;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 
 public interface ContactTypeLocaleService {
@@ -18,6 +19,8 @@ public interface ContactTypeLocaleService {
     ContactTypeLocaleEntity getEntityById(Long contactTypeId, Long id);
 
     PaginatedResponse<ContactTypeLocaleDto> getAll(Long contactTypeId, String localeCode, PaginatedRequest paginatedRequest);
+
+    LocaleCountResponse getCount(Long contactTypeId);
 
     SuccessResponse update(ContactTypeLocaleEntity entity,
                            UpdateContactTypeLocaleRequest request);

@@ -34,6 +34,7 @@ actually used to shape the response:
 | PUT    | `/api/v1/unit-types/{id}`                         | Update a unit type          |
 | DELETE | `/api/v1/unit-types/{id}`                         | Delete a unit type          |
 | GET    | `/api/v1/unit-types/{unit-type-id}/locales`       | List a unit type's locales   |
+| GET    | `/api/v1/unit-types/{unit-type-id}/locales/count` | Count a unit type's locales  |
 | POST   | `/api/v1/unit-types/{unit-type-id}/locales`       | Create a unit type locale   |
 | PUT    | `/api/v1/unit-types/{unit-type-id}/locales/{id}`  | Update a unit type locale   |
 | DELETE | `/api/v1/unit-types/{unit-type-id}/locales/{id}`  | Delete a unit type locale   |
@@ -359,6 +360,35 @@ see more than the single Accept-Language-matched translation returned by `GET /u
   "has_previous": false,
   "sortable_fields": null,
   "searchable_fields": null
+}
+```
+
+---
+
+### Count Unit Type Locales
+
+`GET /api/v1/unit-types/{unit-type-id}/locales/count`
+
+Returns how many active locale translations a unit type currently has, plus the `code` of each one.
+Compare this against [`GET /api/v1/locales/count`](locales-api.md) (the platform-wide list of active
+locale codes) to determine which languages the unit type is still missing and can add a translation for
+via [Create Unit Type Locale](#create-unit-type-locale) — e.g. if the platform has `en`, `bn`, `es` and
+this endpoint returns `en`, `bn` for the unit type, `es` is still available; if it returns all three,
+every platform locale already has a translation and `POST .../locales` for any of them will fail with
+`409 CONFLICT`.
+
+#### Path Parameters
+
+| Parameter      | Type | Description                 |
+|----------------|------|-------------------------------|
+| `unit-type-id` | Long | ID of the parent unit type   |
+
+#### Response `200 OK`
+
+```json
+{
+  "count": 2,
+  "codes": ["en", "bn"]
 }
 ```
 

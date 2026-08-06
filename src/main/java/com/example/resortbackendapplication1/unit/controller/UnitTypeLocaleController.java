@@ -40,6 +40,12 @@ public class UnitTypeLocaleController {
         return ResponseEntity.ok(unitTypeLocaleService.getAll(unitTypeId, localeCode, paginatedRequest));
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<?> getCount(@PathVariable("unit-type-id") Long unitTypeId) {
+        unitTypeService.getEntityById(unitTypeId);
+        return ResponseEntity.ok(unitTypeLocaleService.getCount(unitTypeId));
+    }
+
     @PostMapping
     public ResponseEntity<?> create(
             @PathVariable("unit-type-id") Long unitTypeId,

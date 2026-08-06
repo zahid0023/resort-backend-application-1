@@ -8,6 +8,7 @@ import com.example.resortbackendapplication1.currency.dto.request.currency.local
 import com.example.resortbackendapplication1.currency.model.dto.CurrencyLocaleDto;
 import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
 import com.example.resortbackendapplication1.currency.model.entity.CurrencyLocaleEntity;
+import com.example.resortbackendapplication1.locale.dto.response.locales.LocaleCountResponse;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 
 public interface CurrencyLocaleService {
@@ -18,6 +19,8 @@ public interface CurrencyLocaleService {
     CurrencyLocaleEntity getEntityById(Long currencyId, Long id);
 
     PaginatedResponse<CurrencyLocaleDto> getAll(Long currencyId, String localeCode, PaginatedRequest paginatedRequest);
+
+    LocaleCountResponse getCount(Long currencyId);
 
     SuccessResponse update(CurrencyLocaleEntity entity,
                            UpdateCurrencyLocaleRequest request);

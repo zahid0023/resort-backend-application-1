@@ -3,6 +3,7 @@ package com.example.resortbackendapplication1.unit.service;
 import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
+import com.example.resortbackendapplication1.locale.dto.response.locales.LocaleCountResponse;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.unit.dto.request.unit.locale.CreateUnitLocaleRequest;
 import com.example.resortbackendapplication1.unit.dto.request.unit.locale.UpdateUnitLocaleRequest;
@@ -18,6 +19,8 @@ public interface UnitLocaleService {
     UnitLocaleEntity getEntityById(Long unitId, Long id);
 
     PaginatedResponse<UnitLocaleDto> getAll(Long unitId, String localeCode, PaginatedRequest paginatedRequest);
+
+    LocaleCountResponse getCount(Long unitId);
 
     SuccessResponse update(UnitLocaleEntity entity,
                            UpdateUnitLocaleRequest request);

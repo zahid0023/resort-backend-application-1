@@ -6,7 +6,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
 import java.util.Optional;
 
 @SuppressWarnings("unused")
@@ -41,5 +43,13 @@ public interface UnitTypeLocaleRepository extends
             Boolean isActive,
             Boolean isDeleted,
             Pageable pageable
+    );
+
+    @Query("select utle.localeEntity.code from UnitTypeLocaleEntity utle " +
+            "where utle.unitTypeEntity.id = :unitTypeId and utle.isActive = :isActive and utle.isDeleted = :isDeleted")
+    List<String> findLocaleEntity_CodeByUnitTypeEntity_IdAndIsActiveAndIsDeleted(
+            Long unitTypeId,
+            Boolean isActive,
+            Boolean isDeleted
     );
 }

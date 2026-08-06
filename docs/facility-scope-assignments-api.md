@@ -22,11 +22,11 @@ resource itself branches on.
 
 ## Endpoints
 
-| Method | Path                                                                     | Description                            |
-|--------|-----------------------------------------------------------------------------|---------------------------------------------|
-| GET    | `/api/v1/facility-scopes/{facility-scope-id}/facility-assignments`          | List facilities assigned to a scope           |
-| POST   | `/api/v1/facility-scopes/{facility-scope-id}/facility-assignments`          | Assign a facility to a scope                  |
-| DELETE | `/api/v1/facility-scopes/{facility-scope-id}/facility-assignments/{id}`     | Unassign a facility from a scope              |
+| Method | Path                                                                    | Description                         |
+|--------|-------------------------------------------------------------------------|-------------------------------------|
+| GET    | `/api/v1/facility-scopes/{facility-scope-id}/facility-assignments`      | List facilities assigned to a scope |
+| POST   | `/api/v1/facility-scopes/{facility-scope-id}/facility-assignments`      | Assign a facility to a scope        |
+| DELETE | `/api/v1/facility-scopes/{facility-scope-id}/facility-assignments/{id}` | Unassign a facility from a scope    |
 
 ---
 
@@ -34,10 +34,10 @@ resource itself branches on.
 
 ### FacilityScopeAssignment
 
-| Field       | Type   | Required | Constraints | Description                                                                                                             |
-|--------------|--------|----------|---------------|--------------------------------------------------------------------------------------------------------------------------|
-| `id`         | Long   | —        | read-only     | Auto-generated identifier of the assignment row                                                                           |
-| `facility`   | Object | —        | read-only     | The assigned facility — same shape as [Facilities](facilities-api.md)'s `Facility` data model, including its own `facility_group` and `locale`-matched translation |
+| Field      | Type   | Required | Constraints | Description                                                                                                                                                        |
+|------------|--------|----------|-------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `id`       | Long   | —        | read-only   | Auto-generated identifier of the assignment row                                                                                                                    |
+| `facility` | Object | —        | read-only   | The assigned facility — same shape as [Facilities](facilities-api.md)'s `Facility` data model, including its own `facility_group` and `locale`-matched translation |
 
 The parent `facility_scope` is never re-embedded on each row — it's already known from the
 `{facility-scope-id}` path segment.
@@ -54,16 +54,16 @@ client discovers "which facilities apply here" for a resort (`RESORT` scope) or 
 
 ### Path Parameters
 
-| Parameter           | Type | Description               |
-|-----------------------|------|-------------------------------|
-| `facility-scope-id`   | Long | ID of the facility scope     |
+| Parameter           | Type | Description              |
+|---------------------|------|--------------------------|
+| `facility-scope-id` | Long | ID of the facility scope |
 
 ### Query Parameters
 
-| Parameter | Type | Default | Constraints | Description               |
-|-----------|------|---------|---------------|-------------------------------|
-| `page`    | int  | `0`     | >= 0          | Zero-based page index         |
-| `size`    | int  | `10`    | 1 – 50        | Number of items per page      |
+| Parameter | Type | Default | Constraints | Description              |
+|-----------|------|---------|-------------|--------------------------|
+| `page`    | int  | `0`     | >= 0        | Zero-based page index    |
+| `size`    | int  | `10`    | 1 – 50      | Number of items per page |
 
 > **Note:** `sortBy`/`sortDir` are accepted on the request object but there are no sortable fields
 > registered for this endpoint — passing any non-null `sortBy` value throws
@@ -150,9 +150,9 @@ application-level only; there is no DB-level unique constraint on `(facility_sco
 
 ### Path Parameters
 
-| Parameter           | Type | Description               |
-|-----------------------|------|-------------------------------|
-| `facility-scope-id`   | Long | ID of the facility scope     |
+| Parameter           | Type | Description              |
+|---------------------|------|--------------------------|
+| `facility-scope-id` | Long | ID of the facility scope |
 
 ### Request Body
 
@@ -164,9 +164,9 @@ application-level only; there is no DB-level unique constraint on `(facility_sco
 
 ### Request Fields
 
-| Field           | Type | Required | Validation                                |
-|------------------|------|----------|-------------------------------------------------|
-| `facility_id`    | Long | Yes      | Not null; must reference an existing facility    |
+| Field         | Type | Required | Validation                                    |
+|---------------|------|----------|-----------------------------------------------|
+| `facility_id` | Long | Yes      | Not null; must reference an existing facility |
 
 ### Response `201 Created`
 
@@ -188,10 +188,10 @@ response.
 
 ### Path Parameters
 
-| Parameter           | Type | Description               |
-|-----------------------|------|-------------------------------|
-| `facility-scope-id`   | Long | ID of the facility scope     |
-| `id`                  | Long | ID of the assignment row     |
+| Parameter           | Type | Description              |
+|---------------------|------|--------------------------|
+| `facility-scope-id` | Long | ID of the facility scope |
+| `id`                | Long | ID of the assignment row |
 
 ### Response `200 OK`
 
@@ -217,8 +217,8 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                                                                                                             |
-|-------------|-----------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
-| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs); an unsupported `sortBy` query value; or `facility_id` missing/null |
-| 404         | `ENTITY_NOT_FOUND`         | Facility scope not found, the facility referenced by `facility_id` not found, or assignment not found                                  |
-| 409         | `CONFLICT`                 | The facility is already assigned to this facility scope (pre-checked at the application level)                                          |
+| HTTP Status | Error Code         | Cause                                                                                                                                                      |
+|-------------|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 400         | `INVALID_ARGUMENT` | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs); an unsupported `sortBy` query value; or `facility_id` missing/null |
+| 404         | `ENTITY_NOT_FOUND` | Facility scope not found, the facility referenced by `facility_id` not found, or assignment not found                                                      |
+| 409         | `CONFLICT`         | The facility is already assigned to this facility scope (pre-checked at the application level)                                                             |

@@ -40,6 +40,12 @@ public class PriceTypeScopeLocaleController {
         return ResponseEntity.ok(priceTypeScopeLocaleService.getAll(priceTypeScopeId, localeCode, paginatedRequest));
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<?> getCount(@PathVariable("price-type-scope-id") Long priceTypeScopeId) {
+        priceTypeScopeService.getEntityById(priceTypeScopeId);
+        return ResponseEntity.ok(priceTypeScopeLocaleService.getCount(priceTypeScopeId));
+    }
+
     @PostMapping
     public ResponseEntity<?> create(
             @PathVariable("price-type-scope-id") Long priceTypeScopeId,

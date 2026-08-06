@@ -8,6 +8,7 @@ import com.example.resortbackendapplication1.facility.dto.request.facility.local
 import com.example.resortbackendapplication1.facility.model.dto.FacilityLocaleDto;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityLocaleEntity;
+import com.example.resortbackendapplication1.locale.dto.response.locales.LocaleCountResponse;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 
 public interface FacilityLocaleService {
@@ -18,6 +19,8 @@ public interface FacilityLocaleService {
     FacilityLocaleEntity getEntityById(Long facilityId, Long id);
 
     PaginatedResponse<FacilityLocaleDto> getAll(Long facilityId, String localeCode, PaginatedRequest paginatedRequest);
+
+    LocaleCountResponse getCount(Long facilityId);
 
     SuccessResponse update(FacilityLocaleEntity entity,
                            UpdateFacilityLocaleRequest request);

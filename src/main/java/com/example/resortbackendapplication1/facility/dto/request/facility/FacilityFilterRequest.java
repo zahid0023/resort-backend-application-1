@@ -9,6 +9,7 @@ import com.example.resortbackendapplication1.facility.model.enums.FacilitySearch
 import com.example.resortbackendapplication1.facility.model.enums.FacilitySortField;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import lombok.Data;
@@ -28,7 +29,11 @@ public class FacilityFilterRequest extends PaginatedRequest implements LocaleReq
     public List<Predicate> toPredicates(Root<?> root, CriteriaQuery<?> query, CriteriaBuilder cb, Long localeId) {
         List<Predicate> predicates = SpecificationUtils.buildSearchPredicates(this, FacilitySearchField.values(), root, query, cb, localeId);
         if (facilityGroupId != null) {
-            predicates.add(cb.equal(root.get("facilityGroupEntity").get("id"), facilityGroupId));
+            Join<?, ?> assignmentJoin = root.join("facilityGroupFacilityAssignmentEntities");
+            predicates.add(cb.equal(assignmentJoin.get("facilityGroupEntity").get("id"), facilityGroupId));
+            predicates.add(cb.isTrue(assignmentJoin.get("isActive")));
+            predicates.add(cb.isFalse(assignmentJoin.get("isDeleted")));
+            query.distinct(true);
         }
         return predicates;
     }

@@ -50,6 +50,12 @@ public class DayOfWeekLocaleController {
         return ResponseEntity.ok(dayOfWeekLocaleService.getAll(dayOfWeekId, localeCode, paginatedRequest));
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<?> getCount(@PathVariable("day-of-week-id") Long dayOfWeekId) {
+        dayOfWeekService.getEntityById(dayOfWeekId);
+        return ResponseEntity.ok(dayOfWeekLocaleService.getCount(dayOfWeekId));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<?> update(
             @PathVariable("day-of-week-id") Long dayOfWeekId,

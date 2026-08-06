@@ -12,6 +12,7 @@ import com.example.resortbackendapplication1.roomcategory.model.entity.RoomCateg
 import com.example.resortbackendapplication1.roomcategory.model.mapper.RoomCategoryLocaleMapper;
 import com.example.resortbackendapplication1.roomcategory.repository.RoomCategoryLocaleRepository;
 import com.example.resortbackendapplication1.roomcategory.service.RoomCategoryLocaleService;
+import com.example.resortbackendapplication1.locale.dto.response.locales.LocaleCountResponse;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -99,5 +101,12 @@ public class RoomCategoryLocaleServiceImpl implements RoomCategoryLocaleService 
                         roomCategoryId, localeCode, true, false, pageable))
                 .map(RoomCategoryLocaleMapper::toDto);
         return Pagination.buildPaginatedResponse(dtoPage);
+    }
+
+    @Override
+    public LocaleCountResponse getCount(Long roomCategoryId) {
+        List<String> codes = roomCategoryLocaleRepository
+                .findLocaleEntity_CodeByRoomCategoryEntity_IdAndIsActiveAndIsDeleted(roomCategoryId, true, false);
+        return new LocaleCountResponse((long) codes.size(), codes);
     }
 }

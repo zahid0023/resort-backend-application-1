@@ -8,6 +8,7 @@ import com.example.resortbackendapplication1.address.model.entity.CityLocaleEnti
 import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
+import com.example.resortbackendapplication1.locale.dto.response.locales.LocaleCountResponse;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 
 public interface CityLocaleService {
@@ -18,6 +19,8 @@ public interface CityLocaleService {
     CityLocaleEntity getEntityById(Long cityId, Long id);
 
     PaginatedResponse<CityLocaleDto> getAll(Long cityId, String localeCode, PaginatedRequest paginatedRequest);
+
+    LocaleCountResponse getCount(Long cityId);
 
     SuccessResponse update(CityLocaleEntity entity,
                            UpdateCityLocaleRequest request);

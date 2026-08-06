@@ -50,6 +50,12 @@ public class ContactTypeLocaleController {
         return ResponseEntity.ok(contactTypeLocaleService.getAll(contactTypeId, localeCode, paginatedRequest));
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<?> getCount(@PathVariable("contact-type-id") Long contactTypeId) {
+        contactTypeService.getEntityById(contactTypeId);
+        return ResponseEntity.ok(contactTypeLocaleService.getCount(contactTypeId));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<?> update(
             @PathVariable("contact-type-id") Long contactTypeId,

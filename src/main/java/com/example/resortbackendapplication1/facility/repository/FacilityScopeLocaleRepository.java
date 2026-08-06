@@ -6,7 +6,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
 import java.util.Optional;
 
 @SuppressWarnings("unused")
@@ -56,5 +58,13 @@ public interface FacilityScopeLocaleRepository extends
             Boolean isActive,
             Boolean isDeleted,
             Pageable pageable
+    );
+
+    @Query("select fsle.localeEntity.code from FacilityScopeLocaleEntity fsle " +
+            "where fsle.facilityScopeEntity.id = :facilityScopeId and fsle.isActive = :isActive and fsle.isDeleted = :isDeleted")
+    List<String> findLocaleEntity_CodeByFacilityScopeEntity_IdAndIsActiveAndIsDeleted(
+            Long facilityScopeId,
+            Boolean isActive,
+            Boolean isDeleted
     );
 }

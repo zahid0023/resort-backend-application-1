@@ -8,6 +8,7 @@ import com.example.resortbackendapplication1.bedtype.model.entity.BedTypeLocaleE
 import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
+import com.example.resortbackendapplication1.locale.dto.response.locales.LocaleCountResponse;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 
 public interface BedTypeLocaleService {
@@ -18,6 +19,8 @@ public interface BedTypeLocaleService {
     BedTypeLocaleEntity getEntityById(Long bedTypeId, Long id);
 
     PaginatedResponse<BedTypeLocaleDto> getAll(Long bedTypeId, String localeCode, PaginatedRequest paginatedRequest);
+
+    LocaleCountResponse getCount(Long bedTypeId);
 
     SuccessResponse update(BedTypeLocaleEntity entity,
                            UpdateBedTypeLocaleRequest request);

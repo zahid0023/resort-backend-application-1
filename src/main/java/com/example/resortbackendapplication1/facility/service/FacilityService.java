@@ -9,12 +9,16 @@ import com.example.resortbackendapplication1.facility.dto.response.facilities.Fa
 import com.example.resortbackendapplication1.facility.model.dto.FacilityDto;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupEntity;
+import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeEntity;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+
+import java.util.List;
 
 public interface FacilityService {
 
     SuccessResponse create(CreateFacilityRequest request,
-                           FacilityGroupEntity facilityGroupEntity,
+                           List<FacilityGroupEntity> facilityGroupEntities,
+                           List<FacilityScopeEntity> facilityScopeEntities,
                            LocaleEntity localeEntity);
 
     FacilityEntity getEntityById(Long id);

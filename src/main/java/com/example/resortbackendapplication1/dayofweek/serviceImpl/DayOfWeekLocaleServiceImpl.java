@@ -4,6 +4,7 @@ import com.example.resortbackendapplication1.commons.dto.request.PaginatedReques
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.commons.utils.Pagination;
+import com.example.resortbackendapplication1.locale.dto.response.locales.LocaleCountResponse;
 import com.example.resortbackendapplication1.dayofweek.dto.request.dayofweek.locale.CreateDayOfWeekLocaleRequest;
 import com.example.resortbackendapplication1.dayofweek.dto.request.dayofweek.locale.UpdateDayOfWeekLocaleRequest;
 import com.example.resortbackendapplication1.dayofweek.model.dto.DayOfWeekLocaleDto;
@@ -21,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -86,5 +88,12 @@ public class DayOfWeekLocaleServiceImpl implements DayOfWeekLocaleService {
                         dayOfWeekId, localeCode, true, false, pageable))
                 .map(DayOfWeekLocaleMapper::toDto);
         return Pagination.buildPaginatedResponse(dtoPage);
+    }
+
+    @Override
+    public LocaleCountResponse getCount(Long dayOfWeekId) {
+        List<String> codes = dayOfWeekLocaleRepository
+                .findLocaleEntity_CodeByDayOfWeekEntity_IdAndIsActiveAndIsDeleted(dayOfWeekId, true, false);
+        return new LocaleCountResponse((long) codes.size(), codes);
     }
 }

@@ -4,7 +4,9 @@ import com.example.resortbackendapplication1.facility.dto.request.facilitygroup.
 import com.example.resortbackendapplication1.facility.dto.request.facilitygroup.FacilityGroupFilterRequest;
 import com.example.resortbackendapplication1.facility.dto.request.facilitygroup.UpdateFacilityGroupRequest;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupEntity;
+import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeEntity;
 import com.example.resortbackendapplication1.facility.service.FacilityGroupService;
+import com.example.resortbackendapplication1.facility.service.FacilityScopeService;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.locale.service.LocaleService;
 import jakarta.validation.Valid;
@@ -13,23 +15,29 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/facility-groups")
 public class FacilityGroupController {
 
     private final FacilityGroupService facilityGroupService;
+    private final FacilityScopeService facilityScopeService;
     private final LocaleService localeService;
 
     public FacilityGroupController(FacilityGroupService facilityGroupService,
+                                   FacilityScopeService facilityScopeService,
                                    LocaleService localeService) {
         this.facilityGroupService = facilityGroupService;
+        this.facilityScopeService = facilityScopeService;
         this.localeService = localeService;
     }
 
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody CreateFacilityGroupRequest request) {
+        List<FacilityScopeEntity> facilityScopeEntities = facilityScopeService.getAll(request.getFacilityScopeIds());
         LocaleEntity localeEntity = localeService.getEntityByCode("en");
-        return ResponseEntity.status(HttpStatus.CREATED).body(facilityGroupService.create(request, localeEntity));
+        return ResponseEntity.status(HttpStatus.CREATED).body(facilityGroupService.create(request, facilityScopeEntities, localeEntity));
     }
 
     @GetMapping("/{id}")

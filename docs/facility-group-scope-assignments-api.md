@@ -22,11 +22,11 @@ here, not a value this resource itself branches on.
 
 ## Endpoints
 
-| Method | Path                                                                | Description                                  |
-|--------|-----------------------------------------------------------------------|-------------------------------------------------|
-| GET    | `/api/v1/facility-scopes/{facility-scope-id}/group-assignments`       | List facility groups assigned to a scope         |
-| POST   | `/api/v1/facility-scopes/{facility-scope-id}/group-assignments`       | Assign a facility group to a scope               |
-| DELETE | `/api/v1/facility-scopes/{facility-scope-id}/group-assignments/{id}`  | Unassign a facility group from a scope           |
+| Method | Path                                                                 | Description                              |
+|--------|----------------------------------------------------------------------|------------------------------------------|
+| GET    | `/api/v1/facility-scopes/{facility-scope-id}/group-assignments`      | List facility groups assigned to a scope |
+| POST   | `/api/v1/facility-scopes/{facility-scope-id}/group-assignments`      | Assign a facility group to a scope       |
+| DELETE | `/api/v1/facility-scopes/{facility-scope-id}/group-assignments/{id}` | Unassign a facility group from a scope   |
 
 ---
 
@@ -34,10 +34,10 @@ here, not a value this resource itself branches on.
 
 ### FacilityGroupScopeAssignment
 
-| Field           | Type   | Required | Constraints | Description                                                              |
-|------------------|--------|----------|---------------|-----------------------------------------------------------------------------|
-| `id`             | Long   | —        | read-only     | Auto-generated identifier of the assignment row                             |
-| `facility_group` | Object | —        | read-only     | The assigned facility group — same shape as [Facility Groups](facility-groups-api.md)'s `FacilityGroup` data model, including its own `locale`-matched translation |
+| Field            | Type   | Required | Constraints | Description                                                                                                                                                        |
+|------------------|--------|----------|-------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `id`             | Long   | —        | read-only   | Auto-generated identifier of the assignment row                                                                                                                    |
+| `facility_group` | Object | —        | read-only   | The assigned facility group — same shape as [Facility Groups](facility-groups-api.md)'s `FacilityGroup` data model, including its own `locale`-matched translation |
 
 The parent `facility_scope` is never re-embedded on each row — it's already known from the
 `{facility-scope-id}` path segment.
@@ -54,16 +54,16 @@ a client discovers "which facility groups apply here" for a resort (`RESORT` sco
 
 ### Path Parameters
 
-| Parameter            | Type | Description               |
-|------------------------|------|-------------------------------|
-| `facility-scope-id`    | Long | ID of the facility scope     |
+| Parameter           | Type | Description              |
+|---------------------|------|--------------------------|
+| `facility-scope-id` | Long | ID of the facility scope |
 
 ### Query Parameters
 
-| Parameter | Type | Default | Constraints | Description               |
-|-----------|------|---------|---------------|-------------------------------|
-| `page`    | int  | `0`     | >= 0          | Zero-based page index         |
-| `size`    | int  | `10`    | 1 – 50        | Number of items per page      |
+| Parameter | Type | Default | Constraints | Description              |
+|-----------|------|---------|-------------|--------------------------|
+| `page`    | int  | `0`     | >= 0        | Zero-based page index    |
+| `size`    | int  | `10`    | 1 – 50      | Number of items per page |
 
 > **Note:** `sortBy`/`sortDir` are accepted on the request object but there are no sortable fields
 > registered for this endpoint — passing any non-null `sortBy` value throws
@@ -127,9 +127,9 @@ application-level only; there is no DB-level unique constraint on `(facility_sco
 
 ### Path Parameters
 
-| Parameter            | Type | Description               |
-|------------------------|------|-------------------------------|
-| `facility-scope-id`    | Long | ID of the facility scope     |
+| Parameter           | Type | Description              |
+|---------------------|------|--------------------------|
+| `facility-scope-id` | Long | ID of the facility scope |
 
 ### Request Body
 
@@ -141,9 +141,9 @@ application-level only; there is no DB-level unique constraint on `(facility_sco
 
 ### Request Fields
 
-| Field                | Type | Required | Validation                                    |
-|-----------------------|------|----------|---------------------------------------------------|
-| `facility_group_id`   | Long | Yes      | Not null; must reference an existing facility group |
+| Field               | Type | Required | Validation                                          |
+|---------------------|------|----------|-----------------------------------------------------|
+| `facility_group_id` | Long | Yes      | Not null; must reference an existing facility group |
 
 ### Response `201 Created`
 
@@ -165,10 +165,10 @@ response.
 
 ### Path Parameters
 
-| Parameter            | Type | Description               |
-|------------------------|------|-------------------------------|
-| `facility-scope-id`    | Long | ID of the facility scope     |
-| `id`                   | Long | ID of the assignment row     |
+| Parameter           | Type | Description              |
+|---------------------|------|--------------------------|
+| `facility-scope-id` | Long | ID of the facility scope |
+| `id`                | Long | ID of the assignment row |
 
 ### Response `200 OK`
 
@@ -194,8 +194,8 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                                                                                                                     |
-|-------------|-----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
-| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs); an unsupported `sortBy` query value; or `facility_group_id` missing/null |
-| 404         | `ENTITY_NOT_FOUND`         | Facility scope not found, the facility group referenced by `facility_group_id` not found, or assignment not found                          |
-| 409         | `CONFLICT`                 | The facility group is already assigned to this facility scope (pre-checked at the application level)                                         |
+| HTTP Status | Error Code         | Cause                                                                                                                                                            |
+|-------------|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 400         | `INVALID_ARGUMENT` | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs); an unsupported `sortBy` query value; or `facility_group_id` missing/null |
+| 404         | `ENTITY_NOT_FOUND` | Facility scope not found, the facility group referenced by `facility_group_id` not found, or assignment not found                                                |
+| 409         | `CONFLICT`         | The facility group is already assigned to this facility scope (pre-checked at the application level)                                                             |

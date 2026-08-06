@@ -6,7 +6,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
 import java.util.Optional;
 
 @SuppressWarnings("unused")
@@ -56,5 +58,13 @@ public interface PriceTypeLocaleRepository extends
             Boolean isActive,
             Boolean isDeleted,
             Pageable pageable
+    );
+
+    @Query("select ptle.localeEntity.code from PriceTypeLocaleEntity ptle " +
+            "where ptle.priceTypeEntity.id = :priceTypeId and ptle.isActive = :isActive and ptle.isDeleted = :isDeleted")
+    List<String> findLocaleEntity_CodeByPriceTypeEntity_IdAndIsActiveAndIsDeleted(
+            Long priceTypeId,
+            Boolean isActive,
+            Boolean isDeleted
     );
 }

@@ -14,13 +14,13 @@ requests via `MockMvc`, dispatched through the actual Spring MVC + Spring
 Security filter chain, against a real (in-memory) database — never a mocked
 `Service`/`Repository` layer, never a hand-poked `SecurityContext`.
 
-| Test class                                    | Covers                                                              |
-|------------------------------------------------|-----------------------------------------------------------------------|
-| `support/ApiIntegrationTestBase.java`          | Shared base — not a test itself, see §3                               |
-| `locale/controller/LocaleControllerTest.java`  | Full CRUD for `/api/v1/locales`                                       |
-| `address/controller/CountryControllerTest.java`| Full CRUD for `/api/v1/countries` + its `CountryLocale` sub-resource  |
-| `EndToEndFlowTest.java`                        | One continuous realistic journey: superadmin → create Locales → create a Country referencing them → manage its locale sub-resource |
-| `SpringBackendTemplate1ApplicationTests.java`  | Default Spring Boot smoke test (`contextLoads`) — unrelated to the above, still targets the real Postgres datasource |
+| Test class                                      | Covers                                                                                                                             |
+|-------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| `support/ApiIntegrationTestBase.java`           | Shared base — not a test itself, see §3                                                                                            |
+| `locale/controller/LocaleControllerTest.java`   | Full CRUD for `/api/v1/locales`                                                                                                    |
+| `address/controller/CountryControllerTest.java` | Full CRUD for `/api/v1/countries` + its `CountryLocale` sub-resource                                                               |
+| `EndToEndFlowTest.java`                         | One continuous realistic journey: superadmin → create Locales → create a Country referencing them → manage its locale sub-resource |
+| `SpringBackendTemplate1ApplicationTests.java`   | Default Spring Boot smoke test (`contextLoads`) — unrelated to the above, still targets the real Postgres datasource               |
 
 There are currently no pure unit tests (Mockito-mocked service/repository
 tests) and no `@DataJpaTest` repository slices — every test exercises the
@@ -115,6 +115,7 @@ exists in the system to it (not just the 3 bootstrap ones), and logs in for
 real via `POST /api/v1/auth/login` to get a genuine, filter-chain-issued JWT:
 
 ```java
+
 @BeforeEach
 void bootstrapSuperAdmin() throws Exception {
     // ...create ADMIN role, bootstrap permissions, register + activate "superadmin"...
@@ -130,10 +131,20 @@ Every test subclass attaches this token to a request with
 
 ```java
 mockMvc.perform(post("/api/v1/countries")
-                .with(asSuperAdmin())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body))
-        .andExpect(status().isCreated());
+                .
+
+with(asSuperAdmin())
+        .
+
+contentType(MediaType.APPLICATION_JSON)
+                .
+
+content(body))
+        .
+
+andExpect(status().
+
+isCreated());
 ```
 
 Note that for Locale/Country/City endpoints, the superadmin's specific
@@ -215,6 +226,7 @@ Since the H2 test database starts empty (§2), any entity another entity
 depends on via `@ManyToOne` must be seeded directly, bypassing HTTP:
 
 ```java
+
 @BeforeEach
 void seedLocales() {
     LocaleEntity en = new LocaleEntity();
@@ -242,15 +254,41 @@ Every entity in this codebase supports soft-delete (`isActive`/`isDeleted` on
 that the delete call itself returned `200`:
 
 ```java
-mockMvc.perform(delete("/api/v1/countries/{id}", countryId).with(asSuperAdmin()))
-        .andExpect(status().isOk());
+mockMvc.perform(delete("/api/v1/countries/{id}", countryId).
 
-mockMvc.perform(get("/api/v1/countries/{id}", countryId).with(asSuperAdmin()))
-        .andExpect(status().isNotFound());          // hidden from getById
+with(asSuperAdmin()))
+        .
 
-mockMvc.perform(get("/api/v1/countries").with(asSuperAdmin())
-                .param("iso3Code", "...").param("sortBy", "code"))
-        .andExpect(jsonPath("$.data.length()").value(0));   // hidden from getAll
+andExpect(status().
+
+isOk());
+
+        mockMvc.
+
+perform(get("/api/v1/countries/{id}", countryId).
+
+with(asSuperAdmin()))
+        .
+
+andExpect(status().
+
+isNotFound());          // hidden from getById
+
+        mockMvc.
+
+perform(get("/api/v1/countries").
+
+with(asSuperAdmin())
+        .
+
+param("iso3Code","...").
+
+param("sortBy","code"))
+        .
+
+andExpect(jsonPath("$.data.length()").
+
+value(0));   // hidden from getAll
 ```
 
 For a CHILD/locale entity, the test additionally re-fetches the **parent**

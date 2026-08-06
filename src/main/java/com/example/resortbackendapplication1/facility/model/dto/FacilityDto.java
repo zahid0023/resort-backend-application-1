@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
 
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -20,7 +21,7 @@ public class FacilityDto {
 
     private Long id;
 
-    private FacilityGroupDto facilityGroup;
+    private List<FacilityGroupDto> facilityGroups;
 
     private String code;
     private Integer sortOrder;
@@ -29,4 +30,5 @@ public class FacilityDto {
     private Map<String, Object> iconMeta;
 
     private FacilityLocaleDto locale;
+    private List<FacilityScopeDto> facilityScopes;
 }

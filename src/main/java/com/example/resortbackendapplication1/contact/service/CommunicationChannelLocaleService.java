@@ -8,6 +8,7 @@ import com.example.resortbackendapplication1.contact.model.entity.CommunicationC
 import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
+import com.example.resortbackendapplication1.locale.dto.response.locales.LocaleCountResponse;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 
 public interface CommunicationChannelLocaleService {
@@ -18,6 +19,8 @@ public interface CommunicationChannelLocaleService {
     CommunicationChannelLocaleEntity getEntityById(Long communicationChannelId, Long id);
 
     PaginatedResponse<CommunicationChannelLocaleDto> getAll(Long communicationChannelId, String localeCode, PaginatedRequest paginatedRequest);
+
+    LocaleCountResponse getCount(Long communicationChannelId);
 
     SuccessResponse update(CommunicationChannelLocaleEntity entity,
                            UpdateCommunicationChannelLocaleRequest request);

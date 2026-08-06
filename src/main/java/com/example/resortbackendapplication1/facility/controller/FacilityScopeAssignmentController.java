@@ -23,8 +23,8 @@ public class FacilityScopeAssignmentController {
     private final FacilityScopeAssignmentService facilityScopeAssignmentService;
 
     public FacilityScopeAssignmentController(FacilityScopeService facilityScopeService,
-                                              FacilityService facilityService,
-                                              FacilityScopeAssignmentService facilityScopeAssignmentService) {
+                                             FacilityService facilityService,
+                                             FacilityScopeAssignmentService facilityScopeAssignmentService) {
         this.facilityScopeService = facilityScopeService;
         this.facilityService = facilityService;
         this.facilityScopeAssignmentService = facilityScopeAssignmentService;

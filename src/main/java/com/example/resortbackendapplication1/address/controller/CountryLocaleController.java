@@ -50,6 +50,12 @@ public class CountryLocaleController {
         return ResponseEntity.ok(countryLocaleService.getAll(countryId, localeCode, paginatedRequest));
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<?> getCount(@PathVariable("country-id") Long countryId) {
+        countryService.getEntityById(countryId);
+        return ResponseEntity.ok(countryLocaleService.getCount(countryId));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<?> update(
             @PathVariable("country-id") Long countryId,

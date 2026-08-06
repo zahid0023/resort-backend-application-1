@@ -40,6 +40,12 @@ public class FacilityScopeLocaleController {
         return ResponseEntity.ok(facilityScopeLocaleService.getAll(facilityScopeId, localeCode, paginatedRequest));
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<?> getCount(@PathVariable("facility-scope-id") Long facilityScopeId) {
+        facilityScopeService.getEntityById(facilityScopeId);
+        return ResponseEntity.ok(facilityScopeLocaleService.getCount(facilityScopeId));
+    }
+
     @PostMapping
     public ResponseEntity<?> create(
             @PathVariable("facility-scope-id") Long facilityScopeId,

@@ -12,6 +12,7 @@ import com.example.resortbackendapplication1.commons.dto.request.PaginatedReques
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.commons.utils.Pagination;
+import com.example.resortbackendapplication1.locale.dto.response.locales.LocaleCountResponse;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -86,5 +88,12 @@ public class CommunicationChannelLocaleServiceImpl implements CommunicationChann
                         communicationChannelId, localeCode, true, false, pageable))
                 .map(CommunicationChannelLocaleMapper::toDto);
         return Pagination.buildPaginatedResponse(dtoPage);
+    }
+
+    @Override
+    public LocaleCountResponse getCount(Long communicationChannelId) {
+        List<String> codes = communicationChannelLocaleRepository
+                .findLocaleEntity_CodeByCommunicationChannelEntity_IdAndIsActiveAndIsDeleted(communicationChannelId, true, false);
+        return new LocaleCountResponse((long) codes.size(), codes);
     }
 }

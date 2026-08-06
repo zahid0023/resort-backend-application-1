@@ -25,19 +25,20 @@ actually used to shape the response:
 
 ## Endpoints
 
-| Method | Path                                          | Description                   |
-|--------|-----------------------------------------------|-------------------------------|
-| POST   | `/api/v1/countries`                           | Create a country              |
-| GET    | `/api/v1/countries`                           | List / search countries       |
-| GET    | `/api/v1/countries/{id}`                      | Get a country                 |
-| PUT    | `/api/v1/countries/{id}`                      | Update a country              |
-| DELETE | `/api/v1/countries/{id}`                      | Delete a country              |
-| GET    | `/api/v1/countries/{country-id}/locales`      | List a country's locales      |
-| POST   | `/api/v1/countries/{country-id}/locales`      | Create a country locale       |
-| PUT    | `/api/v1/countries/{country-id}/locales/{id}` | Update a country locale       |
-| DELETE | `/api/v1/countries/{country-id}/locales/{id}` | Delete a country locale       |
-| POST   | `/api/v1/countries/{country-id}/images`       | Upload a country's flag image |
-| DELETE | `/api/v1/countries/{country-id}/images`       | Remove a country's flag image |
+| Method | Path                                           | Description                   |
+|--------|------------------------------------------------|-------------------------------|
+| POST   | `/api/v1/countries`                            | Create a country              |
+| GET    | `/api/v1/countries`                            | List / search countries       |
+| GET    | `/api/v1/countries/{id}`                       | Get a country                 |
+| PUT    | `/api/v1/countries/{id}`                       | Update a country              |
+| DELETE | `/api/v1/countries/{id}`                       | Delete a country              |
+| GET    | `/api/v1/countries/{country-id}/locales`       | List a country's locales      |
+| GET    | `/api/v1/countries/{country-id}/locales/count` | Count a country's locales     |
+| POST   | `/api/v1/countries/{country-id}/locales`       | Create a country locale       |
+| PUT    | `/api/v1/countries/{country-id}/locales/{id}`  | Update a country locale       |
+| DELETE | `/api/v1/countries/{country-id}/locales/{id}`  | Delete a country locale       |
+| POST   | `/api/v1/countries/{country-id}/images`        | Upload a country's flag image |
+| DELETE | `/api/v1/countries/{country-id}/images`        | Remove a country's flag image |
 
 ---
 
@@ -415,6 +416,38 @@ more than the single Accept-Language-matched translation returned by `GET /count
 
 ---
 
+### Count Country Locales
+
+`GET /api/v1/countries/{country-id}/locales/count`
+
+Returns how many active locale translations a country currently has, plus the `code` of each one. Compare
+this against [`GET /api/v1/locales/count`](locales-api.md) (the platform-wide list of active locale codes)
+to determine which languages the country is still missing and can add a translation for via
+[Create Country Locale](#create-country-locale) — e.g. if the platform has `en`, `bn`, `es` and this
+endpoint returns `en`, `bn` for the country, `es` is still available; if it returns all three, every
+platform locale already has a translation and `POST .../locales` for any of them will fail with
+`409 CONFLICT`.
+
+#### Path Parameters
+
+| Parameter    | Type | Description              |
+|--------------|------|--------------------------|
+| `country-id` | Long | ID of the parent country |
+
+#### Response `200 OK`
+
+```json
+{
+  "count": 2,
+  "codes": [
+    "en",
+    "bn"
+  ]
+}
+```
+
+---
+
 ### Create Country Locale
 
 `POST /api/v1/countries/{country-id}/locales`
@@ -643,9 +676,9 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                                                                                                                                                                                                                                                                                                                                                      |
-|-------------|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| HTTP Status | Error Code                 | Cause                                                                                                                                                                                                                                                                                                                                                                                                          |
+|-------------|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields; an unsupported `sortBy` query value; or, on the Country Images endpoints, an uploaded file that isn't an SVG, a required config key missing/blank for the resolved image hosting provider, or `provider_config_id`'s provider has no registered upload strategy |
-| 404         | `ENTITY_NOT_FOUND`         | Country not found, country locale not found, the locale referenced by `locale_id` not found (locale creation), or `provider_config_id` not referencing an existing, active `ImageHostingProviderConfig` (Country Images)                                                                                                                                                   |
-| 409         | `CONFLICT`                 | `code` already in use by another active country (`create`); the country already has a translation for the given `locale_id` (`create` country locale, pre-checked at the application level); or the underlying image hosting provider (Cloudinary/S3) itself rejected the upload/delete call (Country Images)                                                              |
-| 409         | `DATA_INTEGRITY_VIOLATION` | Last-resort DB-level unique constraint on `country_id` + `locale_id`, should not normally be reachable now that the duplicate is pre-checked at the application level                                                                                                                                                                                                      |
+| 404         | `ENTITY_NOT_FOUND`         | Country not found, country locale not found, the locale referenced by `locale_id` not found (locale creation), or `provider_config_id` not referencing an existing, active `ImageHostingProviderConfig` (Country Images)                                                                                                                                                                                       |
+| 409         | `CONFLICT`                 | `code` already in use by another active country (`create`); the country already has a translation for the given `locale_id` (`create` country locale, pre-checked at the application level); or the underlying image hosting provider (Cloudinary/S3) itself rejected the upload/delete call (Country Images)                                                                                                  |
+| 409         | `DATA_INTEGRITY_VIOLATION` | Last-resort DB-level unique constraint on `country_id` + `locale_id`, should not normally be reachable now that the duplicate is pre-checked at the application level                                                                                                                                                                                                                                          |

@@ -40,6 +40,12 @@ public class CurrencyLocaleController {
         return ResponseEntity.ok(currencyLocaleService.getAll(currencyId, localeCode, paginatedRequest));
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<?> getCount(@PathVariable("currency-id") Long currencyId) {
+        currencyService.getEntityById(currencyId);
+        return ResponseEntity.ok(currencyLocaleService.getCount(currencyId));
+    }
+
     @PostMapping
     public ResponseEntity<?> create(
             @PathVariable("currency-id") Long currencyId,

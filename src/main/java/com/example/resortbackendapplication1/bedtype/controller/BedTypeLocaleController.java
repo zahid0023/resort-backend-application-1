@@ -50,6 +50,12 @@ public class BedTypeLocaleController {
         return ResponseEntity.ok(bedTypeLocaleService.getAll(bedTypeId, localeCode, paginatedRequest));
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<?> getCount(@PathVariable("bed-type-id") Long bedTypeId) {
+        bedTypeService.getEntityById(bedTypeId);
+        return ResponseEntity.ok(bedTypeLocaleService.getCount(bedTypeId));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<?> update(
             @PathVariable("bed-type-id") Long bedTypeId,

@@ -12,6 +12,7 @@ import com.example.resortbackendapplication1.currency.model.entity.CurrencyLocal
 import com.example.resortbackendapplication1.currency.model.mapper.CurrencyLocaleMapper;
 import com.example.resortbackendapplication1.currency.repository.CurrencyLocaleRepository;
 import com.example.resortbackendapplication1.currency.service.CurrencyLocaleService;
+import com.example.resortbackendapplication1.locale.dto.response.locales.LocaleCountResponse;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -86,5 +88,12 @@ public class CurrencyLocaleServiceImpl implements CurrencyLocaleService {
                         currencyId, localeCode, true, false, pageable))
                 .map(CurrencyLocaleMapper::toDto);
         return Pagination.buildPaginatedResponse(dtoPage);
+    }
+
+    @Override
+    public LocaleCountResponse getCount(Long currencyId) {
+        List<String> codes = currencyLocaleRepository
+                .findLocaleEntity_CodeByCurrencyEntity_IdAndIsActiveAndIsDeleted(currencyId, true, false);
+        return new LocaleCountResponse((long) codes.size(), codes);
     }
 }

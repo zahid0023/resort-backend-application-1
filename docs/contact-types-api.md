@@ -34,6 +34,7 @@ actually used to shape the response:
 | PUT    | `/api/v1/contact-types/{id}`                            | Update a contact type               |
 | DELETE | `/api/v1/contact-types/{id}`                            | Delete a contact type               |
 | GET    | `/api/v1/contact-types/{contact-type-id}/locales`       | List a contact type's locales       |
+| GET    | `/api/v1/contact-types/{contact-type-id}/locales/count` | Count a contact type's locales      |
 | POST   | `/api/v1/contact-types/{contact-type-id}/locales`       | Create a contact type locale        |
 | PUT    | `/api/v1/contact-types/{contact-type-id}/locales/{id}`  | Update a contact type locale        |
 | DELETE | `/api/v1/contact-types/{contact-type-id}/locales/{id}`  | Delete a contact type locale        |
@@ -380,6 +381,35 @@ see more than the single Accept-Language-matched translation returned by `GET /c
   "has_previous": false,
   "sortable_fields": null,
   "searchable_fields": null
+}
+```
+
+---
+
+### Count Contact Type Locales
+
+`GET /api/v1/contact-types/{contact-type-id}/locales/count`
+
+Returns how many active locale translations a contact type currently has, plus the `code` of each one.
+Compare this against [`GET /api/v1/locales/count`](locales-api.md) (the platform-wide list of active
+locale codes) to determine which languages the contact type is still missing and can add a translation
+for via [Create Contact Type Locale](#create-contact-type-locale) — e.g. if the platform has `en`, `bn`,
+`es` and this endpoint returns `en`, `bn` for the contact type, `es` is still available; if it returns all
+three, every platform locale already has a translation and `POST .../locales` for any of them will fail
+with `409 CONFLICT`.
+
+#### Path Parameters
+
+| Parameter         | Type | Description                    |
+|--------------------|------|----------------------------------|
+| `contact-type-id`  | Long | ID of the parent contact type    |
+
+#### Response `200 OK`
+
+```json
+{
+  "count": 2,
+  "codes": ["en", "bn"]
 }
 ```
 

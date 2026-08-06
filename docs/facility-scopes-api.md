@@ -25,17 +25,19 @@ actually used to shape the response:
 
 ## Endpoints
 
-| Method | Path                                                       | Description                     |
-|--------|------------------------------------------------------------|---------------------------------|
-| POST   | `/api/v1/facility-scopes`                                  | Create a facility scope         |
-| GET    | `/api/v1/facility-scopes`                                  | List / search facility scopes   |
-| GET    | `/api/v1/facility-scopes/{id}`                             | Get a facility scope            |
-| PUT    | `/api/v1/facility-scopes/{id}`                             | Update a facility scope         |
-| DELETE | `/api/v1/facility-scopes/{id}`                             | Delete a facility scope         |
-| GET    | `/api/v1/facility-scopes/{facility-scope-id}/locales`      | List a facility scope's locales |
-| POST   | `/api/v1/facility-scopes/{facility-scope-id}/locales`      | Create a facility scope locale  |
-| PUT    | `/api/v1/facility-scopes/{facility-scope-id}/locales/{id}` | Update a facility scope locale  |
-| DELETE | `/api/v1/facility-scopes/{facility-scope-id}/locales/{id}` | Delete a facility scope locale  |
+| Method | Path                                                        | Description                      |
+|--------|-------------------------------------------------------------|----------------------------------|
+| POST   | `/api/v1/facility-scopes`                                   | Create a facility scope          |
+| GET    | `/api/v1/facility-scopes`                                   | List / search facility scopes    |
+| GET    | `/api/v1/facility-scopes/count`                             | Count active facility scopes     |
+| GET    | `/api/v1/facility-scopes/{id}`                              | Get a facility scope             |
+| PUT    | `/api/v1/facility-scopes/{id}`                              | Update a facility scope          |
+| DELETE | `/api/v1/facility-scopes/{id}`                              | Delete a facility scope          |
+| GET    | `/api/v1/facility-scopes/{facility-scope-id}/locales`       | List a facility scope's locales  |
+| GET    | `/api/v1/facility-scopes/{facility-scope-id}/locales/count` | Count a facility scope's locales |
+| POST   | `/api/v1/facility-scopes/{facility-scope-id}/locales`       | Create a facility scope locale   |
+| PUT    | `/api/v1/facility-scopes/{facility-scope-id}/locales/{id}`  | Update a facility scope locale   |
+| DELETE | `/api/v1/facility-scopes/{facility-scope-id}/locales/{id}`  | Delete a facility scope locale   |
 
 ---
 
@@ -150,6 +152,28 @@ To fetch every translation a facility scope has, use
       "sort_order": 1
     }
   }
+}
+```
+
+---
+
+## Count Active Facility Scopes
+
+`GET /api/v1/facility-scopes/count`
+
+Returns how many active, non-deleted facility scopes exist, together with each one's `code`. `count` is
+always `codes.length` — both come from the same query, so there's no separate tally to drift out of sync
+with the list.
+
+### Response `200 OK`
+
+```json
+{
+  "count": 2,
+  "codes": [
+    "RESORT",
+    "ROOM_CATEGORY"
+  ]
 }
 ```
 
@@ -380,6 +404,38 @@ see more than the single Accept-Language-matched translation returned by `GET /f
   "has_previous": false,
   "sortable_fields": null,
   "searchable_fields": null
+}
+```
+
+---
+
+### Count Facility Scope Locales
+
+`GET /api/v1/facility-scopes/{facility-scope-id}/locales/count`
+
+Returns how many active locale translations a facility scope currently has, plus the `code` of each one.
+Compare this against [`GET /api/v1/locales/count`](locales-api.md) (the platform-wide list of active
+locale codes) to determine which languages the facility scope is still missing and can add a translation
+for via [Create Facility Scope Locale](#create-facility-scope-locale) — e.g. if the platform has `en`,
+`bn`, `es` and this endpoint returns `en`, `bn` for the facility scope, `es` is still available; if it
+returns all three, every platform locale already has a translation and `POST .../locales` for any of them
+will fail with `409 CONFLICT`.
+
+#### Path Parameters
+
+| Parameter           | Type | Description                     |
+|---------------------|------|---------------------------------|
+| `facility-scope-id` | Long | ID of the parent facility scope |
+
+#### Response `200 OK`
+
+```json
+{
+  "count": 2,
+  "codes": [
+    "en",
+    "bn"
+  ]
 }
 ```
 

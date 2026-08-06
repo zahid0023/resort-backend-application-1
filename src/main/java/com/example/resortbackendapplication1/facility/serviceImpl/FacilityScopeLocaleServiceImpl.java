@@ -12,6 +12,7 @@ import com.example.resortbackendapplication1.facility.model.entity.FacilityScope
 import com.example.resortbackendapplication1.facility.model.mapper.FacilityScopeLocaleMapper;
 import com.example.resortbackendapplication1.facility.repository.FacilityScopeLocaleRepository;
 import com.example.resortbackendapplication1.facility.service.FacilityScopeLocaleService;
+import com.example.resortbackendapplication1.locale.dto.response.locales.LocaleCountResponse;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -99,5 +101,12 @@ public class FacilityScopeLocaleServiceImpl implements FacilityScopeLocaleServic
                         facilityScopeId, localeCode, true, false, pageable))
                 .map(FacilityScopeLocaleMapper::toDto);
         return Pagination.buildPaginatedResponse(dtoPage);
+    }
+
+    @Override
+    public LocaleCountResponse getCount(Long facilityScopeId) {
+        List<String> codes = facilityScopeLocaleRepository
+                .findLocaleEntity_CodeByFacilityScopeEntity_IdAndIsActiveAndIsDeleted(facilityScopeId, true, false);
+        return new LocaleCountResponse((long) codes.size(), codes);
     }
 }

@@ -8,6 +8,7 @@ import com.example.resortbackendapplication1.facility.dto.request.facilityscope.
 import com.example.resortbackendapplication1.facility.model.dto.FacilityScopeLocaleDto;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeLocaleEntity;
+import com.example.resortbackendapplication1.locale.dto.response.locales.LocaleCountResponse;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 
 public interface FacilityScopeLocaleService {
@@ -18,6 +19,8 @@ public interface FacilityScopeLocaleService {
     FacilityScopeLocaleEntity getEntityById(Long facilityScopeId, Long id);
 
     PaginatedResponse<FacilityScopeLocaleDto> getAll(Long facilityScopeId, String localeCode, PaginatedRequest paginatedRequest);
+
+    LocaleCountResponse getCount(Long facilityScopeId);
 
     SuccessResponse update(FacilityScopeLocaleEntity entity,
                            UpdateFacilityScopeLocaleRequest request);

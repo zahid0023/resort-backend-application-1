@@ -33,6 +33,7 @@ actually used to shape the response:
 | PUT    | `/api/v1/room-categories/{id}`                               | Update a room category           |
 | DELETE | `/api/v1/room-categories/{id}`                               | Delete a room category           |
 | GET    | `/api/v1/room-categories/{room-category-id}/locales`         | List a room category's locales   |
+| GET    | `/api/v1/room-categories/{room-category-id}/locales/count`   | Count a room category's locales  |
 | POST   | `/api/v1/room-categories/{room-category-id}/locales`         | Create a room category locale    |
 | PUT    | `/api/v1/room-categories/{room-category-id}/locales/{id}`    | Update a room category locale    |
 | DELETE | `/api/v1/room-categories/{room-category-id}/locales/{id}`    | Delete a room category locale    |
@@ -379,6 +380,35 @@ see more than the single Accept-Language-matched translation returned by `GET /r
   "has_previous": false,
   "sortable_fields": null,
   "searchable_fields": null
+}
+```
+
+---
+
+### Count Room Category Locales
+
+`GET /api/v1/room-categories/{room-category-id}/locales/count`
+
+Returns how many active locale translations a room category currently has, plus the `code` of each one.
+Compare this against [`GET /api/v1/locales/count`](locales-api.md) (the platform-wide list of active
+locale codes) to determine which languages the room category is still missing and can add a translation
+for via [Create Room Category Locale](#create-room-category-locale) — e.g. if the platform has `en`,
+`bn`, `es` and this endpoint returns `en`, `bn` for the room category, `es` is still available; if it
+returns all three, every platform locale already has a translation and `POST .../locales` for any of them
+will fail with `409 CONFLICT`.
+
+#### Path Parameters
+
+| Parameter         | Type | Description                     |
+|--------------------|------|------------------------------------|
+| `room-category-id` | Long | ID of the parent room category   |
+
+#### Response `200 OK`
+
+```json
+{
+  "count": 2,
+  "codes": ["en", "bn"]
 }
 ```
 

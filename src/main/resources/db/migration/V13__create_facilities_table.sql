@@ -1,15 +1,31 @@
 create table if not exists facilities
 (
+    id         bigserial primary key,
+
+    code       varchar(100)                 not null unique,
+    sort_order integer                      not null default 0,
+
+    icon_type  varchar(100)                 not null,
+    icon_value text,
+    icon_meta  jsonb,
+
+    created_by bigint references users (id) not null,
+    created_at timestamp with time zone     not null default current_timestamp,
+    updated_by bigint references users (id) not null,
+    updated_at timestamp with time zone     not null default current_timestamp,
+    version    bigint                       not null default 0,
+    is_active  boolean                      not null default true,
+    is_deleted boolean                      not null default false,
+    deleted_by bigint,
+    deleted_at timestamp with time zone
+);
+
+create table if not exists facility_group_facility_assignments
+(
     id                bigserial primary key,
 
-    code              varchar(100)                           not null unique,
-    sort_order        integer                                not null default 0,
-
     facility_group_id bigint references facility_groups (id) not null,
-
-    icon_type         varchar(100)                           not null,
-    icon_value        text,
-    icon_meta         jsonb,
+    facility_id       bigint references facilities (id)      not null,
 
     created_by        bigint references users (id)           not null,
     created_at        timestamp with time zone               not null default current_timestamp,
@@ -63,54 +79,76 @@ create table if not exists facility_scope_assignments
 );
 
 -- seed: facilities
-insert into facilities (code, sort_order, facility_group_id, icon_type, icon_value, icon_meta, created_by, updated_by)
-values ('RESTAURANT', 1, (select id from facility_groups where code = 'DINING'), 'LUCIDE', 'UtensilsCrossed',
+insert into facilities (code, sort_order, icon_type, icon_value, icon_meta, created_by, updated_by)
+values ('RESTAURANT', 1, 'LUCIDE', 'UtensilsCrossed',
         '{
           "size": 24,
           "color": "#f59e0b"
         }',
         (select id from users where username = 'system'), (select id from users where username = 'system')),
-       ('POOL_BAR', 2, (select id from facility_groups where code = 'DINING'), 'LUCIDE', 'GlassWater',
+       ('POOL_BAR', 2, 'LUCIDE', 'GlassWater',
         '{
           "size": 24,
           "color": "#3b82f6"
         }',
         (select id from users where username = 'system'), (select id from users where username = 'system')),
-       ('SPA', 1, (select id from facility_groups where code = 'WELLNESS'), 'LUCIDE', 'Sparkles',
+       ('SPA', 1, 'LUCIDE', 'Sparkles',
         '{
           "size": 24,
           "color": "#8b5cf6"
         }',
         (select id from users where username = 'system'), (select id from users where username = 'system')),
-       ('FITNESS', 2, (select id from facility_groups where code = 'WELLNESS'), 'LUCIDE', 'Dumbbell',
+       ('FITNESS', 2, 'LUCIDE', 'Dumbbell',
         '{
           "size": 24,
           "color": "#ec4899"
         }',
         (select id from users where username = 'system'), (select id from users where username = 'system')),
-       ('SWIMMING_POOL', 1, (select id from facility_groups where code = 'RECREATION'), 'LUCIDE', 'Waves',
+       ('SWIMMING_POOL', 1, 'LUCIDE', 'Waves',
         '{
           "size": 24,
           "color": "#06b6d4"
         }',
         (select id from users where username = 'system'), (select id from users where username = 'system')),
-       ('TENNIS', 2, (select id from facility_groups where code = 'RECREATION'), 'LUCIDE', 'CircleDot',
+       ('TENNIS', 2, 'LUCIDE', 'CircleDot',
         '{
           "size": 24,
           "color": "#84cc16"
         }',
         (select id from users where username = 'system'), (select id from users where username = 'system')),
-       ('ROOM_SERVICE', 1, (select id from facility_groups where code = 'ACCOMMODATION'), 'LUCIDE', 'BellRing',
+       ('ROOM_SERVICE', 1, 'LUCIDE', 'BellRing',
         '{
           "size": 24,
           "color": "#f97316"
         }',
         (select id from users where username = 'system'), (select id from users where username = 'system')),
-       ('CONCIERGE', 2, (select id from facility_groups where code = 'ACCOMMODATION'), 'LUCIDE', 'ConciergeBell',
+       ('CONCIERGE', 2, 'LUCIDE', 'ConciergeBell',
         '{
           "size": 24,
           "color": "#14b8a6"
         }',
+        (select id from users where username = 'system'), (select id from users where username = 'system'));
+
+-- seed: facility group facility assignments
+insert into facility_group_facility_assignments (facility_group_id, facility_id, created_by, updated_by)
+values ((select id from facility_groups where code = 'DINING'), (select id from facilities where code = 'RESTAURANT'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from facility_groups where code = 'DINING'), (select id from facilities where code = 'POOL_BAR'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from facility_groups where code = 'WELLNESS'), (select id from facilities where code = 'SPA'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from facility_groups where code = 'WELLNESS'), (select id from facilities where code = 'FITNESS'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from facility_groups where code = 'RECREATION'),
+        (select id from facilities where code = 'SWIMMING_POOL'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from facility_groups where code = 'RECREATION'), (select id from facilities where code = 'TENNIS'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from facility_groups where code = 'ACCOMMODATION'),
+        (select id from facilities where code = 'ROOM_SERVICE'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from facility_groups where code = 'ACCOMMODATION'),
+        (select id from facilities where code = 'CONCIERGE'),
         (select id from users where username = 'system'), (select id from users where username = 'system'));
 
 -- seed: facility locales (english)
