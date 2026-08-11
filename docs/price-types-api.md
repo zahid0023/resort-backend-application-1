@@ -4,12 +4,14 @@ Base URL: `/api/v1/price-types`
 
 Price types represent the pricing rules a resort can apply (e.g. `BAS` for base pricing, `WKD`/`WKE` for
 weekday/weekend pricing, `HOL` for holiday pricing, `SPECIAL` for promotions). Each price type is identified
-by a unique `code` and can be assigned to one or more price type scopes (`ROOM_CATEGORY`, `ROOM`,
-`RESORT_FACILITY`) via the separate [Price Type Scope Assignments](price-type-scope-assignments-api.md)
-resource — not covered by this document. A price type's display name, description, and administrative
-guidance are locale-specific and are managed through a companion sub-resource — Price Type Locales — reached
-via `/api/v1/price-types/{price-type-id}/locales`. All records support soft-delete — deleted records are
-hidden from all responses.
+by a unique `code` and must be assigned to one or more [price scopes](price-scopes-api.md) (`ROOM_CATEGORY`,
+`ROOM`, `RESORT_FACILITY`) — the scopes declare *where* the price type is allowed to be used. At least one
+`price_scope_id` is required at creation time (see [Create Price Type](#create-price-type) below); scopes can
+be added or removed afterward via the separate
+[Price Type Scope Assignments](price-type-scope-assignments-api.md) resource. A price type's display name,
+description, and administrative guidance are locale-specific and are managed through a companion
+sub-resource — Price Type Locales — reached via `/api/v1/price-types/{price-type-id}/locales`. All records
+support soft-delete — deleted records are hidden from all responses.
 
 **`Accept-Language` is required on every endpoint below, with no exceptions** — a request missing (or with
 a blank) `Accept-Language` header is rejected with `400 INVALID_ARGUMENT` before it reaches any endpoint
@@ -28,18 +30,18 @@ actually used to shape the response:
 
 ## Endpoints
 
-| Method | Path                                                       | Description                    |
-|--------|--------------------------------------------------------------|------------------------------------|
-| POST   | `/api/v1/price-types`                                          | Create a price type                 |
-| GET    | `/api/v1/price-types`                                          | List / search price types           |
-| GET    | `/api/v1/price-types/{id}`                                     | Get a price type                    |
-| PUT    | `/api/v1/price-types/{id}`                                     | Update a price type                 |
-| DELETE | `/api/v1/price-types/{id}`                                     | Delete a price type                 |
-| GET    | `/api/v1/price-types/{price-type-id}/locales`                  | List a price type's locales         |
-| GET    | `/api/v1/price-types/{price-type-id}/locales/count`            | Count a price type's locales        |
-| POST   | `/api/v1/price-types/{price-type-id}/locales`                  | Create a price type locale          |
-| PUT    | `/api/v1/price-types/{price-type-id}/locales/{id}`             | Update a price type locale          |
-| DELETE | `/api/v1/price-types/{price-type-id}/locales/{id}`             | Delete a price type locale          |
+| Method | Path                                                | Description                  |
+|--------|-----------------------------------------------------|------------------------------|
+| POST   | `/api/v1/price-types`                               | Create a price type          |
+| GET    | `/api/v1/price-types`                               | List / search price types    |
+| GET    | `/api/v1/price-types/{id}`                          | Get a price type             |
+| PUT    | `/api/v1/price-types/{id}`                          | Update a price type          |
+| DELETE | `/api/v1/price-types/{id}`                          | Delete a price type          |
+| GET    | `/api/v1/price-types/{price-type-id}/locales`       | List a price type's locales  |
+| GET    | `/api/v1/price-types/{price-type-id}/locales/count` | Count a price type's locales |
+| POST   | `/api/v1/price-types/{price-type-id}/locales`       | Create a price type locale   |
+| PUT    | `/api/v1/price-types/{price-type-id}/locales/{id}`  | Update a price type locale   |
+| DELETE | `/api/v1/price-types/{price-type-id}/locales/{id}`  | Delete a price type locale   |
 
 ---
 
@@ -47,24 +49,25 @@ actually used to shape the response:
 
 ### Price Type
 
-| Field        | Type    | Required | Constraints                                                            | Description                                                                                                                                    |
-|--------------|---------|----------|----------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
-| `id`         | Long    | —        | read-only                                                                 | Auto-generated identifier                                                                                                                           |
-| `code`       | String  | Yes      | max 50 chars, unique among active records; set at creation, immutable    | Internal code (e.g. `BAS`, `WKD`, `WKE`, `HOL`, `SPECIAL`)                                                                                          |
-| `sort_order` | Integer | Yes      | default 0                                                                 | Display order                                                                                                                                        |
-| `locale`     | Object  | —        | nullable; see PriceTypeLocale below                                      | The single translation matching the request's `Accept-Language` (falls back to `en`, then `null` if the price type has no translations at all)     |
+| Field          | Type    | Required | Constraints                                                           | Description                                                                                                                                    |
+|----------------|---------|----------|-----------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| `id`           | Long    | —        | read-only                                                             | Auto-generated identifier                                                                                                                      |
+| `code`         | String  | Yes      | max 50 chars, unique among active records; set at creation, immutable | Internal code (e.g. `BAS`, `WKD`, `WKE`, `HOL`, `SPECIAL`)                                                                                     |
+| `sort_order`   | Integer | Yes      | default 0                                                             | Display order                                                                                                                                  |
+| `locale`       | Object  | —        | nullable; see PriceTypeLocale below                                   | The single translation matching the request's `Accept-Language` (falls back to `en`, then `null` if the price type has no translations at all) |
+| `price_scopes` | Array   | —        | only present on `GET /{id}` and `GET` (list)                          | The [price scopes](price-scopes-api.md) this price type is assigned to (e.g. `ROOM_CATEGORY`, `ROOM`, `RESORT_FACILITY`)                       |
 
 ### PriceTypeLocale
 
-| Field           | Type    | Required | Constraints                                                          | Description                                                                    |
-|------------------|---------|----------|--------------------------------------------------------------------------|------------------------------------------------------------------------------------|
-| `id`             | Long    | —        | read-only                                                               | Auto-generated identifier                                                          |
-| `locale`         | Locale  | —        | read-only, resolved from `locale_id` at creation                      | The locale this translation is written in (`id`, `code`, `name`, `sort_order`)     |
-| `name`           | String  | Yes      | max 100 chars, unique among active translations for the same locale   | Localized name of the price type                                                   |
-| `description`    | String  | Yes      | not null (defaults to `""`)                                            | Localized description                                                              |
-| `sort_order`     | Integer | Yes      | default 0                                                               | Display order among locale entries                                                 |
-| `purpose`        | String  | Yes      | not null (defaults to `""`)                                            | Localized explanation of why this price type exists / when to use it               |
-| `usage_example`  | String  | Yes      | not null (defaults to `""`)                                            | Localized example scenario shown to administrators                                 |
+| Field           | Type    | Required | Constraints                                                         | Description                                                                    |
+|-----------------|---------|----------|---------------------------------------------------------------------|--------------------------------------------------------------------------------|
+| `id`            | Long    | —        | read-only                                                           | Auto-generated identifier                                                      |
+| `locale`        | Locale  | —        | read-only, resolved from `locale_id` at creation                    | The locale this translation is written in (`id`, `code`, `name`, `sort_order`) |
+| `name`          | String  | Yes      | max 100 chars, unique among active translations for the same locale | Localized name of the price type                                               |
+| `description`   | String  | Yes      | not null (defaults to `""`)                                         | Localized description                                                          |
+| `sort_order`    | Integer | Yes      | default 0                                                           | Display order among locale entries                                             |
+| `purpose`       | String  | Yes      | not null (defaults to `""`)                                         | Localized explanation of why this price type exists / when to use it           |
+| `usage_example` | String  | Yes      | not null (defaults to `""`)                                         | Localized example scenario shown to administrators                             |
 
 ---
 
@@ -72,8 +75,14 @@ actually used to shape the response:
 
 `POST /api/v1/price-types`
 
-Creates a new price type together with exactly **one** initial locale translation. `code` must be unique
-among active, non-deleted price types — attempting to reuse an existing code returns `409 CONFLICT`.
+Creates a new price type together with the [price scopes](price-scopes-api.md) it may be used in and exactly
+**one** initial locale translation. `code` must be unique among active, non-deleted price types — attempting
+to reuse an existing code returns `409 CONFLICT`.
+
+**At least one `price_scope_id` is required** — it declares which scopes (`ROOM_CATEGORY`, `ROOM`,
+`RESORT_FACILITY`, etc.) the price type is allowed to be applied to. Every id must reference an existing,
+active price scope — an unknown id returns `404 ENTITY_NOT_FOUND`. Additional scopes can be assigned or
+removed afterward via the [Price Type Scope Assignments](price-type-scope-assignments-api.md) resource.
 
 **The initial translation is always attached to the `en` locale, resolved by the server — the request
 carries no `locale_id` at all.** There is no option to submit multiple locales at creation time.
@@ -85,6 +94,10 @@ Additional languages are added afterward via the Price Type Locales sub-resource
 {
   "code": "WKE",
   "sort_order": 3,
+  "price_scope_ids": [
+    1,
+    2
+  ],
   "locale": {
     "name": "Weekend Price",
     "description": "Price applied to bookings made on Saturdays and Sundays.",
@@ -97,21 +110,22 @@ Additional languages are added afterward via the Price Type Locales sub-resource
 
 ### Request Fields
 
-| Field        | Type    | Required | Validation                                                                                 |
-|--------------|---------|----------|-----------------------------------------------------------------------------------------------|
-| `code`       | String  | Yes      | Not blank, max 50 chars, unique among active records                                          |
-| `sort_order` | Integer | Yes      | Not null                                                                                        |
-| `locale`     | Object  | Yes      | Not null; validated (see below) — no `locale_id` field; always resolved to the `en` locale     |
+| Field             | Type       | Required | Validation                                                                                 |
+|-------------------|------------|----------|--------------------------------------------------------------------------------------------|
+| `code`            | String     | Yes      | Not blank, max 50 chars, unique among active records                                       |
+| `sort_order`      | Integer    | Yes      | Not null                                                                                   |
+| `price_scope_ids` | Long array | Yes      | Not empty; every id must reference an existing, active [price scope](price-scopes-api.md)  |
+| `locale`          | Object     | Yes      | Not null; validated (see below) — no `locale_id` field; always resolved to the `en` locale |
 
 **Locale entry (`locale`):**
 
 | Field           | Type    | Required | Validation                                                          |
-|------------------|---------|----------|-----------------------------------------------------------------------|
-| `name`           | String  | Yes      | Not blank, max 100 chars, unique among active translations for `en`   |
-| `description`    | String  | Yes      | Not null                                                               |
-| `sort_order`     | Integer | Yes      | Not null                                                               |
-| `purpose`        | String  | Yes      | Not null                                                               |
-| `usage_example`  | String  | Yes      | Not null                                                               |
+|-----------------|---------|----------|---------------------------------------------------------------------|
+| `name`          | String  | Yes      | Not blank, max 100 chars, unique among active translations for `en` |
+| `description`   | String  | Yes      | Not null                                                            |
+| `sort_order`    | Integer | Yes      | Not null                                                            |
+| `purpose`       | String  | Yes      | Not null                                                            |
+| `usage_example` | String  | Yes      | Not null                                                            |
 
 ### Response `201 Created`
 
@@ -135,8 +149,8 @@ fetch every translation a price type has, use [List Price Type Locales](#list-pr
 ### Path Parameters
 
 | Parameter | Type | Description          |
-|-----------|------|---------------------------|
-| `id`      | Long | ID of the price type      |
+|-----------|------|----------------------|
+| `id`      | Long | ID of the price type |
 
 ### Response `200 OK`
 
@@ -159,7 +173,26 @@ fetch every translation a price type has, use [List Price Type Locales](#list-pr
       "sort_order": 3,
       "purpose": "Allows higher pricing during peak weekend demand.",
       "usage_example": "Football Ground A costs $50/hour on weekdays and $70/hour on weekends."
-    }
+    },
+    "price_scopes": [
+      {
+        "id": 1,
+        "code": "ROOM_CATEGORY",
+        "sort_order": 1,
+        "locale": {
+          "id": 1,
+          "locale": {
+            "id": 1,
+            "code": "en",
+            "name": "English",
+            "sort_order": 1
+          },
+          "name": "Room Category",
+          "description": "Applies to room category pricing.",
+          "sort_order": 1
+        }
+      }
+    ]
   }
 }
 ```
@@ -184,14 +217,14 @@ falls back to `en`, then `null`).
 > **Note:** Query parameters bind directly onto `PriceTypeFilterRequest`'s Java field names, so they are
 > **camelCase** — not the snake_case used in JSON request/response bodies.
 
-| Parameter | Type   | Default         | Constraints                             | Description                                     |
-|-----------|--------|-----------------|--------------------------------------------|-----------------------------------------------------|
-| `code`    | String | —               | —                                           | Filter by code (partial, case-insensitive)          |
-| `name`    | String | —               | —                                           | Filter by locale-specific name (partial, case-insensitive), scoped to the resolved locale |
-| `page`    | int    | `0`             | >= 0                                        | Zero-based page index                               |
-| `size`    | int    | `10`            | 1 – 50                                      | Number of items per page                            |
-| `sortBy`  | String | `id` (implicit) | `createdAt`, `code`, `name` (`id` NOT selectable) | Field to sort by                              |
-| `sortDir` | String | `ASC`           | `ASC`, `DESC`                               | Sort direction                                      |
+| Parameter | Type   | Default         | Constraints                                       | Description                                                                               |
+|-----------|--------|-----------------|---------------------------------------------------|-------------------------------------------------------------------------------------------|
+| `code`    | String | —               | —                                                 | Filter by code (partial, case-insensitive)                                                |
+| `name`    | String | —               | —                                                 | Filter by locale-specific name (partial, case-insensitive), scoped to the resolved locale |
+| `page`    | int    | `0`             | >= 0                                              | Zero-based page index                                                                     |
+| `size`    | int    | `10`            | 1 – 50                                            | Number of items per page                                                                  |
+| `sortBy`  | String | `id` (implicit) | `createdAt`, `code`, `name` (`id` NOT selectable) | Field to sort by                                                                          |
+| `sortDir` | String | `ASC`           | `ASC`, `DESC`                                     | Sort direction                                                                            |
 
 > **Note:** `sort_order`, `purpose`, and `usage_example` are not filterable or sortable — only `code` and
 > locale `name` are wired into the search/sort infrastructure for this endpoint.
@@ -218,7 +251,24 @@ falls back to `en`, then `null`).
         "sort_order": 1,
         "purpose": "Serves as the fallback pricing rule for all bookings.",
         "usage_example": "A standard room costs $100/night under the base price."
-      }
+      },
+      "price_scopes": [
+        {
+          "id": 1,
+          "code": "ROOM_CATEGORY",
+          "sort_order": 1
+        },
+        {
+          "id": 2,
+          "code": "ROOM",
+          "sort_order": 2
+        },
+        {
+          "id": 3,
+          "code": "RESORT_FACILITY",
+          "sort_order": 3
+        }
+      ]
     },
     {
       "id": 2,
@@ -237,7 +287,14 @@ falls back to `en`, then `null`).
         "sort_order": 2,
         "purpose": "Allows lower pricing during off-peak weekday periods.",
         "usage_example": "A room costs $90/night on weekdays compared to $130/night on weekends."
-      }
+      },
+      "price_scopes": [
+        {
+          "id": 1,
+          "code": "ROOM_CATEGORY",
+          "sort_order": 1
+        }
+      ]
     }
   ],
   "current_page": 0,
@@ -270,8 +327,8 @@ separately via the Price Type Locales sub-resource endpoints below, not through 
 ### Path Parameters
 
 | Parameter | Type | Description          |
-|-----------|------|---------------------------|
-| `id`      | Long | ID of the price type      |
+|-----------|------|----------------------|
+| `id`      | Long | ID of the price type |
 
 ### Request Body
 
@@ -284,8 +341,8 @@ separately via the Price Type Locales sub-resource endpoints below, not through 
 ### Request Fields
 
 | Field        | Type    | Required | Validation |
-|--------------|---------|----------|--------------|
-| `sort_order` | Integer | Yes      | Not null     |
+|--------------|---------|----------|------------|
+| `sort_order` | Integer | Yes      | Not null   |
 
 ### Response `200 OK`
 
@@ -308,8 +365,8 @@ response.
 ### Path Parameters
 
 | Parameter | Type | Description          |
-|-----------|------|---------------------------|
-| `id`      | Long | ID of the price type      |
+|-----------|------|----------------------|
+| `id`      | Long | ID of the price type |
 
 ### Response `200 OK`
 
@@ -339,17 +396,17 @@ more than the single Accept-Language-matched translation returned by `GET /price
 
 #### Path Parameters
 
-| Parameter        | Type | Description               |
-|--------------------|------|---------------------------------|
-| `price-type-id`    | Long | ID of the parent price type     |
+| Parameter       | Type | Description                 |
+|-----------------|------|-----------------------------|
+| `price-type-id` | Long | ID of the parent price type |
 
 #### Query Parameters
 
 | Parameter    | Type   | Default | Constraints | Description                                                                                     |
-|--------------|--------|---------|-------------|-----------------------------------------------------------------------------------------------------|
-| `localeCode` | String | —       | —           | Filter to locales whose `code` contains this value (partial, case-insensitive), e.g. `en`, `bn`   |
-| `page`       | int    | `0`     | >= 0        | Zero-based page index                                                                                |
-| `size`       | int    | `10`    | 1 – 50      | Number of items per page                                                                             |
+|--------------|--------|---------|-------------|-------------------------------------------------------------------------------------------------|
+| `localeCode` | String | —       | —           | Filter to locales whose `code` contains this value (partial, case-insensitive), e.g. `en`, `bn` |
+| `page`       | int    | `0`     | >= 0        | Zero-based page index                                                                           |
+| `size`       | int    | `10`    | 1 – 50      | Number of items per page                                                                        |
 
 > **Note:** `sortBy`/`sortDir` are accepted on the request object but there are no sortable fields
 > registered for this endpoint — passing any non-null `sortBy` value throws
@@ -403,16 +460,19 @@ every platform locale already has a translation and `POST .../locales` for any o
 
 #### Path Parameters
 
-| Parameter       | Type | Description                  |
-|------------------|------|----------------------------------|
-| `price-type-id`  | Long | ID of the parent price type     |
+| Parameter       | Type | Description                 |
+|-----------------|------|-----------------------------|
+| `price-type-id` | Long | ID of the parent price type |
 
 #### Response `200 OK`
 
 ```json
 {
   "count": 2,
-  "codes": ["en", "bn"]
+  "codes": [
+    "en",
+    "bn"
+  ]
 }
 ```
 
@@ -432,9 +492,9 @@ this one).
 
 #### Path Parameters
 
-| Parameter        | Type | Description               |
-|--------------------|------|---------------------------------|
-| `price-type-id`    | Long | ID of the parent price type     |
+| Parameter       | Type | Description                 |
+|-----------------|------|-----------------------------|
+| `price-type-id` | Long | ID of the parent price type |
 
 #### Request Body
 
@@ -451,14 +511,14 @@ this one).
 
 #### Request Fields
 
-| Field           | Type    | Required | Validation                                                                |
-|------------------|---------|----------|--------------------------------------------------------------------------------|
-| `locale_id`      | Long    | Yes      | Not null; must reference an existing locale                                    |
-| `name`           | String  | Yes      | Not blank, max 100 chars, unique among active translations for `locale_id`      |
-| `description`    | String  | Yes      | Not null                                                                        |
-| `sort_order`     | Integer | Yes      | Not null                                                                        |
-| `purpose`        | String  | Yes      | Not null                                                                        |
-| `usage_example`  | String  | Yes      | Not null                                                                        |
+| Field           | Type    | Required | Validation                                                                 |
+|-----------------|---------|----------|----------------------------------------------------------------------------|
+| `locale_id`     | Long    | Yes      | Not null; must reference an existing locale                                |
+| `name`          | String  | Yes      | Not blank, max 100 chars, unique among active translations for `locale_id` |
+| `description`   | String  | Yes      | Not null                                                                   |
+| `sort_order`    | Integer | Yes      | Not null                                                                   |
+| `purpose`       | String  | Yes      | Not null                                                                   |
+| `usage_example` | String  | Yes      | Not null                                                                   |
 
 #### Response `201 Created`
 
@@ -482,10 +542,10 @@ re-checked for uniqueness among active translations for the same locale, excludi
 
 #### Path Parameters
 
-| Parameter        | Type | Description               |
-|--------------------|------|---------------------------------|
-| `price-type-id`    | Long | ID of the parent price type     |
-| `id`               | Long | ID of the price type locale     |
+| Parameter       | Type | Description                 |
+|-----------------|------|-----------------------------|
+| `price-type-id` | Long | ID of the parent price type |
+| `id`            | Long | ID of the price type locale |
 
 #### Request Body
 
@@ -501,13 +561,13 @@ re-checked for uniqueness among active translations for the same locale, excludi
 
 #### Request Fields
 
-| Field           | Type    | Required | Validation                                                                     |
-|------------------|---------|----------|--------------------------------------------------------------------------------------|
-| `name`           | String  | Yes      | Not blank, max 100 chars, unique among active translations for this locale             |
-| `description`    | String  | Yes      | Not null                                                                                |
-| `sort_order`     | Integer | Yes      | Not null                                                                                |
-| `purpose`        | String  | Yes      | Not null                                                                                |
-| `usage_example`  | String  | Yes      | Not null                                                                                |
+| Field           | Type    | Required | Validation                                                                 |
+|-----------------|---------|----------|----------------------------------------------------------------------------|
+| `name`          | String  | Yes      | Not blank, max 100 chars, unique among active translations for this locale |
+| `description`   | String  | Yes      | Not null                                                                   |
+| `sort_order`    | Integer | Yes      | Not null                                                                   |
+| `purpose`       | String  | Yes      | Not null                                                                   |
+| `usage_example` | String  | Yes      | Not null                                                                   |
 
 #### Response `200 OK`
 
@@ -529,10 +589,10 @@ any response.
 
 #### Path Parameters
 
-| Parameter        | Type | Description               |
-|--------------------|------|---------------------------------|
-| `price-type-id`    | Long | ID of the parent price type     |
-| `id`               | Long | ID of the price type locale     |
+| Parameter       | Type | Description                 |
+|-----------------|------|-----------------------------|
+| `price-type-id` | Long | ID of the parent price type |
+| `id`            | Long | ID of the price type locale |
 
 #### Response `200 OK`
 
@@ -558,9 +618,9 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                                                                                                                                                              |
-|-------------|-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields; or an unsupported `sortBy` query value |
-| 404         | `ENTITY_NOT_FOUND`         | Price type not found, price type locale not found, or the locale referenced by `locale_id` not found (locale creation)                                                              |
+| HTTP Status | Error Code                 | Cause                                                                                                                                                                                                                                                                   |
+|-------------|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields; an empty `price_scope_ids` array; or an unsupported `sortBy` query value                                                 |
+| 404         | `ENTITY_NOT_FOUND`         | Price type not found, price type locale not found, one of the `price_scope_ids` not found (create), or the locale referenced by `locale_id` not found (locale creation)                                                                                                 |
 | 409         | `CONFLICT`                 | `code` already in use by another active price type (`create`); the price type already has a translation for the given `locale_id` (`create` locale); or `name` already in use by another active translation for the same locale (`create`/`update` locale, pre-checked) |
-| 409         | `DATA_INTEGRITY_VIOLATION` | Last-resort DB-level unique constraint on `price_type_id` + `locale_id`, should not normally be reachable now that the duplicate is pre-checked at the application level          |
+| 409         | `DATA_INTEGRITY_VIOLATION` | Last-resort DB-level unique constraint on `price_type_id` + `locale_id`, should not normally be reachable now that the duplicate is pre-checked at the application level                                                                                                |

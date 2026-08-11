@@ -8,11 +8,15 @@ import com.example.resortbackendapplication1.price.dto.request.pricetype.UpdateP
 import com.example.resortbackendapplication1.price.dto.response.pricetypes.PriceTypeResponse;
 import com.example.resortbackendapplication1.price.model.dto.PriceTypeDto;
 import com.example.resortbackendapplication1.price.model.entity.PriceTypeEntity;
+import com.example.resortbackendapplication1.price.model.entity.PriceScopeEntity;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+
+import java.util.List;
 
 public interface PriceTypeService {
 
     SuccessResponse create(CreatePriceTypeRequest request,
+                           List<PriceScopeEntity> priceScopeEntities,
                            LocaleEntity localeEntity);
 
     PriceTypeEntity getEntityById(Long id);

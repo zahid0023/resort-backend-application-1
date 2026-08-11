@@ -30,35 +30,35 @@ create table if not exists price_type_locales
     -- parent price type.
     price_type_id bigint references price_types (id) not null,
     -- translation language.
-    locale_id     bigint references locales (id) not null,
+    locale_id     bigint references locales (id)     not null,
 
     -- localized display name.
     -- example:
     -- "Weekend Price"
-    name          varchar(100)                 not null,
+    name          varchar(100)                       not null,
     -- short explanation shown in ui.
     -- example:
     -- "Price applied to bookings made on Saturdays and Sundays."
-    description   text                         not null default '',
+    description   text                               not null default '',
     -- display order.
-    sort_order    integer                      not null default 0,
+    sort_order    integer                            not null default 0,
 
     -- business purpose of this price type.
     -- example:
     -- "Allows higher pricing during weekends."
-    purpose       text                         not null default '',
+    purpose       text                               not null default '',
     -- example scenario shown to administrators.
     -- example:
     -- "Football Ground A costs $50/hour on weekdays and $70/hour on weekends."
-    usage_example text                         not null default '',
+    usage_example text                               not null default '',
 
-    created_by    bigint references users (id) not null,
-    created_at    timestamp with time zone     not null default current_timestamp,
-    updated_by    bigint references users (id) not null,
-    updated_at    timestamp with time zone     not null default current_timestamp,
-    version       bigint                       not null default 0,
-    is_active     boolean                      not null default true,
-    is_deleted    boolean                      not null default false,
+    created_by    bigint references users (id)       not null,
+    created_at    timestamp with time zone           not null default current_timestamp,
+    updated_by    bigint references users (id)       not null,
+    updated_at    timestamp with time zone           not null default current_timestamp,
+    version       bigint                             not null default 0,
+    is_active     boolean                            not null default true,
+    is_deleted    boolean                            not null default false,
     deleted_by    bigint references users (id),
     deleted_at    timestamp with time zone,
 
@@ -68,20 +68,20 @@ create table if not exists price_type_locales
 
 create table if not exists price_type_scope_assignments
 (
-    id                  bigserial primary key,
+    id             bigserial primary key,
 
-    price_type_scope_id bigint references price_type_scopes (id) not null,
-    price_type_id       bigint references price_types (id)       not null,
+    price_scope_id bigint references price_scopes (id) not null,
+    price_type_id  bigint references price_types (id)  not null,
 
-    created_by          bigint references users (id)             not null,
-    created_at          timestamp with time zone                 not null default current_timestamp,
-    updated_by          bigint references users (id)             not null,
-    updated_at          timestamp with time zone                 not null default current_timestamp,
-    version             bigint                                   not null default 0,
-    is_active           boolean                                  not null default true,
-    is_deleted          boolean                                  not null default false,
-    deleted_by          bigint references users (id),
-    deleted_at          timestamp with time zone
+    created_by     bigint references users (id)        not null,
+    created_at     timestamp with time zone            not null default current_timestamp,
+    updated_by     bigint references users (id)        not null,
+    updated_at     timestamp with time zone            not null default current_timestamp,
+    version        bigint                              not null default 0,
+    is_active      boolean                             not null default true,
+    is_deleted     boolean                             not null default false,
+    deleted_by     bigint references users (id),
+    deleted_at     timestamp with time zone
 );
 
 -- seed: price types
@@ -124,4 +124,38 @@ values ((select id from price_types where code = 'BAS'), (select id from locales
         'Special Price', 'Price applied during special promotions, events, or limited-time offers.', 5,
         'Enables custom pricing for marketing campaigns and one-off events.',
         'A suite costs $150/night during a New Year''s Eve special promotion, down from the usual $220/night.',
+        (select id from users where username = 'system'), (select id from users where username = 'system'));
+
+-- seed: price type scope assignments
+insert into price_type_scope_assignments (price_scope_id, price_type_id, created_by, updated_by)
+values ((select id from price_scopes where code = 'ROOM_CATEGORY'), (select id from price_types where code = 'BAS'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from price_scopes where code = 'ROOM'), (select id from price_types where code = 'BAS'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from price_scopes where code = 'RESORT_FACILITY'), (select id from price_types where code = 'BAS'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from price_scopes where code = 'ROOM_CATEGORY'), (select id from price_types where code = 'WKD'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from price_scopes where code = 'ROOM'), (select id from price_types where code = 'WKD'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from price_scopes where code = 'RESORT_FACILITY'), (select id from price_types where code = 'WKD'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from price_scopes where code = 'ROOM_CATEGORY'), (select id from price_types where code = 'WKE'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from price_scopes where code = 'ROOM'), (select id from price_types where code = 'WKE'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from price_scopes where code = 'RESORT_FACILITY'), (select id from price_types where code = 'WKE'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from price_scopes where code = 'ROOM_CATEGORY'), (select id from price_types where code = 'HOL'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from price_scopes where code = 'ROOM'), (select id from price_types where code = 'HOL'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from price_scopes where code = 'RESORT_FACILITY'), (select id from price_types where code = 'HOL'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from price_scopes where code = 'ROOM_CATEGORY'), (select id from price_types where code = 'SPECIAL'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from price_scopes where code = 'ROOM'), (select id from price_types where code = 'SPECIAL'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from price_scopes where code = 'RESORT_FACILITY'),
+        (select id from price_types where code = 'SPECIAL'),
         (select id from users where username = 'system'), (select id from users where username = 'system'));

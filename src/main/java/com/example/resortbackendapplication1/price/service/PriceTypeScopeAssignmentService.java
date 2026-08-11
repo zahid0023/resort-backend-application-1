@@ -1,21 +1,16 @@
 package com.example.resortbackendapplication1.price.service;
 
-import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
-import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
-import com.example.resortbackendapplication1.price.model.dto.PriceTypeScopeAssignmentDto;
 import com.example.resortbackendapplication1.price.model.entity.PriceTypeEntity;
 import com.example.resortbackendapplication1.price.model.entity.PriceTypeScopeAssignmentEntity;
-import com.example.resortbackendapplication1.price.model.entity.PriceTypeScopeEntity;
+import com.example.resortbackendapplication1.price.model.entity.PriceScopeEntity;
 
 public interface PriceTypeScopeAssignmentService {
 
-    SuccessResponse assign(PriceTypeScopeEntity priceTypeScopeEntity,
-                           PriceTypeEntity priceTypeEntity);
+    SuccessResponse assign(PriceTypeEntity priceTypeEntity,
+                           PriceScopeEntity priceScopeEntity);
 
-    PriceTypeScopeAssignmentEntity getEntityById(Long priceTypeScopeId, Long id);
-
-    PaginatedResponse<PriceTypeScopeAssignmentDto> getAll(Long priceTypeScopeId, PaginatedRequest paginatedRequest);
+    PriceTypeScopeAssignmentEntity getEntityByPriceScopeId(Long priceTypeId, Long priceScopeId);
 
     SuccessResponse unassign(PriceTypeScopeAssignmentEntity entity);
 }

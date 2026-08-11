@@ -16,17 +16,17 @@ public class PriceTypeScopeAssignmentEntity extends AuditableEntity {
     @Setter(AccessLevel.NONE)
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "price_type_scope_id", nullable = false)
-    private PriceTypeScopeEntity priceTypeScopeEntity;
+    @JoinColumn(name = "price_scope_id", nullable = false)
+    private PriceScopeEntity priceScopeEntity;
 
-    /** Internal — call via {@link PriceTypeScopeEntity#addPriceTypeScopeAssignmentEntity}. */
-    public void assignPriceTypeScope(PriceTypeScopeEntity priceTypeScopeEntity) {
-        this.priceTypeScopeEntity = priceTypeScopeEntity;
+    /** Internal — call via {@link PriceScopeEntity#addPriceTypeScopeAssignmentEntity}. */
+    public void assignPriceScope(PriceScopeEntity priceScopeEntity) {
+        this.priceScopeEntity = priceScopeEntity;
     }
 
-    /** Internal — call via {@link PriceTypeScopeEntity#removePriceTypeScopeAssignmentEntity}. */
-    public void unassignPriceTypeScope() {
-        this.priceTypeScopeEntity = null;
+    /** Internal — call via {@link PriceScopeEntity#removePriceTypeScopeAssignmentEntity}. */
+    public void unassignPriceScope() {
+        this.priceScopeEntity = null;
     }
 
     @Setter(AccessLevel.NONE)

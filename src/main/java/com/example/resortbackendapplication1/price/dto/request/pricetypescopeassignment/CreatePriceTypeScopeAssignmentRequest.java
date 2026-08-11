@@ -10,6 +10,6 @@ import tools.jackson.databind.annotation.JsonNaming;
 public class CreatePriceTypeScopeAssignmentRequest {
 
     @NotNull
-    private Long priceTypeId;
+    private Long priceScopeId;
 
 }

@@ -26,18 +26,18 @@ actually used to shape the response:
 
 ## Endpoints
 
-| Method | Path                                                  | Description                    |
-|--------|--------------------------------------------------------|-------------------------------------|
-| POST   | `/api/v1/contact-types`                                 | Create a contact type               |
-| GET    | `/api/v1/contact-types`                                 | List / search contact types         |
-| GET    | `/api/v1/contact-types/{id}`                            | Get a contact type                  |
-| PUT    | `/api/v1/contact-types/{id}`                            | Update a contact type               |
-| DELETE | `/api/v1/contact-types/{id}`                            | Delete a contact type               |
-| GET    | `/api/v1/contact-types/{contact-type-id}/locales`       | List a contact type's locales       |
-| GET    | `/api/v1/contact-types/{contact-type-id}/locales/count` | Count a contact type's locales      |
-| POST   | `/api/v1/contact-types/{contact-type-id}/locales`       | Create a contact type locale        |
-| PUT    | `/api/v1/contact-types/{contact-type-id}/locales/{id}`  | Update a contact type locale        |
-| DELETE | `/api/v1/contact-types/{contact-type-id}/locales/{id}`  | Delete a contact type locale        |
+| Method | Path                                                    | Description                    |
+|--------|---------------------------------------------------------|--------------------------------|
+| POST   | `/api/v1/contact-types`                                 | Create a contact type          |
+| GET    | `/api/v1/contact-types`                                 | List / search contact types    |
+| GET    | `/api/v1/contact-types/{id}`                            | Get a contact type             |
+| PUT    | `/api/v1/contact-types/{id}`                            | Update a contact type          |
+| DELETE | `/api/v1/contact-types/{id}`                            | Delete a contact type          |
+| GET    | `/api/v1/contact-types/{contact-type-id}/locales`       | List a contact type's locales  |
+| GET    | `/api/v1/contact-types/{contact-type-id}/locales/count` | Count a contact type's locales |
+| POST   | `/api/v1/contact-types/{contact-type-id}/locales`       | Create a contact type locale   |
+| PUT    | `/api/v1/contact-types/{contact-type-id}/locales/{id}`  | Update a contact type locale   |
+| DELETE | `/api/v1/contact-types/{contact-type-id}/locales/{id}`  | Delete a contact type locale   |
 
 ---
 
@@ -45,22 +45,22 @@ actually used to shape the response:
 
 ### ContactType
 
-| Field        | Type    | Required | Constraints                                                            | Description                                                                                                                                    |
-|--------------|---------|----------|--------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
-| `id`         | Long    | —        | read-only                                                                 | Auto-generated identifier                                                                                                                            |
-| `code`       | String  | Yes      | max 50 chars, unique among active records; set at creation, immutable    | Internal code (e.g. `GENERAL`, `RESERVATION`, `SALES`, `SUPPORT`, `EMERGENCY`, `ACCOUNTING`)                                                          |
-| `sort_order` | Integer | Yes      | default 0                                                                 | Display order                                                                                                                                         |
-| `locale`     | Object  | —        | nullable; see ContactTypeLocale below                                    | The single translation matching the request's `Accept-Language` (falls back to `en`, then `null` if the contact type has no translations at all)    |
+| Field        | Type    | Required | Constraints                                                           | Description                                                                                                                                      |
+|--------------|---------|----------|-----------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| `id`         | Long    | —        | read-only                                                             | Auto-generated identifier                                                                                                                        |
+| `code`       | String  | Yes      | max 50 chars, unique among active records; set at creation, immutable | Internal code (e.g. `GENERAL`, `RESERVATION`, `SALES`, `SUPPORT`, `EMERGENCY`, `ACCOUNTING`)                                                     |
+| `sort_order` | Integer | Yes      | default 0                                                             | Display order                                                                                                                                    |
+| `locale`     | Object  | —        | nullable; see ContactTypeLocale below                                 | The single translation matching the request's `Accept-Language` (falls back to `en`, then `null` if the contact type has no translations at all) |
 
 ### ContactTypeLocale
 
 | Field         | Type    | Required | Constraints                                      | Description                                                                    |
-|---------------|---------|----------|---------------------------------------------------|----------------------------------------------------------------------------------|
-| `id`          | Long    | —        | read-only                                        | Auto-generated identifier                                                        |
-| `locale`      | Locale  | —        | read-only, resolved from `locale_id` at creation | The locale this translation is written in (`id`, `code`, `name`, `sort_order`)   |
-| `name`        | String  | Yes      | max 100 chars                                    | Localized display name of the contact type                                       |
-| `description` | String  | Yes      | not null (defaults to `""`)                      | Localized description                                                            |
-| `sort_order`  | Integer | Yes      | default 0                                        | Display order among locale entries                                               |
+|---------------|---------|----------|--------------------------------------------------|--------------------------------------------------------------------------------|
+| `id`          | Long    | —        | read-only                                        | Auto-generated identifier                                                      |
+| `locale`      | Locale  | —        | read-only, resolved from `locale_id` at creation | The locale this translation is written in (`id`, `code`, `name`, `sort_order`) |
+| `name`        | String  | Yes      | max 100 chars                                    | Localized display name of the contact type                                     |
+| `description` | String  | Yes      | not null (defaults to `""`)                      | Localized description                                                          |
+| `sort_order`  | Integer | Yes      | default 0                                        | Display order among locale entries                                             |
 
 ---
 
@@ -91,9 +91,9 @@ Additional languages are added afterward via the Contact Type Locales sub-resour
 
 ### Request Fields
 
-| Field        | Type    | Required | Validation                                                                             |
-|--------------|---------|----------|------------------------------------------------------------------------------------------|
-| `code`       | String  | Yes      | Not blank, max 50 chars, unique among active records                                     |
+| Field        | Type    | Required | Validation                                                                                 |
+|--------------|---------|----------|--------------------------------------------------------------------------------------------|
+| `code`       | String  | Yes      | Not blank, max 50 chars, unique among active records                                       |
 | `sort_order` | Integer | Yes      | Not null                                                                                   |
 | `locale`     | Object  | Yes      | Not null; validated (see below) — no `locale_id` field; always resolved to the `en` locale |
 
@@ -127,7 +127,7 @@ To fetch every translation a contact type has, use
 
 ### Path Parameters
 
-| Parameter | Type | Description           |
+| Parameter | Type | Description            |
 |-----------|------|------------------------|
 | `id`      | Long | ID of the contact type |
 
@@ -175,14 +175,14 @@ field the same way as `GET /{id}` (exact match, falls back to `en`, then `null`)
 > **Note:** Query parameters bind directly onto `ContactTypeFilterRequest`'s Java field names, so they are
 > **camelCase** — not the snake_case used in JSON request/response bodies.
 
-| Parameter | Type   | Default         | Constraints                                | Description                                                                                 |
-|-----------|--------|-----------------|-----------------------------------------------|--------------------------------------------------------------------------------------------------|
-| `code`    | String | —               | —                                              | Filter by code (partial, case-insensitive)                                                       |
-| `name`    | String | —               | —                                              | Filter by locale-specific name (partial, case-insensitive), scoped to the resolved locale        |
-| `page`    | int    | `0`             | >= 0                                           | Zero-based page index                                                                             |
-| `size`    | int    | `10`            | 1 – 50                                         | Number of items per page                                                                          |
-| `sortBy`  | String | `id` (implicit) | `createdAt`, `code`, `name` (`id` NOT selectable) | Field to sort by                                                                              |
-| `sortDir` | String | `ASC`           | `ASC`, `DESC`                                  | Sort direction                                                                                    |
+| Parameter | Type   | Default         | Constraints                                       | Description                                                                               |
+|-----------|--------|-----------------|---------------------------------------------------|-------------------------------------------------------------------------------------------|
+| `code`    | String | —               | —                                                 | Filter by code (partial, case-insensitive)                                                |
+| `name`    | String | —               | —                                                 | Filter by locale-specific name (partial, case-insensitive), scoped to the resolved locale |
+| `page`    | int    | `0`             | >= 0                                              | Zero-based page index                                                                     |
+| `size`    | int    | `10`            | 1 – 50                                            | Number of items per page                                                                  |
+| `sortBy`  | String | `id` (implicit) | `createdAt`, `code`, `name` (`id` NOT selectable) | Field to sort by                                                                          |
+| `sortDir` | String | `ASC`           | `ASC`, `DESC`                                     | Sort direction                                                                            |
 
 > **Note:** `sort_order` is not filterable or sortable — only `code` and locale `name` are wired into the
 > search/sort infrastructure for this endpoint.
@@ -256,7 +256,7 @@ separately via the Contact Type Locales sub-resource endpoints below, not throug
 
 ### Path Parameters
 
-| Parameter | Type | Description           |
+| Parameter | Type | Description            |
 |-----------|------|------------------------|
 | `id`      | Long | ID of the contact type |
 
@@ -294,7 +294,7 @@ response.
 
 ### Path Parameters
 
-| Parameter | Type | Description           |
+| Parameter | Type | Description            |
 |-----------|------|------------------------|
 | `id`      | Long | ID of the contact type |
 
@@ -326,17 +326,17 @@ see more than the single Accept-Language-matched translation returned by `GET /c
 
 #### Path Parameters
 
-| Parameter         | Type | Description                    |
-|--------------------|------|----------------------------------|
-| `contact-type-id`  | Long | ID of the parent contact type    |
+| Parameter         | Type | Description                   |
+|-------------------|------|-------------------------------|
+| `contact-type-id` | Long | ID of the parent contact type |
 
 #### Query Parameters
 
 | Parameter    | Type   | Default | Constraints | Description                                                                                     |
-|--------------|--------|---------|-------------|-----------------------------------------------------------------------------------------------------|
-| `localeCode` | String | —       | —           | Filter to locales whose `code` contains this value (partial, case-insensitive), e.g. `en`, `bn`     |
-| `page`       | int    | `0`     | >= 0        | Zero-based page index                                                                                |
-| `size`       | int    | `10`    | 1 – 50      | Number of items per page                                                                             |
+|--------------|--------|---------|-------------|-------------------------------------------------------------------------------------------------|
+| `localeCode` | String | —       | —           | Filter to locales whose `code` contains this value (partial, case-insensitive), e.g. `en`, `bn` |
+| `page`       | int    | `0`     | >= 0        | Zero-based page index                                                                           |
+| `size`       | int    | `10`    | 1 – 50      | Number of items per page                                                                        |
 
 > **Note:** `sortBy`/`sortDir` are accepted on the request object but there are no sortable fields
 > registered for this endpoint — passing any non-null `sortBy` value throws
@@ -400,16 +400,19 @@ with `409 CONFLICT`.
 
 #### Path Parameters
 
-| Parameter         | Type | Description                    |
-|--------------------|------|----------------------------------|
-| `contact-type-id`  | Long | ID of the parent contact type    |
+| Parameter         | Type | Description                   |
+|-------------------|------|-------------------------------|
+| `contact-type-id` | Long | ID of the parent contact type |
 
 #### Response `200 OK`
 
 ```json
 {
   "count": 2,
-  "codes": ["en", "bn"]
+  "codes": [
+    "en",
+    "bn"
+  ]
 }
 ```
 
@@ -427,9 +430,9 @@ pre-checked at the application level before any write (backed by a DB-level uniq
 
 #### Path Parameters
 
-| Parameter         | Type | Description                    |
-|--------------------|------|----------------------------------|
-| `contact-type-id`  | Long | ID of the parent contact type    |
+| Parameter         | Type | Description                   |
+|-------------------|------|-------------------------------|
+| `contact-type-id` | Long | ID of the parent contact type |
 
 #### Request Body
 
@@ -445,11 +448,11 @@ pre-checked at the application level before any write (backed by a DB-level uniq
 #### Request Fields
 
 | Field         | Type    | Required | Validation                                  |
-|---------------|---------|----------|-----------------------------------------------|
-| `locale_id`   | Long    | Yes      | Not null; must reference an existing locale    |
-| `name`        | String  | Yes      | Not blank, max 100 chars                       |
-| `description` | String  | Yes      | Not null                                        |
-| `sort_order`  | Integer | Yes      | Not null                                        |
+|---------------|---------|----------|---------------------------------------------|
+| `locale_id`   | Long    | Yes      | Not null; must reference an existing locale |
+| `name`        | String  | Yes      | Not blank, max 100 chars                    |
+| `description` | String  | Yes      | Not null                                    |
+| `sort_order`  | Integer | Yes      | Not null                                    |
 
 #### Response `201 Created`
 
@@ -471,10 +474,10 @@ associated contact type and locale cannot be changed after creation.
 
 #### Path Parameters
 
-| Parameter         | Type | Description                    |
-|--------------------|------|----------------------------------|
-| `contact-type-id`  | Long | ID of the parent contact type    |
-| `id`               | Long | ID of the contact type locale    |
+| Parameter         | Type | Description                   |
+|-------------------|------|-------------------------------|
+| `contact-type-id` | Long | ID of the parent contact type |
+| `id`              | Long | ID of the contact type locale |
 
 #### Request Body
 
@@ -514,10 +517,10 @@ in any response.
 
 #### Path Parameters
 
-| Parameter         | Type | Description                    |
-|--------------------|------|----------------------------------|
-| `contact-type-id`  | Long | ID of the parent contact type    |
-| `id`               | Long | ID of the contact type locale    |
+| Parameter         | Type | Description                   |
+|-------------------|------|-------------------------------|
+| `contact-type-id` | Long | ID of the parent contact type |
+| `id`              | Long | ID of the contact type locale |
 
 #### Response `200 OK`
 
@@ -543,9 +546,9 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                                                                                                                                     |
-|-------------|-----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields; or an unsupported `sortBy` query value |
-| 404         | `ENTITY_NOT_FOUND`         | Contact type not found, contact type locale not found, or the locale referenced by `locale_id` not found (locale creation)                                |
+| HTTP Status | Error Code                 | Cause                                                                                                                                                                                            |
+|-------------|----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields; or an unsupported `sortBy` query value            |
+| 404         | `ENTITY_NOT_FOUND`         | Contact type not found, contact type locale not found, or the locale referenced by `locale_id` not found (locale creation)                                                                       |
 | 409         | `CONFLICT`                 | `code` already in use by another active contact type (`create`); or the contact type already has a translation for the given `locale_id` (`create` locale, pre-checked at the application level) |
-| 409         | `DATA_INTEGRITY_VIOLATION` | Last-resort DB-level unique constraint on `contact_type_id` + `locale_id`, should not normally be reachable now that the duplicate is pre-checked at the application level |
+| 409         | `DATA_INTEGRITY_VIOLATION` | Last-resort DB-level unique constraint on `contact_type_id` + `locale_id`, should not normally be reachable now that the duplicate is pre-checked at the application level                       |

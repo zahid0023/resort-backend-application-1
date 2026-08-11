@@ -12,7 +12,8 @@ import com.example.resortbackendapplication1.facility.model.entity.FacilityGroup
 import com.example.resortbackendapplication1.facility.model.entity.FacilityLocaleEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeLocaleEntity;
 import com.example.resortbackendapplication1.price.model.entity.PriceTypeLocaleEntity;
-import com.example.resortbackendapplication1.price.model.entity.PriceTypeScopeLocaleEntity;
+import com.example.resortbackendapplication1.price.model.entity.PriceScopeLocaleEntity;
+import com.example.resortbackendapplication1.price.model.entity.PriceUnitLocaleEntity;
 import com.example.resortbackendapplication1.roomcategory.model.entity.RoomCategoryLocaleEntity;
 import com.example.resortbackendapplication1.unit.model.entity.UnitLocaleEntity;
 import com.example.resortbackendapplication1.unit.model.entity.UnitTypeLocaleEntity;
@@ -81,10 +82,13 @@ public class LocaleEntity extends AuditableEntity {
     private Set<RoomCategoryLocaleEntity> roomCategoryLocaleEntities = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "localeEntity")
-    private Set<PriceTypeScopeLocaleEntity> priceTypeScopeLocaleEntities = new LinkedHashSet<>();
+    private Set<PriceScopeLocaleEntity> priceScopeLocaleEntities = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "localeEntity")
     private Set<PriceTypeLocaleEntity> priceTypeLocaleEntities = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "localeEntity")
+    private Set<PriceUnitLocaleEntity> priceUnitLocaleEntities = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "localeEntity")
     private Set<ContactTypeLocaleEntity> contactTypeLocaleEntities = new LinkedHashSet<>();
@@ -210,12 +214,12 @@ public class LocaleEntity extends AuditableEntity {
     // PriceTypeScope Locale relationship helpers
     // -------------------------------------------------------------------------
 
-    public void addPriceTypeScopeLocaleEntity(PriceTypeScopeLocaleEntity entity) {
-        addChild(priceTypeScopeLocaleEntities, entity, PriceTypeScopeLocaleEntity::assignLocale, this);
+    public void addPriceScopeLocaleEntity(PriceScopeLocaleEntity entity) {
+        addChild(priceScopeLocaleEntities, entity, PriceScopeLocaleEntity::assignLocale, this);
     }
 
-    public void removePriceTypeScopeLocaleEntity(PriceTypeScopeLocaleEntity entity) {
-        removeChild(priceTypeScopeLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
+    public void removePriceScopeLocaleEntity(PriceScopeLocaleEntity entity) {
+        removeChild(priceScopeLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
     }
 
     // -------------------------------------------------------------------------
@@ -228,6 +232,18 @@ public class LocaleEntity extends AuditableEntity {
 
     public void removePriceTypeLocaleEntity(PriceTypeLocaleEntity entity) {
         removeChild(priceTypeLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
+    }
+
+    // -------------------------------------------------------------------------
+    // PriceUnit Locale relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addPriceUnitLocaleEntity(PriceUnitLocaleEntity entity) {
+        addChild(priceUnitLocaleEntities, entity, PriceUnitLocaleEntity::assignLocale, this);
+    }
+
+    public void removePriceUnitLocaleEntity(PriceUnitLocaleEntity entity) {
+        removeChild(priceUnitLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
     }
 
     // -------------------------------------------------------------------------

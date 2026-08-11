@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -21,4 +23,5 @@ public class PriceTypeDto {
     private Integer sortOrder;
 
     private PriceTypeLocaleDto locale;
+    private List<PriceScopeDto> priceScopes;
 }

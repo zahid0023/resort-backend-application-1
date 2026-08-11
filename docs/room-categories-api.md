@@ -26,17 +26,17 @@ actually used to shape the response:
 ## Endpoints
 
 | Method | Path                                                       | Description                     |
-|--------|-------------------------------------------------------------|---------------------------------|
-| POST   | `/api/v1/room-categories`                                    | Create a room category           |
-| GET    | `/api/v1/room-categories`                                    | List / search room categories    |
-| GET    | `/api/v1/room-categories/{id}`                               | Get a room category              |
-| PUT    | `/api/v1/room-categories/{id}`                               | Update a room category           |
-| DELETE | `/api/v1/room-categories/{id}`                               | Delete a room category           |
-| GET    | `/api/v1/room-categories/{room-category-id}/locales`         | List a room category's locales   |
-| GET    | `/api/v1/room-categories/{room-category-id}/locales/count`   | Count a room category's locales  |
-| POST   | `/api/v1/room-categories/{room-category-id}/locales`         | Create a room category locale    |
-| PUT    | `/api/v1/room-categories/{room-category-id}/locales/{id}`    | Update a room category locale    |
-| DELETE | `/api/v1/room-categories/{room-category-id}/locales/{id}`    | Delete a room category locale    |
+|--------|------------------------------------------------------------|---------------------------------|
+| POST   | `/api/v1/room-categories`                                  | Create a room category          |
+| GET    | `/api/v1/room-categories`                                  | List / search room categories   |
+| GET    | `/api/v1/room-categories/{id}`                             | Get a room category             |
+| PUT    | `/api/v1/room-categories/{id}`                             | Update a room category          |
+| DELETE | `/api/v1/room-categories/{id}`                             | Delete a room category          |
+| GET    | `/api/v1/room-categories/{room-category-id}/locales`       | List a room category's locales  |
+| GET    | `/api/v1/room-categories/{room-category-id}/locales/count` | Count a room category's locales |
+| POST   | `/api/v1/room-categories/{room-category-id}/locales`       | Create a room category locale   |
+| PUT    | `/api/v1/room-categories/{room-category-id}/locales/{id}`  | Update a room category locale   |
+| DELETE | `/api/v1/room-categories/{room-category-id}/locales/{id}`  | Delete a room category locale   |
 
 ---
 
@@ -44,22 +44,22 @@ actually used to shape the response:
 
 ### Room Category
 
-| Field        | Type    | Required | Constraints                                                            | Description                                                                                                                                       |
-|--------------|---------|----------|----------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
-| `id`         | Long    | —        | read-only                                                                 | Auto-generated identifier                                                                                                                          |
-| `code`       | String  | Yes      | max 50 chars, unique among active records; set at creation, immutable    | Internal code (e.g. `STD`, `DLX`, `STE`)                                                                                                            |
-| `sort_order` | Integer | Yes      | default 0                                                                 | Display order                                                                                                                                       |
-| `locale`     | Object  | —        | nullable; see RoomCategoryLocale below                                   | The single translation matching the request's `Accept-Language` (falls back to `en`, then `null` if the room category has no translations at all)  |
+| Field        | Type    | Required | Constraints                                                           | Description                                                                                                                                       |
+|--------------|---------|----------|-----------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| `id`         | Long    | —        | read-only                                                             | Auto-generated identifier                                                                                                                         |
+| `code`       | String  | Yes      | max 50 chars, unique among active records; set at creation, immutable | Internal code (e.g. `STD`, `DLX`, `STE`)                                                                                                          |
+| `sort_order` | Integer | Yes      | default 0                                                             | Display order                                                                                                                                     |
+| `locale`     | Object  | —        | nullable; see RoomCategoryLocale below                                | The single translation matching the request's `Accept-Language` (falls back to `en`, then `null` if the room category has no translations at all) |
 
 ### RoomCategoryLocale
 
-| Field         | Type    | Required | Constraints                                                          | Description                                                                    |
-|---------------|---------|----------|--------------------------------------------------------------------------|------------------------------------------------------------------------------------|
-| `id`          | Long    | —        | read-only                                                               | Auto-generated identifier                                                          |
-| `locale`      | Locale  | —        | read-only, resolved from `locale_id` at creation                      | The locale this translation is written in (`id`, `code`, `name`, `sort_order`)     |
-| `name`        | String  | Yes      | max 100 chars, unique among active translations for the same locale   | Localized name of the room category                                                |
-| `description` | String  | Yes      | not null (defaults to `""`)                                            | Localized description                                                              |
-| `sort_order`  | Integer | Yes      | default 0                                                               | Display order among locale entries                                                 |
+| Field         | Type    | Required | Constraints                                                         | Description                                                                    |
+|---------------|---------|----------|---------------------------------------------------------------------|--------------------------------------------------------------------------------|
+| `id`          | Long    | —        | read-only                                                           | Auto-generated identifier                                                      |
+| `locale`      | Locale  | —        | read-only, resolved from `locale_id` at creation                    | The locale this translation is written in (`id`, `code`, `name`, `sort_order`) |
+| `name`        | String  | Yes      | max 100 chars, unique among active translations for the same locale | Localized name of the room category                                            |
+| `description` | String  | Yes      | not null (defaults to `""`)                                         | Localized description                                                          |
+| `sort_order`  | Integer | Yes      | default 0                                                           | Display order among locale entries                                             |
 
 ---
 
@@ -91,18 +91,18 @@ Additional languages are added afterward via the Room Category Locales sub-resou
 ### Request Fields
 
 | Field        | Type    | Required | Validation                                                                                 |
-|--------------|---------|----------|-----------------------------------------------------------------------------------------------|
-| `code`       | String  | Yes      | Not blank, max 50 chars, unique among active records                                          |
-| `sort_order` | Integer | Yes      | Not null                                                                                        |
-| `locale`     | Object  | Yes      | Not null; validated (see below) — no `locale_id` field; always resolved to the `en` locale     |
+|--------------|---------|----------|--------------------------------------------------------------------------------------------|
+| `code`       | String  | Yes      | Not blank, max 50 chars, unique among active records                                       |
+| `sort_order` | Integer | Yes      | Not null                                                                                   |
+| `locale`     | Object  | Yes      | Not null; validated (see below) — no `locale_id` field; always resolved to the `en` locale |
 
 **Locale entry (`locale`):**
 
 | Field         | Type    | Required | Validation                                                          |
-|---------------|---------|----------|-----------------------------------------------------------------------|
-| `name`        | String  | Yes      | Not blank, max 100 chars, unique among active translations for `en`   |
-| `description` | String  | Yes      | Not null                                                               |
-| `sort_order`  | Integer | Yes      | Not null                                                               |
+|---------------|---------|----------|---------------------------------------------------------------------|
+| `name`        | String  | Yes      | Not blank, max 100 chars, unique among active translations for `en` |
+| `description` | String  | Yes      | Not null                                                            |
+| `sort_order`  | Integer | Yes      | Not null                                                            |
 
 ### Response `201 Created`
 
@@ -127,8 +127,8 @@ below.
 ### Path Parameters
 
 | Parameter | Type | Description             |
-|-----------|------|-----------------------------|
-| `id`      | Long | ID of the room category     |
+|-----------|------|-------------------------|
+| `id`      | Long | ID of the room category |
 
 ### Response `200 OK`
 
@@ -174,14 +174,14 @@ partial match. `Accept-Language` selects each room category's `locale` field the
 > **Note:** Query parameters bind directly onto `RoomCategoryFilterRequest`'s Java field names, so they are
 > **camelCase** — not the snake_case used in JSON request/response bodies.
 
-| Parameter | Type   | Default         | Constraints                             | Description                                     |
-|-----------|--------|-----------------|--------------------------------------------|-----------------------------------------------------|
-| `code`    | String | —               | —                                           | Filter by code (partial, case-insensitive)          |
-| `name`    | String | —               | —                                           | Filter by locale-specific name (partial, case-insensitive), scoped to the resolved locale |
-| `page`    | int    | `0`             | >= 0                                        | Zero-based page index                               |
-| `size`    | int    | `10`            | 1 – 50                                      | Number of items per page                            |
-| `sortBy`  | String | `id` (implicit) | `createdAt`, `code`, `name` (`id` NOT selectable) | Field to sort by                              |
-| `sortDir` | String | `ASC`           | `ASC`, `DESC`                               | Sort direction                                      |
+| Parameter | Type   | Default         | Constraints                                       | Description                                                                               |
+|-----------|--------|-----------------|---------------------------------------------------|-------------------------------------------------------------------------------------------|
+| `code`    | String | —               | —                                                 | Filter by code (partial, case-insensitive)                                                |
+| `name`    | String | —               | —                                                 | Filter by locale-specific name (partial, case-insensitive), scoped to the resolved locale |
+| `page`    | int    | `0`             | >= 0                                              | Zero-based page index                                                                     |
+| `size`    | int    | `10`            | 1 – 50                                            | Number of items per page                                                                  |
+| `sortBy`  | String | `id` (implicit) | `createdAt`, `code`, `name` (`id` NOT selectable) | Field to sort by                                                                          |
+| `sortDir` | String | `ASC`           | `ASC`, `DESC`                                     | Sort direction                                                                            |
 
 > **Note:** `sort_order` is not filterable or sortable — only `code` and locale `name` are wired into the
 > search/sort infrastructure for this endpoint.
@@ -256,8 +256,8 @@ separately via the Room Category Locales sub-resource endpoints below, not throu
 ### Path Parameters
 
 | Parameter | Type | Description             |
-|-----------|------|-----------------------------|
-| `id`      | Long | ID of the room category     |
+|-----------|------|-------------------------|
+| `id`      | Long | ID of the room category |
 
 ### Request Body
 
@@ -270,8 +270,8 @@ separately via the Room Category Locales sub-resource endpoints below, not throu
 ### Request Fields
 
 | Field        | Type    | Required | Validation |
-|--------------|---------|----------|--------------|
-| `sort_order` | Integer | Yes      | Not null     |
+|--------------|---------|----------|------------|
+| `sort_order` | Integer | Yes      | Not null   |
 
 ### Response `200 OK`
 
@@ -294,8 +294,8 @@ any response.
 ### Path Parameters
 
 | Parameter | Type | Description             |
-|-----------|------|-----------------------------|
-| `id`      | Long | ID of the room category     |
+|-----------|------|-------------------------|
+| `id`      | Long | ID of the room category |
 
 ### Response `200 OK`
 
@@ -325,17 +325,17 @@ see more than the single Accept-Language-matched translation returned by `GET /r
 
 #### Path Parameters
 
-| Parameter            | Type | Description                     |
-|------------------------|------|--------------------------------------|
-| `room-category-id`     | Long | ID of the parent room category      |
+| Parameter          | Type | Description                    |
+|--------------------|------|--------------------------------|
+| `room-category-id` | Long | ID of the parent room category |
 
 #### Query Parameters
 
 | Parameter    | Type   | Default | Constraints | Description                                                                                     |
-|--------------|--------|---------|-------------|-----------------------------------------------------------------------------------------------------|
-| `localeCode` | String | —       | —           | Filter to locales whose `code` contains this value (partial, case-insensitive), e.g. `en`, `bn`   |
-| `page`       | int    | `0`     | >= 0        | Zero-based page index                                                                                |
-| `size`       | int    | `10`    | 1 – 50      | Number of items per page                                                                             |
+|--------------|--------|---------|-------------|-------------------------------------------------------------------------------------------------|
+| `localeCode` | String | —       | —           | Filter to locales whose `code` contains this value (partial, case-insensitive), e.g. `en`, `bn` |
+| `page`       | int    | `0`     | >= 0        | Zero-based page index                                                                           |
+| `size`       | int    | `10`    | 1 – 50      | Number of items per page                                                                        |
 
 > **Note:** `sortBy`/`sortDir` are accepted on the request object but there are no sortable fields
 > registered for this endpoint — passing any non-null `sortBy` value throws
@@ -399,16 +399,19 @@ will fail with `409 CONFLICT`.
 
 #### Path Parameters
 
-| Parameter         | Type | Description                     |
-|--------------------|------|------------------------------------|
-| `room-category-id` | Long | ID of the parent room category   |
+| Parameter          | Type | Description                    |
+|--------------------|------|--------------------------------|
+| `room-category-id` | Long | ID of the parent room category |
 
 #### Response `200 OK`
 
 ```json
 {
   "count": 2,
-  "codes": ["en", "bn"]
+  "codes": [
+    "en",
+    "bn"
+  ]
 }
 ```
 
@@ -433,9 +436,9 @@ platform only ever soft-deletes.
 
 #### Path Parameters
 
-| Parameter            | Type | Description                     |
-|------------------------|------|--------------------------------------|
-| `room-category-id`     | Long | ID of the parent room category      |
+| Parameter          | Type | Description                    |
+|--------------------|------|--------------------------------|
+| `room-category-id` | Long | ID of the parent room category |
 
 #### Request Body
 
@@ -450,12 +453,12 @@ platform only ever soft-deletes.
 
 #### Request Fields
 
-| Field         | Type    | Required | Validation                                                                |
-|---------------|---------|----------|--------------------------------------------------------------------------------|
-| `locale_id`   | Long    | Yes      | Not null; must reference an existing locale                                    |
-| `name`        | String  | Yes      | Not blank, max 100 chars, unique among active translations for `locale_id`      |
-| `description` | String  | Yes      | Not null                                                                        |
-| `sort_order`  | Integer | Yes      | Not null                                                                        |
+| Field         | Type    | Required | Validation                                                                 |
+|---------------|---------|----------|----------------------------------------------------------------------------|
+| `locale_id`   | Long    | Yes      | Not null; must reference an existing locale                                |
+| `name`        | String  | Yes      | Not blank, max 100 chars, unique among active translations for `locale_id` |
+| `description` | String  | Yes      | Not null                                                                   |
+| `sort_order`  | Integer | Yes      | Not null                                                                   |
 
 #### Response `201 Created`
 
@@ -479,10 +482,10 @@ already used by another translation in the same locale returns `409 CONFLICT`.
 
 #### Path Parameters
 
-| Parameter            | Type | Description                     |
-|------------------------|------|--------------------------------------|
-| `room-category-id`     | Long | ID of the parent room category      |
-| `id`                   | Long | ID of the room category locale      |
+| Parameter          | Type | Description                    |
+|--------------------|------|--------------------------------|
+| `room-category-id` | Long | ID of the parent room category |
+| `id`               | Long | ID of the room category locale |
 
 #### Request Body
 
@@ -496,11 +499,11 @@ already used by another translation in the same locale returns `409 CONFLICT`.
 
 #### Request Fields
 
-| Field         | Type    | Required | Validation                                                                     |
-|---------------|---------|----------|--------------------------------------------------------------------------------------|
-| `name`        | String  | Yes      | Not blank, max 100 chars, unique among active translations for this locale             |
-| `description` | String  | Yes      | Not null                                                                                |
-| `sort_order`  | Integer | Yes      | Not null                                                                                |
+| Field         | Type    | Required | Validation                                                                 |
+|---------------|---------|----------|----------------------------------------------------------------------------|
+| `name`        | String  | Yes      | Not blank, max 100 chars, unique among active translations for this locale |
+| `description` | String  | Yes      | Not null                                                                   |
+| `sort_order`  | Integer | Yes      | Not null                                                                   |
 
 #### Response `200 OK`
 
@@ -522,10 +525,10 @@ in any response.
 
 #### Path Parameters
 
-| Parameter            | Type | Description                     |
-|------------------------|------|--------------------------------------|
-| `room-category-id`     | Long | ID of the parent room category      |
-| `id`                   | Long | ID of the room category locale      |
+| Parameter          | Type | Description                    |
+|--------------------|------|--------------------------------|
+| `room-category-id` | Long | ID of the parent room category |
+| `id`               | Long | ID of the room category locale |
 
 #### Response `200 OK`
 
@@ -551,9 +554,9 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                                                                                                                                                                    |
-|-------------|-----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields; or an unsupported `sortBy` query value  |
-| 404         | `ENTITY_NOT_FOUND`         | Room category not found, room category locale not found, or the locale referenced by `locale_id` not found (locale creation)                                                            |
+| HTTP Status | Error Code                 | Cause                                                                                                                                                                                                                                                                         |
+|-------------|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields; or an unsupported `sortBy` query value                                                                                         |
+| 404         | `ENTITY_NOT_FOUND`         | Room category not found, room category locale not found, or the locale referenced by `locale_id` not found (locale creation)                                                                                                                                                  |
 | 409         | `CONFLICT`                 | `code` already in use by another active room category (`create`); the room category already has a translation for the given `locale_id` (`create` locale); or `name` already in use by another active translation for the same locale (`create`/`update` locale, pre-checked) |
-| 409         | `DATA_INTEGRITY_VIOLATION` | Last-resort DB-level unique constraint on `room_category_id` + `locale_id`, should not normally be reachable now that the duplicate is pre-checked at the application level            |
+| 409         | `DATA_INTEGRITY_VIOLATION` | Last-resort DB-level unique constraint on `room_category_id` + `locale_id`, should not normally be reachable now that the duplicate is pre-checked at the application level                                                                                                   |

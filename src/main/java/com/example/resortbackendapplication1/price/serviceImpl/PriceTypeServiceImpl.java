@@ -9,12 +9,17 @@ import com.example.resortbackendapplication1.price.dto.request.pricetype.PriceTy
 import com.example.resortbackendapplication1.price.dto.request.pricetype.UpdatePriceTypeRequest;
 import com.example.resortbackendapplication1.price.dto.response.pricetypes.PriceTypeResponse;
 import com.example.resortbackendapplication1.price.model.dto.PriceTypeDto;
+import com.example.resortbackendapplication1.price.model.dto.PriceScopeDto;
 import com.example.resortbackendapplication1.price.model.entity.PriceTypeEntity;
 import com.example.resortbackendapplication1.price.model.entity.PriceTypeLocaleEntity;
+import com.example.resortbackendapplication1.price.model.entity.PriceTypeScopeAssignmentEntity;
+import com.example.resortbackendapplication1.price.model.entity.PriceScopeEntity;
 import com.example.resortbackendapplication1.price.model.enums.PriceTypeSearchField;
 import com.example.resortbackendapplication1.price.model.enums.PriceTypeSortField;
 import com.example.resortbackendapplication1.price.model.mapper.PriceTypeLocaleMapper;
 import com.example.resortbackendapplication1.price.model.mapper.PriceTypeMapper;
+import com.example.resortbackendapplication1.price.model.mapper.PriceTypeScopeAssignmentMapper;
+import com.example.resortbackendapplication1.price.model.mapper.PriceScopeMapper;
 import com.example.resortbackendapplication1.price.repository.PriceTypeRepository;
 import com.example.resortbackendapplication1.price.service.PriceTypeService;
 import com.example.resortbackendapplication1.price.specification.PriceTypeSpecification;
@@ -28,6 +33,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -45,12 +51,20 @@ public class PriceTypeServiceImpl implements PriceTypeService {
 
     @Transactional
     @Override
-    public SuccessResponse create(CreatePriceTypeRequest request, LocaleEntity localeEntity) {
+    public SuccessResponse create(CreatePriceTypeRequest request,
+                                  List<PriceScopeEntity> priceScopeEntities,
+                                  LocaleEntity localeEntity) {
         if (priceTypeRepository.existsByCodeAndIsActiveAndIsDeleted(request.getCode(), true, false)) {
             throw new IllegalStateException("PriceType with code '" + request.getCode() + "' already exists");
         }
 
         PriceTypeEntity entity = PriceTypeMapper.create(request);
+
+        for (PriceScopeEntity priceScopeEntity : priceScopeEntities) {
+            PriceTypeScopeAssignmentEntity assignmentEntity = PriceTypeScopeAssignmentMapper.create();
+            priceScopeEntity.addPriceTypeScopeAssignmentEntity(assignmentEntity);
+            entity.addPriceTypeScopeAssignmentEntity(assignmentEntity);
+        }
 
         PriceTypeLocaleEntity priceTypeLocaleEntity = PriceTypeLocaleMapper.create(request.getLocale());
         localeEntity.addPriceTypeLocaleEntity(priceTypeLocaleEntity);
@@ -70,7 +84,9 @@ public class PriceTypeServiceImpl implements PriceTypeService {
     @Override
     public PriceTypeResponse getById(Long id) {
         PriceTypeEntity entity = getEntityById(id);
-        PriceTypeDto dto = PriceTypeMapper.toDto(entity).build();
+        PriceTypeDto dto = PriceTypeMapper.toDto(entity)
+                .priceScopes(mapPriceScopes(entity))
+                .build();
         return new PriceTypeResponse(dto);
     }
 
@@ -81,8 +97,19 @@ public class PriceTypeServiceImpl implements PriceTypeService {
         Pageable pageable = request.toPageable(ALLOWED_SORT_FIELDS, PriceTypeSortField.localeSortFields());
         Page<@NonNull PriceTypeDto> page = priceTypeRepository
                 .findAll(specification, pageable)
-                .map(entity -> PriceTypeMapper.toDto(entity).build());
+                .map(entity -> PriceTypeMapper.toDto(entity)
+                        .priceScopes(mapPriceScopes(entity))
+                        .build());
         return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
+    }
+
+    private List<PriceScopeDto> mapPriceScopes(PriceTypeEntity entity) {
+        return entity.getPriceTypeScopeAssignmentEntities().stream()
+                .filter(assignment -> Boolean.TRUE.equals(assignment.getIsActive())
+                        && Boolean.FALSE.equals(assignment.getIsDeleted()))
+                .map(PriceTypeScopeAssignmentEntity::getPriceScopeEntity)
+                .map(priceScopeEntity -> PriceScopeMapper.toDto(priceScopeEntity).build())
+                .toList();
     }
 
     @Transactional
