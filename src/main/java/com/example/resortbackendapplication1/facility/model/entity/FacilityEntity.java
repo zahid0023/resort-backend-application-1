@@ -52,7 +52,7 @@ public class FacilityEntity extends AuditableEntity {
     private Set<FacilityScopeAssignmentEntity> facilityScopeAssignmentEntities = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "facilityEntity", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<FacilityGroupFacilityAssignmentEntity> facilityGroupFacilityAssignmentEntities = new LinkedHashSet<>();
+    private Set<FacilityFacilityGroupAssignmentEntity> facilityFacilityGroupAssignmentEntities = new LinkedHashSet<>();
 
     // -------------------------------------------------------------------------
     // Facility Locale relationship helpers
@@ -79,14 +79,14 @@ public class FacilityEntity extends AuditableEntity {
     }
 
     // -------------------------------------------------------------------------
-    // FacilityGroupFacilityAssignment relationship helpers
+    // FacilityFacilityGroupAssignment relationship helpers
     // -------------------------------------------------------------------------
 
-    public void addFacilityGroupFacilityAssignmentEntity(FacilityGroupFacilityAssignmentEntity entity) {
-        addChild(facilityGroupFacilityAssignmentEntities, entity, FacilityGroupFacilityAssignmentEntity::assignFacility, this);
+    public void addFacilityFacilityGroupAssignmentEntity(FacilityFacilityGroupAssignmentEntity entity) {
+        addChild(facilityFacilityGroupAssignmentEntities, entity, FacilityFacilityGroupAssignmentEntity::assignFacility, this);
     }
 
-    public void removeFacilityGroupFacilityAssignmentEntity(FacilityGroupFacilityAssignmentEntity entity) {
-        removeChild(facilityGroupFacilityAssignmentEntities, entity, (child, ignored) -> child.unassignFacility());
+    public void removeFacilityFacilityGroupAssignmentEntity(FacilityFacilityGroupAssignmentEntity entity) {
+        removeChild(facilityFacilityGroupAssignmentEntities, entity, (child, ignored) -> child.unassignFacility());
     }
 }

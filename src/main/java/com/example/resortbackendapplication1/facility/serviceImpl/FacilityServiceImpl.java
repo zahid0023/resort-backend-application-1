@@ -12,14 +12,14 @@ import com.example.resortbackendapplication1.facility.model.dto.FacilityDto;
 import com.example.resortbackendapplication1.facility.model.dto.FacilityGroupDto;
 import com.example.resortbackendapplication1.facility.model.dto.FacilityScopeDto;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
+import com.example.resortbackendapplication1.facility.model.entity.FacilityFacilityGroupAssignmentEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupEntity;
-import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupFacilityAssignmentEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityLocaleEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeAssignmentEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeEntity;
 import com.example.resortbackendapplication1.facility.model.enums.FacilitySearchField;
 import com.example.resortbackendapplication1.facility.model.enums.FacilitySortField;
-import com.example.resortbackendapplication1.facility.model.mapper.FacilityGroupFacilityAssignmentMapper;
+import com.example.resortbackendapplication1.facility.model.mapper.FacilityFacilityGroupAssignmentMapper;
 import com.example.resortbackendapplication1.facility.model.mapper.FacilityGroupMapper;
 import com.example.resortbackendapplication1.facility.model.mapper.FacilityLocaleMapper;
 import com.example.resortbackendapplication1.facility.model.mapper.FacilityMapper;
@@ -40,6 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -67,9 +68,10 @@ public class FacilityServiceImpl implements FacilityService {
         FacilityEntity entity = FacilityMapper.create(request);
 
         for (FacilityGroupEntity facilityGroupEntity : facilityGroupEntities) {
-            FacilityGroupFacilityAssignmentEntity assignmentEntity = FacilityGroupFacilityAssignmentMapper.create();
-            facilityGroupEntity.addFacilityGroupFacilityAssignmentEntity(assignmentEntity);
-            entity.addFacilityGroupFacilityAssignmentEntity(assignmentEntity);
+            validateScopeCompatibility(facilityGroupEntity, facilityScopeEntities);
+            FacilityFacilityGroupAssignmentEntity assignmentEntity = FacilityFacilityGroupAssignmentMapper.create();
+            facilityGroupEntity.addFacilityFacilityGroupAssignmentEntity(assignmentEntity);
+            entity.addFacilityFacilityGroupAssignmentEntity(assignmentEntity);
         }
 
         for (FacilityScopeEntity facilityScopeEntity : facilityScopeEntities) {
@@ -117,11 +119,29 @@ public class FacilityServiceImpl implements FacilityService {
         return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
     }
 
-    private List<FacilityGroupDto> mapFacilityGroups(FacilityEntity entity) {
-        return entity.getFacilityGroupFacilityAssignmentEntities().stream()
+    private void validateScopeCompatibility(FacilityGroupEntity facilityGroupEntity, List<FacilityScopeEntity> facilityScopeEntities) {
+        Set<Long> allowedScopeIds = facilityGroupEntity.getFacilityGroupScopeAssignmentEntities().stream()
                 .filter(assignment -> Boolean.TRUE.equals(assignment.getIsActive())
                         && Boolean.FALSE.equals(assignment.getIsDeleted()))
-                .map(FacilityGroupFacilityAssignmentEntity::getFacilityGroupEntity)
+                .map(assignment -> assignment.getFacilityScopeEntity().getId())
+                .collect(Collectors.toSet());
+
+        List<String> unsupportedCodes = facilityScopeEntities.stream()
+                .filter(facilityScopeEntity -> !allowedScopeIds.contains(facilityScopeEntity.getId()))
+                .map(FacilityScopeEntity::getCode)
+                .toList();
+
+        if (!unsupportedCodes.isEmpty()) {
+            throw new IllegalStateException("FacilityGroup '" + facilityGroupEntity.getCode()
+                    + "' is not scoped to: " + unsupportedCodes);
+        }
+    }
+
+    private List<FacilityGroupDto> mapFacilityGroups(FacilityEntity entity) {
+        return entity.getFacilityFacilityGroupAssignmentEntities().stream()
+                .filter(assignment -> Boolean.TRUE.equals(assignment.getIsActive())
+                        && Boolean.FALSE.equals(assignment.getIsDeleted()))
+                .map(FacilityFacilityGroupAssignmentEntity::getFacilityGroupEntity)
                 .map(facilityGroupEntity -> FacilityGroupMapper.toDto(facilityGroupEntity).build())
                 .toList();
     }

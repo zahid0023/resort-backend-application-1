@@ -1,4 +1,4 @@
-package com.example.resortbackendapplication1.facility.dto.request.facilitygroupfacilityassignment;
+package com.example.resortbackendapplication1.facility.dto.request.facilityfacilitygroupassignment;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -7,9 +7,9 @@ import tools.jackson.databind.annotation.JsonNaming;
 
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class CreateFacilityGroupFacilityAssignmentRequest {
+public class CreateFacilityFacilityGroupAssignmentRequest {
 
     @NotNull
-    private Long facilityId;
+    private Long facilityGroupId;
 
 }

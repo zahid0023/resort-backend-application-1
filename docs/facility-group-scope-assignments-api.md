@@ -1,11 +1,12 @@
 # Facility Group Scope Assignments API
 
-Base URL: `/api/v1/facility-scopes/{facility-scope-id}/group-assignments`
+Base URL: `/api/v1/facility-groups/{facility-group-id}/scope-assignments`
 
-Facility group scope assignments record which facility groups (e.g. `DINING`, `WELLNESS`) apply at which
-facility scope (e.g. `RESORT`, `ROOM_CATEGORY`, `ROOM`). This lets a resort owner fetch only the facility
-groups relevant to the scope they're currently working in — a resort, or a room category — instead of being
-overwhelmed with every facility group in the system.
+Facility group scope assignments record which [facility scopes](facility-scopes-api.md) (e.g. `RESORT`,
+`ROOM_CATEGORY`, `ROOM`) a given facility group (e.g. `DINING`, `WELLNESS`, `RECREATION`, `ACCOMMODATION`)
+applies at. A facility group can be assigned to more than one scope — for example, `DINING` may apply at the
+resort, room category, and room scopes, while `ACCOMMODATION` may apply only at the room category and room
+scopes.
 
 This is a pure membership/assignment resource: there is no locale sub-resource, no updatable fields, and no
 filtering — an assignment either exists or doesn't. To change an assignment, unassign it and assign a new
@@ -13,129 +14,42 @@ one. All records support soft-delete — deleted records are hidden from all res
 
 **`Accept-Language` is required on every endpoint below, with no exceptions**, per this platform's global
 rule — a request missing (or with a blank) `Accept-Language` header is rejected with `400 INVALID_ARGUMENT`
-before it reaches any endpoint (see [Error Responses](#error-responses)). Its value has no effect on any of
-these endpoints — `GET` (list) still resolves each embedded `facility_group.locale` using
-`Accept-Language` the same way `GET /facility-groups` does, but the header's *presence* is what's enforced
-here, not a value this resource itself branches on.
+before it reaches any endpoint (see [Error Responses](#error-responses)). Its value has no effect on either
+endpoint below — the header's *presence* is what's enforced here, not a value this resource itself branches
+on. To see which facility scopes a facility group currently has assigned, use `GET /facility-groups/{id}`
+(see [Facility Groups](facility-groups-api.md)), which embeds the full list.
 
 ---
 
 ## Endpoints
 
-| Method | Path                                                                 | Description                              |
-|--------|----------------------------------------------------------------------|------------------------------------------|
-| GET    | `/api/v1/facility-scopes/{facility-scope-id}/group-assignments`      | List facility groups assigned to a scope |
-| POST   | `/api/v1/facility-scopes/{facility-scope-id}/group-assignments`      | Assign a facility group to a scope       |
-| DELETE | `/api/v1/facility-scopes/{facility-scope-id}/group-assignments/{id}` | Unassign a facility group from a scope   |
+| Method | Path                                                                                | Description                            |
+|--------|-------------------------------------------------------------------------------------|----------------------------------------|
+| POST   | `/api/v1/facility-groups/{facility-group-id}/scope-assignments`                     | Assign a scope to a facility group     |
+| DELETE | `/api/v1/facility-groups/{facility-group-id}/scope-assignments/{facility-scope-id}` | Unassign a scope from a facility group |
 
 ---
 
-## Data Model
+## Assign Scope
 
-### FacilityGroupScopeAssignment
+`POST /api/v1/facility-groups/{facility-group-id}/scope-assignments`
 
-| Field            | Type   | Required | Constraints | Description                                                                                                                                                        |
-|------------------|--------|----------|-------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `id`             | Long   | —        | read-only   | Auto-generated identifier of the assignment row                                                                                                                    |
-| `facility_group` | Object | —        | read-only   | The assigned facility group — same shape as [Facility Groups](facility-groups-api.md)'s `FacilityGroup` data model, including its own `locale`-matched translation |
-
-The parent `facility_scope` is never re-embedded on each row — it's already known from the
-`{facility-scope-id}` path segment.
-
----
-
-## List Facility Group Scope Assignments
-
-`GET /api/v1/facility-scopes/{facility-scope-id}/group-assignments`
-
-Returns a paginated list of every facility group assigned to a given facility scope. This is the primary way
-a client discovers "which facility groups apply here" for a resort (`RESORT` scope) or a room category
-(`ROOM_CATEGORY` scope), without fetching every facility group in the system.
+Assigns a facility scope to a facility group. Both must reference existing, active records — an unknown
+`facility_scope_id` returns `404 ENTITY_NOT_FOUND`. The combination of facility group and facility scope must
+be unique — assigning a scope that's already assigned to this facility group returns `409 CONFLICT`. This
+check is application-level only; there is no DB-level unique constraint on `(facility_group_id, facility_scope_id)`.
 
 ### Path Parameters
 
 | Parameter           | Type | Description              |
 |---------------------|------|--------------------------|
-| `facility-scope-id` | Long | ID of the facility scope |
-
-### Query Parameters
-
-| Parameter | Type | Default | Constraints | Description              |
-|-----------|------|---------|-------------|--------------------------|
-| `page`    | int  | `0`     | >= 0        | Zero-based page index    |
-| `size`    | int  | `10`    | 1 – 50      | Number of items per page |
-
-> **Note:** `sortBy`/`sortDir` are accepted on the request object but there are no sortable fields
-> registered for this endpoint — passing any non-null `sortBy` value throws
-> `400 INVALID_ARGUMENT: Invalid sort field: <value>`. Omit `sortBy` entirely to get the default
-> (sorted by `id` ascending).
-
-### Response `200 OK`
-
-```json
-{
-  "data": [
-    {
-      "id": 1,
-      "facility_group": {
-        "id": 1,
-        "code": "DINING",
-        "sort_order": 1,
-        "icon_type": "LUCIDE",
-        "icon_value": "UtensilsCrossed",
-        "icon_meta": {
-          "size": 24,
-          "color": "#f59e0b",
-          "stroke_width": 1.5
-        },
-        "locale": {
-          "id": 1,
-          "locale": {
-            "id": 1,
-            "code": "en",
-            "name": "English",
-            "sort_order": 1
-          },
-          "name": "Dining",
-          "description": "All food and beverage outlets including restaurants, bars, and room service.",
-          "sort_order": 1
-        }
-      }
-    }
-  ],
-  "current_page": 0,
-  "total_pages": 1,
-  "total_elements": 1,
-  "page_size": 10,
-  "has_next": false,
-  "has_previous": false,
-  "sortable_fields": null,
-  "searchable_fields": null
-}
-```
-
----
-
-## Assign Facility Group
-
-`POST /api/v1/facility-scopes/{facility-scope-id}/group-assignments`
-
-Assigns a facility group to a facility scope. Both must reference existing, active records — an unknown
-`facility_group_id` returns `404 ENTITY_NOT_FOUND`. The combination of facility scope and facility group must
-be unique — assigning a group that's already assigned to this scope returns `409 CONFLICT`. This check is
-application-level only; there is no DB-level unique constraint on `(facility_scope_id, facility_group_id)`.
-
-### Path Parameters
-
-| Parameter           | Type | Description              |
-|---------------------|------|--------------------------|
-| `facility-scope-id` | Long | ID of the facility scope |
+| `facility-group-id` | Long | ID of the facility group |
 
 ### Request Body
 
 ```json
 {
-  "facility_group_id": 1
+  "facility_scope_id": 1
 }
 ```
 
@@ -143,7 +57,7 @@ application-level only; there is no DB-level unique constraint on `(facility_sco
 
 | Field               | Type | Required | Validation                                          |
 |---------------------|------|----------|-----------------------------------------------------|
-| `facility_group_id` | Long | Yes      | Not null; must reference an existing facility group |
+| `facility_scope_id` | Long | Yes      | Not null; must reference an existing facility scope |
 
 ### Response `201 Created`
 
@@ -156,19 +70,22 @@ application-level only; there is no DB-level unique constraint on `(facility_sco
 
 ---
 
-## Unassign Facility Group
+## Unassign Scope
 
-`DELETE /api/v1/facility-scopes/{facility-scope-id}/group-assignments/{id}`
+`DELETE /api/v1/facility-groups/{facility-group-id}/scope-assignments/{facility-scope-id}`
 
-Soft-deletes an assignment. The record is not removed from the database but will no longer appear in any
-response.
+Soft-deletes the assignment between this facility group and the given facility scope. Identified by the
+facility scope's own id rather than the assignment row's id — since a facility group can have at most one
+active, non-deleted assignment to a given facility scope (enforced at the application level on
+[Assign Scope](#assign-scope)), `(facility_group_id, facility_scope_id)` is always enough to uniquely
+identify it. The record is not removed from the database but will no longer appear in any response.
 
 ### Path Parameters
 
 | Parameter           | Type | Description              |
 |---------------------|------|--------------------------|
+| `facility-group-id` | Long | ID of the facility group |
 | `facility-scope-id` | Long | ID of the facility scope |
-| `id`                | Long | ID of the assignment row |
 
 ### Response `200 OK`
 
@@ -190,12 +107,12 @@ All errors follow a common structure:
   "request_id": "abc-123",
   "status": 404,
   "error": "ENTITY_NOT_FOUND",
-  "message": "FacilityGroupScopeAssignment not found with id: 99"
+  "message": "FacilityGroupScopeAssignment not found for FacilityGroup '3' and FacilityScope '99'"
 }
 ```
 
-| HTTP Status | Error Code         | Cause                                                                                                                                                            |
-|-------------|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 400         | `INVALID_ARGUMENT` | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs); an unsupported `sortBy` query value; or `facility_group_id` missing/null |
-| 404         | `ENTITY_NOT_FOUND` | Facility scope not found, the facility group referenced by `facility_group_id` not found, or assignment not found                                                |
-| 409         | `CONFLICT`         | The facility group is already assigned to this facility scope (pre-checked at the application level)                                                             |
+| HTTP Status | Error Code         | Cause                                                                                                                                                                                       |
+|-------------|--------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 400         | `INVALID_ARGUMENT` | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs); or `facility_scope_id` missing/null                                                                 |
+| 404         | `ENTITY_NOT_FOUND` | Facility group not found, the facility scope referenced by `facility_scope_id` not found (assign), or no active assignment exists between this facility group and facility scope (unassign) |
+| 409         | `CONFLICT`         | The facility scope is already assigned to this facility group (pre-checked at the application level)                                                                                        |

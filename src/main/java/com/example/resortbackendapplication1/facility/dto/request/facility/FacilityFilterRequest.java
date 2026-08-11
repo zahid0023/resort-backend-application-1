@@ -29,7 +29,7 @@ public class FacilityFilterRequest extends PaginatedRequest implements LocaleReq
     public List<Predicate> toPredicates(Root<?> root, CriteriaQuery<?> query, CriteriaBuilder cb, Long localeId) {
         List<Predicate> predicates = SpecificationUtils.buildSearchPredicates(this, FacilitySearchField.values(), root, query, cb, localeId);
         if (facilityGroupId != null) {
-            Join<?, ?> assignmentJoin = root.join("facilityGroupFacilityAssignmentEntities");
+            Join<?, ?> assignmentJoin = root.join("facilityFacilityGroupAssignmentEntities");
             predicates.add(cb.equal(assignmentJoin.get("facilityGroupEntity").get("id"), facilityGroupId));
             predicates.add(cb.isTrue(assignmentJoin.get("isActive")));
             predicates.add(cb.isFalse(assignmentJoin.get("isDeleted")));

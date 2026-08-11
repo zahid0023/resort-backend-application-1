@@ -6,10 +6,9 @@ Facilities are the individual amenities a resort offers (e.g. `RESTAURANT`, `SPA
 belonging to one or more facility groups (`DINING`, `WELLNESS`, ...) and one or more facility scopes (`RESORT`,
 `ROOM_CATEGORY`, `ROOM`), and carrying its own icon. A facility must belong to at least one facility group and
 at least one facility scope at creation time. Group membership afterward is managed via the
-[Facility Group Facility Assignments API](facility-group-facility-assignments-api.md) under the facility group
-resource; scope membership afterward is managed via the
-[Facility Scope Assignments API](facility-scope-assignments-api.md) under the facility scope resource — neither
-is managed through this API. A facility's display name and description are locale-specific and are managed
+[Facility Group Assignments API](facility-group-assignments-api.md); scope membership afterward is managed via
+the [Facility Scope Assignments API](facility-scope-assignments-api.md) — neither is managed through this API.
+A facility's display name and description are locale-specific and are managed
 through a companion sub-resource — Facility Locales — reached via `/api/v1/facilities/{facility-id}/locales`.
 All records support soft-delete — deleted records are hidden from all responses.
 
@@ -49,17 +48,17 @@ actually used to shape the response:
 
 ### Facility
 
-| Field            | Type    | Required | Constraints                                                            | Description                                                                                                                                  |
-|------------------|---------|----------|------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| `id`             | Long    | —        | read-only                                                              | Auto-generated identifier                                                                                                                    |
-| `facility_groups` | Array | —        | read-only                                                              | The facility groups this facility belongs to — each same shape as [Facility Groups](facility-groups-api.md)'s `FacilityGroup` data model; always at least one |
-| `code`           | String  | Yes      | max 100 chars, unique among active records; set at creation, immutable | Internal code (e.g. `RESTAURANT`, `SPA`)                                                                                                     |
-| `sort_order`     | Integer | Yes      | default 0                                                              | Display order                                                                                                                                |
-| `icon_type`      | String  | Yes      | max 100 chars                                                          | Icon library/source (e.g. `LUCIDE`)                                                                                                          |
-| `icon_value`     | String  | No       | nullable                                                               | Icon name/path within `icon_type`'s library                                                                                                  |
-| `icon_meta`      | Object  | No       | nullable, free-form JSON                                               | Icon rendering metadata (e.g. `{"size": 24, "color": "#f59e0b"}`)                                                                            |
-| `locale`         | Object  | —        | nullable; see FacilityLocale below                                     | The single translation matching the request's `Accept-Language` (falls back to `en`, then `null` if the facility has no translations at all) |
-| `facility_scopes` | Array  | —        | read-only; see Facility Scope in [Facility Scopes API](facility-scopes-api.md) | The facility scopes currently assigned to this facility, managed via `POST/DELETE /api/v1/facility-scopes/{facility-scope-id}/facility-assignments` under the facility scope resource |
+| Field             | Type    | Required | Constraints                                                                    | Description                                                                                                                                                                           |
+|-------------------|---------|----------|--------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `id`              | Long    | —        | read-only                                                                      | Auto-generated identifier                                                                                                                                                             |
+| `facility_groups` | Array   | —        | read-only                                                                      | The facility groups this facility belongs to — each same shape as [Facility Groups](facility-groups-api.md)'s `FacilityGroup` data model; always at least one                         |
+| `code`            | String  | Yes      | max 100 chars, unique among active records; set at creation, immutable         | Internal code (e.g. `RESTAURANT`, `SPA`)                                                                                                                                              |
+| `sort_order`      | Integer | Yes      | default 0                                                                      | Display order                                                                                                                                                                         |
+| `icon_type`       | String  | Yes      | max 100 chars                                                                  | Icon library/source (e.g. `LUCIDE`)                                                                                                                                                   |
+| `icon_value`      | String  | No       | nullable                                                                       | Icon name/path within `icon_type`'s library                                                                                                                                           |
+| `icon_meta`       | Object  | No       | nullable, free-form JSON                                                       | Icon rendering metadata (e.g. `{"size": 24, "color": "#f59e0b"}`)                                                                                                                     |
+| `locale`          | Object  | —        | nullable; see FacilityLocale below                                             | The single translation matching the request's `Accept-Language` (falls back to `en`, then `null` if the facility has no translations at all)                                          |
+| `facility_scopes` | Array   | —        | read-only; see Facility Scope in [Facility Scopes API](facility-scopes-api.md) | The facility scopes currently assigned to this facility, managed via `POST/DELETE /api/v1/facilities/{facility-id}/scope-assignments` (see [Facility Scope Assignments API](facility-scope-assignments-api.md)) |
 
 ### FacilityLocale
 
@@ -83,6 +82,13 @@ active, non-deleted facilities — attempting to reuse an existing code returns 
 existing, active record of the matching type — any unknown id returns `404 ENTITY_NOT_FOUND` listing the
 missing ids.
 
+**Every facility group in `facility_group_ids` must itself be scoped (see
+[Facility Group Scope Assignments](facility-group-scope-assignments-api.md)) to every scope in
+`facility_scope_ids`.** For example, a facility requesting `RESORT` cannot be placed in a facility group that
+is only assigned to `ROOM_CATEGORY`/`ROOM` scopes. This check runs per facility group — if the facility
+belongs to multiple groups, each one individually must support the full set of requested scopes. Violating
+this returns `409 CONFLICT`.
+
 **The initial translation is always attached to the `en` locale, resolved by the server — the request
 carries no `locale_id` at all.** There is no option to submit multiple locales at creation time.
 Additional languages are added afterward via the Facility Locales sub-resource below.
@@ -92,8 +98,12 @@ Additional languages are added afterward via the Facility Locales sub-resource b
 ```json
 {
   "code": "RESTAURANT",
-  "facility_group_ids": [1],
-  "facility_scope_ids": [1],
+  "facility_group_ids": [
+    1
+  ],
+  "facility_scope_ids": [
+    1
+  ],
   "sort_order": 1,
   "icon_type": "LUCIDE",
   "icon_value": "UtensilsCrossed",
@@ -111,16 +121,16 @@ Additional languages are added afterward via the Facility Locales sub-resource b
 
 ### Request Fields
 
-| Field                 | Type      | Required | Validation                                                                                 |
-|-----------------------|-----------|----------|--------------------------------------------------------------------------------------------|
-| `code`                | String    | Yes      | Not blank, max 100 chars, unique among active records                                      |
-| `facility_group_ids`  | Long[]    | Yes      | Not empty; every id must reference an existing facility group                              |
-| `facility_scope_ids`  | Long[]    | Yes      | Not empty; every id must reference an existing facility scope                              |
-| `sort_order`          | Integer   | Yes      | Not null                                                                                   |
-| `icon_type`           | String    | Yes      | Not blank, max 100 chars                                                                   |
-| `icon_value`          | String    | No       | —                                                                                          |
-| `icon_meta`           | Object    | No       | —, free-form JSON object                                                                   |
-| `locale`              | Object    | Yes      | Not null; validated (see below) — no `locale_id` field; always resolved to the `en` locale |
+| Field                | Type    | Required | Validation                                                                                 |
+|----------------------|---------|----------|--------------------------------------------------------------------------------------------|
+| `code`               | String  | Yes      | Not blank, max 100 chars, unique among active records                                      |
+| `facility_group_ids` | Long[]  | Yes      | Not empty; every id must reference an existing facility group                              |
+| `facility_scope_ids` | Long[]  | Yes      | Not empty; every id must reference an existing facility scope                              |
+| `sort_order`         | Integer | Yes      | Not null                                                                                   |
+| `icon_type`          | String  | Yes      | Not blank, max 100 chars                                                                   |
+| `icon_value`         | String  | No       | —                                                                                          |
+| `icon_meta`          | Object  | No       | —, free-form JSON object                                                                   |
+| `locale`             | Object  | Yes      | Not null; validated (see below) — no `locale_id` field; always resolved to the `en` locale |
 
 **Locale entry (`locale`):**
 
@@ -251,15 +261,15 @@ Each `LIKE`-type filter performs a case-insensitive partial match. `Accept-Langu
 > **Note:** Query parameters bind directly onto `FacilityFilterRequest`'s Java field names, so they are
 > **camelCase** — not the snake_case used in JSON request/response bodies.
 
-| Parameter         | Type   | Default         | Constraints                                                    | Description                                                                               |
-|-------------------|--------|-----------------|----------------------------------------------------------------|-------------------------------------------------------------------------------------------|
-| `code`            | String | —               | —                                                              | Filter by code (partial, case-insensitive)                                                |
+| Parameter         | Type   | Default         | Constraints                                                    | Description                                                                                           |
+|-------------------|--------|-----------------|----------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| `code`            | String | —               | —                                                              | Filter by code (partial, case-insensitive)                                                            |
 | `facilityGroupId` | Long   | —               | —                                                              | Filter to facilities that belong to the given facility group (a facility may belong to more than one) |
-| `name`            | String | —               | —                                                              | Filter by locale-specific name (partial, case-insensitive), scoped to the resolved locale |
-| `page`            | int    | `0`             | >= 0                                                           | Zero-based page index                                                                     |
-| `size`            | int    | `10`            | 1 – 50                                                         | Number of items per page                                                                  |
-| `sortBy`          | String | `id` (implicit) | `createdAt`, `sortOrder`, `code`, `name` (`id` NOT selectable) | Field to sort by                                                                          |
-| `sortDir`         | String | `ASC`           | `ASC`, `DESC`                                                  | Sort direction                                                                            |
+| `name`            | String | —               | —                                                              | Filter by locale-specific name (partial, case-insensitive), scoped to the resolved locale             |
+| `page`            | int    | `0`             | >= 0                                                           | Zero-based page index                                                                                 |
+| `size`            | int    | `10`            | 1 – 50                                                         | Number of items per page                                                                              |
+| `sortBy`          | String | `id` (implicit) | `createdAt`, `sortOrder`, `code`, `name` (`id` NOT selectable) | Field to sort by                                                                                      |
+| `sortDir`         | String | `ASC`           | `ASC`, `DESC`                                                  | Sort direction                                                                                        |
 
 > **Note:** `icon_type`, `icon_value`, and `icon_meta` are not filterable or sortable.
 
@@ -364,7 +374,7 @@ Each `LIKE`-type filter performs a case-insensitive partial match. `Accept-Langu
 
 Updates `sort_order`, `icon_type`, `icon_value`, and `icon_meta`. `code` is set at creation and cannot be
 changed. Facility group membership is managed separately via the
-[Facility Group Facility Assignments API](facility-group-facility-assignments-api.md), not through this
+[Facility Group Assignments API](facility-group-assignments-api.md), not through this
 endpoint. Locale translations are managed separately via the Facility Locales sub-resource endpoints below.
 
 ### Path Parameters
@@ -662,5 +672,5 @@ All errors follow a common structure:
 | HTTP Status | Error Code         | Cause                                                                                                                                                                                                                                                                            |
 |-------------|--------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 400         | `INVALID_ARGUMENT` | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs); missing/invalid required fields; or an unsupported `sortBy` query value                                                                                                                  |
-| 404         | `ENTITY_NOT_FOUND` | Facility not found, facility locale not found, any facility group referenced in `facility_group_ids` not found (`create`), any facility scope referenced in `facility_scope_ids` not found (`create`), or the locale referenced by `locale_id` not found (locale creation)          |
-| 409         | `CONFLICT`         | `code` already in use by another active facility (`create`); the facility already has a translation for the given `locale_id` (`create` locale, pre-checked); or `name` already in use by another active translation for the same locale (`create`/`update` locale, pre-checked) |
+| 404         | `ENTITY_NOT_FOUND` | Facility not found, facility locale not found, any facility group referenced in `facility_group_ids` not found (`create`), any facility scope referenced in `facility_scope_ids` not found (`create`), or the locale referenced by `locale_id` not found (locale creation)       |
+| 409         | `CONFLICT`         | `code` already in use by another active facility (`create`); a facility group in `facility_group_ids` is not scoped to every scope in `facility_scope_ids` (`create`); the facility already has a translation for the given `locale_id` (`create` locale, pre-checked); or `name` already in use by another active translation for the same locale (`create`/`update` locale, pre-checked) |

@@ -9,12 +9,14 @@ import com.example.resortbackendapplication1.facility.model.enums.FacilityGroupS
 import com.example.resortbackendapplication1.facility.model.enums.FacilityGroupSortField;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.util.List;
+import java.util.Set;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -22,10 +24,19 @@ public class FacilityGroupFilterRequest extends PaginatedRequest implements Loca
 
     private String code;
     private String name;
+    private Set<Long> facilityScopeIds;
 
     @Override
     public List<Predicate> toPredicates(Root<?> root, CriteriaQuery<?> query, CriteriaBuilder cb, Long localeId) {
-        return SpecificationUtils.buildSearchPredicates(this, FacilityGroupSearchField.values(), root, query, cb, localeId);
+        List<Predicate> predicates = SpecificationUtils.buildSearchPredicates(this, FacilityGroupSearchField.values(), root, query, cb, localeId);
+        if (facilityScopeIds != null && !facilityScopeIds.isEmpty()) {
+            Join<?, ?> assignmentJoin = root.join("facilityGroupScopeAssignmentEntities");
+            predicates.add(assignmentJoin.get("facilityScopeEntity").get("id").in(facilityScopeIds));
+            predicates.add(cb.isTrue(assignmentJoin.get("isActive")));
+            predicates.add(cb.isFalse(assignmentJoin.get("isDeleted")));
+            query.distinct(true);
+        }
+        return predicates;
     }
 
     @Override

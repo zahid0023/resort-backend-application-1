@@ -10,6 +10,6 @@ import tools.jackson.databind.annotation.JsonNaming;
 public class CreateFacilityScopeAssignmentRequest {
 
     @NotNull
-    private Long facilityId;
+    private Long facilityScopeId;
 
 }

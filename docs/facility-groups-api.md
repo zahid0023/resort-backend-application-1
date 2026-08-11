@@ -56,7 +56,7 @@ actually used to shape the response:
 | `icon_value`      | String  | No       | nullable                                                                                                   | Icon name/path within `icon_type`'s library (e.g. `UtensilsCrossed`)                                                                                                            |
 | `icon_meta`       | Object  | No       | nullable, free-form JSON                                                                                   | Icon rendering metadata (e.g. `{"size": 24, "color": "#f59e0b", "stroke_width": 1.5}`)                                                                                          |
 | `locale`          | Object  | —        | nullable; see FacilityGroupLocale below                                                                    | The single translation matching the request's `Accept-Language` (falls back to `en`, then `null` if the facility group has no translations at all)                              |
-| `facility_scopes` | Array   | —        | read-only; see Facility Scope in [Facility Scopes API](facility-scopes-api.md)                             | The facility scopes currently assigned to this group, managed via `POST/DELETE /api/v1/facility-scopes/{facility-scope-id}/group-assignments` under the facility scope resource |
+| `facility_scopes` | Array   | —        | read-only; see Facility Scope in [Facility Scopes API](facility-scopes-api.md)                             | The facility scopes currently assigned to this group, managed via `POST/DELETE /api/v1/facility-groups/{facility-group-id}/scope-assignments` (see [Facility Group Scope Assignments API](facility-group-scope-assignments-api.md)) |
 
 ### FacilityGroupLocale
 
@@ -224,14 +224,15 @@ partial match. `Accept-Language` selects each facility group's `locale` field th
 > **Note:** Query parameters bind directly onto `FacilityGroupFilterRequest`'s Java field names, so they are
 > **camelCase** — not the snake_case used in JSON request/response bodies.
 
-| Parameter | Type   | Default         | Constraints                                       | Description                                                                               |
-|-----------|--------|-----------------|---------------------------------------------------|-------------------------------------------------------------------------------------------|
-| `code`    | String | —               | —                                                 | Filter by code (partial, case-insensitive)                                                |
-| `name`    | String | —               | —                                                 | Filter by locale-specific name (partial, case-insensitive), scoped to the resolved locale |
-| `page`    | int    | `0`             | >= 0                                              | Zero-based page index                                                                     |
-| `size`    | int    | `10`            | 1 – 50                                            | Number of items per page                                                                  |
-| `sortBy`  | String | `id` (implicit) | `createdAt`, `code`, `name` (`id` NOT selectable) | Field to sort by                                                                          |
-| `sortDir` | String | `ASC`           | `ASC`, `DESC`                                     | Sort direction                                                                            |
+| Parameter          | Type   | Default         | Constraints                                       | Description                                                                                                                            |
+|--------------------|--------|-----------------|-----------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| `code`             | String | —               | —                                                 | Filter by code (partial, case-insensitive)                                                                                             |
+| `facilityScopeIds` | Long[] | —               | comma-separated                                   | Filter to facility groups assigned to **any** of the given facility scopes (union/OR, not intersection — a group needs only one match) |
+| `name`             | String | —               | —                                                 | Filter by locale-specific name (partial, case-insensitive), scoped to the resolved locale                                             |
+| `page`             | int    | `0`             | >= 0                                              | Zero-based page index                                                                                                                   |
+| `size`             | int    | `10`            | 1 – 50                                            | Number of items per page                                                                                                                |
+| `sortBy`           | String | `id` (implicit) | `createdAt`, `code`, `name` (`id` NOT selectable) | Field to sort by                                                                                                                        |
+| `sortDir`          | String | `ASC`           | `ASC`, `DESC`                                     | Sort direction                                                                                                                          |
 
 > **Note:** `sort_order`, `icon_type`, `icon_value`, and `icon_meta` are not filterable or sortable — only
 > `code` and locale `name` are wired into the search/sort infrastructure for this endpoint.
