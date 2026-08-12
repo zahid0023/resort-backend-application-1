@@ -1,6 +1,7 @@
 package com.example.resortbackendapplication1.facility.controller;
 
 import com.example.resortbackendapplication1.facility.dto.request.facilitygroup.CreateFacilityGroupRequest;
+import com.example.resortbackendapplication1.facility.dto.request.facilitygroup.FacilityGroupCountRequest;
 import com.example.resortbackendapplication1.facility.dto.request.facilitygroup.FacilityGroupFilterRequest;
 import com.example.resortbackendapplication1.facility.dto.request.facilitygroup.UpdateFacilityGroupRequest;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupEntity;
@@ -43,6 +44,12 @@ public class FacilityGroupController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(@PathVariable Long id) {
         return ResponseEntity.ok(facilityGroupService.getById(id));
+    }
+
+    @GetMapping("/count")
+    public ResponseEntity<?> getCount(@Valid @ParameterObject FacilityGroupCountRequest request) {
+        List<FacilityScopeEntity> facilityScopeEntities = facilityScopeService.getAll(request.getFacilityScopeIds());
+        return ResponseEntity.ok(facilityGroupService.getCount(facilityScopeEntities));
     }
 
     @GetMapping

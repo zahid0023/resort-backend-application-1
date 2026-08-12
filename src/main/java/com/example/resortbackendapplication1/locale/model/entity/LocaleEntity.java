@@ -14,6 +14,8 @@ import com.example.resortbackendapplication1.facility.model.entity.FacilityScope
 import com.example.resortbackendapplication1.price.model.entity.PriceTypeLocaleEntity;
 import com.example.resortbackendapplication1.price.model.entity.PriceScopeLocaleEntity;
 import com.example.resortbackendapplication1.price.model.entity.PriceUnitLocaleEntity;
+import com.example.resortbackendapplication1.resortpermissiontype.model.entity.ResortPermissionTypeLocaleEntity;
+import com.example.resortbackendapplication1.resortroletype.model.entity.ResortRoleTypeLocaleEntity;
 import com.example.resortbackendapplication1.roomcategory.model.entity.RoomCategoryLocaleEntity;
 import com.example.resortbackendapplication1.unit.model.entity.UnitLocaleEntity;
 import com.example.resortbackendapplication1.unit.model.entity.UnitTypeLocaleEntity;
@@ -101,6 +103,12 @@ public class LocaleEntity extends AuditableEntity {
 
     @OneToMany(mappedBy = "localeEntity")
     private Set<BedTypeLocaleEntity> bedTypeLocaleEntities = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "localeEntity")
+    private Set<ResortRoleTypeLocaleEntity> resortRoleTypeLocaleEntities = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "localeEntity")
+    private Set<ResortPermissionTypeLocaleEntity> resortPermissionTypeLocaleEntities = new LinkedHashSet<>();
 
     // -------------------------------------------------------------------------
     // Country Locale relationship helpers
@@ -292,6 +300,30 @@ public class LocaleEntity extends AuditableEntity {
 
     public void removeBedTypeLocaleEntity(BedTypeLocaleEntity entity) {
         removeChild(bedTypeLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
+    }
+
+    // -------------------------------------------------------------------------
+    // ResortRoleType Locale relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addResortRoleTypeLocaleEntity(ResortRoleTypeLocaleEntity entity) {
+        addChild(resortRoleTypeLocaleEntities, entity, ResortRoleTypeLocaleEntity::assignLocale, this);
+    }
+
+    public void removeResortRoleTypeLocaleEntity(ResortRoleTypeLocaleEntity entity) {
+        removeChild(resortRoleTypeLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
+    }
+
+    // -------------------------------------------------------------------------
+    // ResortPermissionType Locale relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addResortPermissionTypeLocaleEntity(ResortPermissionTypeLocaleEntity entity) {
+        addChild(resortPermissionTypeLocaleEntities, entity, ResortPermissionTypeLocaleEntity::assignLocale, this);
+    }
+
+    public void removeResortPermissionTypeLocaleEntity(ResortPermissionTypeLocaleEntity entity) {
+        removeChild(resortPermissionTypeLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
     }
 
 }

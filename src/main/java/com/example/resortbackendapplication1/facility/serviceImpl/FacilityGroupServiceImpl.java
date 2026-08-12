@@ -7,6 +7,7 @@ import com.example.resortbackendapplication1.commons.utils.Pagination;
 import com.example.resortbackendapplication1.facility.dto.request.facilitygroup.CreateFacilityGroupRequest;
 import com.example.resortbackendapplication1.facility.dto.request.facilitygroup.FacilityGroupFilterRequest;
 import com.example.resortbackendapplication1.facility.dto.request.facilitygroup.UpdateFacilityGroupRequest;
+import com.example.resortbackendapplication1.facility.dto.response.facilitygroups.FacilityGroupCountResponse;
 import com.example.resortbackendapplication1.facility.dto.response.facilitygroups.FacilityGroupResponse;
 import com.example.resortbackendapplication1.facility.model.dto.FacilityGroupDto;
 import com.example.resortbackendapplication1.facility.model.dto.FacilityScopeDto;
@@ -36,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -109,6 +111,19 @@ public class FacilityGroupServiceImpl implements FacilityGroupService {
                         .facilityScopes(mapFacilityScopes(entity))
                         .build());
         return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
+    }
+
+    @Override
+    public FacilityGroupCountResponse getCount(List<FacilityScopeEntity> facilityScopeEntities) {
+        Set<Long> facilityScopeIds = facilityScopeEntities.stream()
+                .map(FacilityScopeEntity::getId)
+                .collect(Collectors.toSet());
+        FacilityGroupFilterRequest filterRequest = new FacilityGroupFilterRequest();
+        filterRequest.setFacilityScopeIds(facilityScopeIds);
+        Specification<@NonNull FacilityGroupEntity> specification =
+                FacilityGroupSpecification.filter(filterRequest, LocaleContext.getLocaleId());
+        long count = facilityGroupRepository.count(specification);
+        return new FacilityGroupCountResponse(count);
     }
 
     private List<FacilityScopeDto> mapFacilityScopes(FacilityGroupEntity entity) {

@@ -5,6 +5,7 @@ import com.example.resortbackendapplication1.commons.dto.response.SuccessRespons
 import com.example.resortbackendapplication1.facility.dto.request.facilitygroup.CreateFacilityGroupRequest;
 import com.example.resortbackendapplication1.facility.dto.request.facilitygroup.FacilityGroupFilterRequest;
 import com.example.resortbackendapplication1.facility.dto.request.facilitygroup.UpdateFacilityGroupRequest;
+import com.example.resortbackendapplication1.facility.dto.response.facilitygroups.FacilityGroupCountResponse;
 import com.example.resortbackendapplication1.facility.dto.response.facilitygroups.FacilityGroupResponse;
 import com.example.resortbackendapplication1.facility.model.dto.FacilityGroupDto;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupEntity;
@@ -27,6 +28,8 @@ public interface FacilityGroupService {
     FacilityGroupResponse getById(Long id);
 
     PaginatedResponse<FacilityGroupDto> getAll(FacilityGroupFilterRequest request);
+
+    FacilityGroupCountResponse getCount(List<FacilityScopeEntity> facilityScopeEntities);
 
     SuccessResponse update(FacilityGroupEntity entity,
                            UpdateFacilityGroupRequest request);
