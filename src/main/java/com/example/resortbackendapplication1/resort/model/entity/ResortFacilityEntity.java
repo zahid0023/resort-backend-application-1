@@ -99,6 +99,9 @@ public class ResortFacilityEntity extends AuditableEntity {
     @OneToMany(mappedBy = "resortFacilityEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<ResortFacilityLocaleEntity> resortFacilityLocaleEntities = new LinkedHashSet<>();
 
+    @OneToMany(mappedBy = "resortFacilityEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ResortFacilityOperatingHoursEntity> resortFacilityOperatingHoursEntities = new LinkedHashSet<>();
+
     // -------------------------------------------------------------------------
     // ResortFacilityLocale relationship helpers
     // -------------------------------------------------------------------------
@@ -109,5 +112,17 @@ public class ResortFacilityEntity extends AuditableEntity {
 
     public void removeResortFacilityLocaleEntity(ResortFacilityLocaleEntity entity) {
         removeChild(resortFacilityLocaleEntities, entity, (child, ignored) -> child.unassignResortFacility());
+    }
+
+    // -------------------------------------------------------------------------
+    // ResortFacilityOperatingHours relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addResortFacilityOperatingHoursEntity(ResortFacilityOperatingHoursEntity entity) {
+        addChild(resortFacilityOperatingHoursEntities, entity, ResortFacilityOperatingHoursEntity::assignResortFacility, this);
+    }
+
+    public void removeResortFacilityOperatingHoursEntity(ResortFacilityOperatingHoursEntity entity) {
+        removeChild(resortFacilityOperatingHoursEntities, entity, (child, ignored) -> child.unassignResortFacility());
     }
 }

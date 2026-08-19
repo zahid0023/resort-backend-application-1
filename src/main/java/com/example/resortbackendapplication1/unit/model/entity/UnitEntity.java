@@ -44,12 +44,12 @@ public class UnitEntity extends AuditableEntity {
 
     @NotBlank
     @Size(max = 50)
-    @Column(name = "code", nullable = false, unique = true, length = 50)
+    @Column(name = "code", nullable = false, length = 50)
     private String code;
 
     @NotBlank
     @Size(max = 20)
-    @Column(name = "symbol", nullable = false, unique = true, length = 20)
+    @Column(name = "symbol", nullable = false, length = 20)
     private String symbol;
 
     @NotNull

@@ -2,7 +2,7 @@ create table if not exists room_categories
 (
     id         bigserial primary key,
 
-    code       varchar(50)                  not null unique,
+    code       varchar(50)                  not null,
     sort_order integer                      not null default 0,
 
     created_by bigint references users (id) not null,
@@ -15,6 +15,10 @@ create table if not exists room_categories
     deleted_by bigint references users (id),
     deleted_at timestamp with time zone
 );
+
+create unique index if not exists uq_room_categories_code
+    on room_categories (code)
+    where is_active = true and is_deleted = false;
 
 create table if not exists room_category_locales
 (
@@ -35,11 +39,12 @@ create table if not exists room_category_locales
     is_active        boolean                                not null default true,
     is_deleted       boolean                                not null default false,
     deleted_by       bigint references users (id),
-    deleted_at       timestamp with time zone,
-
-    constraint uq_room_category_locale
-        unique (room_category_id, locale_id)
+    deleted_at       timestamp with time zone
 );
+
+create unique index if not exists uq_room_category_locale
+    on room_category_locales (room_category_id, locale_id)
+    where is_active = true and is_deleted = false;
 
 -- seed: room categories
 insert into room_categories (code, sort_order, created_by, updated_by)

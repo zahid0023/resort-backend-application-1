@@ -47,7 +47,7 @@ public class LocaleEntity extends AuditableEntity {
 
     @NotBlank
     @Size(max = 50)
-    @Column(name = "code", nullable = false, length = 50, unique = true)
+    @Column(name = "code", nullable = false, length = 50)
     private String code;
 
     @NotBlank

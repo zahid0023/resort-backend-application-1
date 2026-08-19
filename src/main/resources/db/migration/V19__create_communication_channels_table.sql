@@ -16,7 +16,7 @@ create table if not exists communication_channels
     -- LINKEDIN
     -- TELEGRAM
     -- WECHAT
-    code         varchar(50)                  not null unique,
+    code         varchar(50)                  not null,
     -- display order in admin ui.
     sort_order   integer                      not null default 0,
 
@@ -42,6 +42,10 @@ create table if not exists communication_channels
     deleted_by   bigint references users (id),
     deleted_at   timestamp with time zone
 );
+
+create unique index if not exists uq_communication_channels_code
+    on communication_channels (code)
+    where is_active = true and is_deleted = false;
 
 create table if not exists communication_channel_locales
 (
@@ -70,11 +74,12 @@ create table if not exists communication_channel_locales
     is_active                boolean                      not null default true,
     is_deleted               boolean                      not null default false,
     deleted_by               bigint references users (id),
-    deleted_at               timestamp with time zone,
-
-    constraint uq_communication_channel_locale
-        unique (communication_channel_id, locale_id)
+    deleted_at               timestamp with time zone
 );
+
+create unique index if not exists uq_communication_channel_locale
+    on communication_channel_locales (communication_channel_id, locale_id)
+    where is_active = true and is_deleted = false;
 
 -- seed: communication channels
 insert into communication_channels (code, sort_order, is_url, is_phone, is_email, is_clickable, created_by, updated_by)

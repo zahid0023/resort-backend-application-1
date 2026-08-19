@@ -14,7 +14,7 @@ import org.hibernate.annotations.ColumnDefault;
 @Getter
 @Setter
 @Entity
-@Table(name = "currency_locales", uniqueConstraints = @UniqueConstraint(columnNames = {"currency_id", "locale_id"}))
+@Table(name = "currency_locales")
 public class CurrencyLocaleEntity extends AuditableEntity {
 
     @Setter(AccessLevel.NONE)

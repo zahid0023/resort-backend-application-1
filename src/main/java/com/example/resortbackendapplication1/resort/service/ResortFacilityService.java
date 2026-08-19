@@ -2,6 +2,7 @@ package com.example.resortbackendapplication1.resort.service;
 
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
+import com.example.resortbackendapplication1.dayofweek.model.entity.DayOfWeekEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.CreateResortFacilityRequest;
@@ -13,13 +14,16 @@ import com.example.resortbackendapplication1.resort.model.entity.ResortEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortFacilityEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortFacilityGroupEntity;
 
+import java.util.List;
+
 public interface ResortFacilityService {
 
     SuccessResponse create(CreateResortFacilityRequest request,
                            ResortEntity resortEntity,
                            ResortFacilityGroupEntity resortFacilityGroupEntity,
                            FacilityEntity facilityEntity,
-                           LocaleEntity localeEntity);
+                           LocaleEntity localeEntity,
+                           List<DayOfWeekEntity> allDaysOfWeek);
 
     ResortFacilityEntity getEntityById(Long resortId, Long id);
 

@@ -6,6 +6,8 @@ import com.example.resortbackendapplication1.dayofweek.dto.response.daysofweek.D
 import com.example.resortbackendapplication1.dayofweek.model.dto.DayOfWeekDto;
 import com.example.resortbackendapplication1.dayofweek.model.entity.DayOfWeekEntity;
 
+import java.util.List;
+
 public interface DayOfWeekService {
 
     DayOfWeekEntity getEntityById(Long id);
@@ -13,4 +15,7 @@ public interface DayOfWeekService {
     DayOfWeekResponse getById(Long id);
 
     PaginatedResponse<DayOfWeekDto> getAll(DayOfWeekFilterRequest request);
+
+    /** Every active day of week, ordered by {@code sort_order} ascending — the canonical week sequence. */
+    List<DayOfWeekEntity> getAllActiveEntities();
 }

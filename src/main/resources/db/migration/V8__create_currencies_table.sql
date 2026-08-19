@@ -11,7 +11,7 @@ create table if not exists currencies
     -- EUR
     -- GBP
     -- INR
-    code           char(3)                          not null unique,
+    code           char(3)                          not null,
     sort_order     integer                          not null default 0,
 
     -- ISO 4217 numeric code.
@@ -19,7 +19,7 @@ create table if not exists currencies
     -- 050
     -- 840
     -- 978
-    numeric_code   char(3)                          not null unique,
+    numeric_code   char(3)                          not null,
 
     -- Currency symbol.
     -- Examples:
@@ -48,6 +48,14 @@ create table if not exists currencies
     deleted_by     bigint references users (id),
     deleted_at     timestamp with time zone
 );
+
+create unique index if not exists uq_currencies_code
+    on currencies (code)
+    where is_active = true and is_deleted = false;
+
+create unique index if not exists uq_currencies_numeric_code
+    on currencies (numeric_code)
+    where is_active = true and is_deleted = false;
 
 create table if not exists currency_locales
 (
@@ -78,11 +86,12 @@ create table if not exists currency_locales
     is_active   boolean                                             not null default true,
     is_deleted  boolean                                             not null default false,
     deleted_by  bigint references users (id),
-    deleted_at  timestamp with time zone,
-
-    constraint uq_currency_locale
-        unique (currency_id, locale_id)
+    deleted_at  timestamp with time zone
 );
+
+create unique index if not exists uq_currency_locale
+    on currency_locales (currency_id, locale_id)
+    where is_active = true and is_deleted = false;
 
 DO
 $$
@@ -108,7 +117,7 @@ $$
         FROM (VALUES ('BDT', '050', '৳', 2, true, 1, 'BD'),
                      ('USD', '840', '$', 2, false, 2, 'US')) v(code, numeric_code, symbol, decimal_places, is_default, sort_order, country_code)
                  JOIN countries c ON c.code = v.country_code
-        ON CONFLICT (code) DO NOTHING;
+        ON CONFLICT (code) WHERE is_active = true AND is_deleted = false DO NOTHING;
 
         -- =============================================
         -- 2. Currency Locales
@@ -122,7 +131,7 @@ $$
                               ('USD', 'bn', 'মার্কিন ডলার', 'ডলার', 2)) v(code, locale_code, name, short_name, sort_order)
                       ON cu.code = v.code
                  JOIN locales l ON l.code = v.locale_code
-        ON CONFLICT (currency_id, locale_id) DO NOTHING;
+        ON CONFLICT (currency_id, locale_id) WHERE is_active = true AND is_deleted = false DO NOTHING;
 
     END
 $$;

@@ -2,7 +2,7 @@ create table if not exists facilities
 (
     id         bigserial primary key,
 
-    code       varchar(100)                 not null unique,
+    code       varchar(100)                 not null,
     sort_order integer                      not null default 0,
 
     icon_type  varchar(100)                 not null,
@@ -19,6 +19,10 @@ create table if not exists facilities
     deleted_by bigint,
     deleted_at timestamp with time zone
 );
+
+create unique index if not exists uq_facilities_code
+    on facilities (code)
+    where is_active = true and is_deleted = false;
 
 create table if not exists facility_group_facility_assignments
 (

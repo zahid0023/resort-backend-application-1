@@ -12,9 +12,11 @@ public interface UserPermissionRepository extends
         JpaRepository<@NonNull UserPermissionEntity, @NonNull Long>,
         JpaSpecificationExecutor<@NonNull UserPermissionEntity> {
 
-    boolean existsByUserEntityAndPermissionEntity(
+    boolean existsByUserEntityAndPermissionEntityAndIsActiveAndIsDeleted(
             UserEntity userEntity,
-            PermissionEntity permissionEntity
+            PermissionEntity permissionEntity,
+            Boolean isActive,
+            Boolean isDeleted
     );
 
 }

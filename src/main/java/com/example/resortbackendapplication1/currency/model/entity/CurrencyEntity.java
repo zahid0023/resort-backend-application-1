@@ -42,13 +42,13 @@ public class CurrencyEntity extends AuditableEntity {
     @NotBlank
     @Size(max = 3)
     @Pattern(regexp = "^[A-Z]{3}$")
-    @Column(name = "code", nullable = false, unique = true, length = 3)
+    @Column(name = "code", nullable = false, length = 3)
     private String code;
 
     @NotBlank
     @Size(max = 3)
     @Pattern(regexp = "^[0-9]{3}$")
-    @Column(name = "numeric_code", nullable = false, unique = true, length = 3)
+    @Column(name = "numeric_code", nullable = false, length = 3)
     private String numericCode;
 
     @NotBlank

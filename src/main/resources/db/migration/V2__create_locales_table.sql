@@ -2,7 +2,7 @@ create table if not exists locales
 (
     id         bigserial primary key,
 
-    code       varchar(50)                  not null unique,
+    code       varchar(50)                  not null,
     name       varchar(255)                 not null,
     sort_order integer                      not null default 0,
 
@@ -16,6 +16,10 @@ create table if not exists locales
     deleted_by bigint references users (id),
     deleted_at timestamp with time zone
 );
+
+create unique index if not exists uq_locales_code
+    on locales (code)
+    where is_active = true and is_deleted = false;
 
 insert into locales (code,
                      name,

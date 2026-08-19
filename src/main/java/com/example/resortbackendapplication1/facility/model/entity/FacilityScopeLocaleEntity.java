@@ -16,7 +16,7 @@ import org.hibernate.annotations.OnDeleteAction;
 @Getter
 @Setter
 @Entity
-@Table(name = "facility_scope_locales", uniqueConstraints = @UniqueConstraint(columnNames = {"facility_scope_id", "locale_id"}))
+@Table(name = "facility_scope_locales")
 public class FacilityScopeLocaleEntity extends AuditableEntity {
 
     @Setter(AccessLevel.NONE)

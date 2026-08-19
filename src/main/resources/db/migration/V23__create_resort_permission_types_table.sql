@@ -11,7 +11,7 @@ create table if not exists resort_permission_types
     -- MANAGE_ROOMS
     -- VIEW_REPORTS
     -- MANAGE_STAFF
-    code       varchar(100)                 not null unique,
+    code       varchar(100)                 not null,
     -- display order in admin ui.
     sort_order integer                      not null default 0,
 
@@ -25,6 +25,10 @@ create table if not exists resort_permission_types
     deleted_by bigint references users (id),
     deleted_at timestamp with time zone
 );
+
+create unique index if not exists uq_resort_permission_types_code
+    on resort_permission_types (code)
+    where is_active = true and is_deleted = false;
 
 create table if not exists resort_permission_type_locales
 (
@@ -51,11 +55,12 @@ create table if not exists resort_permission_type_locales
     is_active                 boolean                                        not null default true,
     is_deleted                boolean                                        not null default false,
     deleted_by                bigint references users (id),
-    deleted_at                timestamp with time zone,
-
-    constraint uq_resort_permission_type_locale
-        unique (resort_permission_type_id, locale_id)
+    deleted_at                timestamp with time zone
 );
+
+create unique index if not exists uq_resort_permission_type_locale
+    on resort_permission_type_locales (resort_permission_type_id, locale_id)
+    where is_active = true and is_deleted = false;
 
 -- seed: resort permission types
 insert into resort_permission_types (code, sort_order, created_by, updated_by)

@@ -4,24 +4,30 @@ import com.example.resortbackendapplication1.commons.context.LocaleContext;
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.commons.utils.Pagination;
+import com.example.resortbackendapplication1.dayofweek.model.entity.DayOfWeekEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.CreateResortFacilityRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.ResortFacilityFilterRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.UpdateResortFacilityRequest;
+import com.example.resortbackendapplication1.resort.dto.request.resortfacilityoperatinghours.ResortFacilityOperatingHoursDayScheduleRequest;
+import com.example.resortbackendapplication1.resort.dto.request.resortfacilityoperatinghours.ResortFacilityOperatingHoursWindowRequest;
 import com.example.resortbackendapplication1.resort.dto.response.resortfacilities.ResortFacilityResponse;
 import com.example.resortbackendapplication1.resort.model.dto.ResortFacilityDto;
 import com.example.resortbackendapplication1.resort.model.entity.ResortEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortFacilityEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortFacilityGroupEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortFacilityLocaleEntity;
+import com.example.resortbackendapplication1.resort.model.entity.ResortFacilityOperatingHoursEntity;
 import com.example.resortbackendapplication1.resort.model.enums.ResortFacilitySearchField;
 import com.example.resortbackendapplication1.resort.model.enums.ResortFacilitySortField;
 import com.example.resortbackendapplication1.resort.model.mapper.ResortFacilityLocaleMapper;
 import com.example.resortbackendapplication1.resort.model.mapper.ResortFacilityMapper;
+import com.example.resortbackendapplication1.resort.model.mapper.ResortFacilityOperatingHoursMapper;
 import com.example.resortbackendapplication1.resort.repository.ResortFacilityRepository;
 import com.example.resortbackendapplication1.resort.service.ResortFacilityService;
 import com.example.resortbackendapplication1.resort.specification.ResortFacilitySpecification;
+import com.example.resortbackendapplication1.resort.validation.ResortFacilityOperatingHoursScheduleValidator;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
@@ -31,7 +37,11 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -52,13 +62,22 @@ public class ResortFacilityServiceImpl implements ResortFacilityService {
                                   ResortEntity resortEntity,
                                   ResortFacilityGroupEntity resortFacilityGroupEntity,
                                   FacilityEntity facilityEntity,
-                                  LocaleEntity localeEntity) {
+                                  LocaleEntity localeEntity,
+                                  List<DayOfWeekEntity> allDaysOfWeek) {
         if (facilityEntity != null && resortFacilityRepository
                 .existsByResortEntity_IdAndFacilityEntity_IdAndIsActiveAndIsDeleted(
                         resortEntity.getId(), facilityEntity.getId(), true, false)) {
             throw new IllegalStateException("Resort already has a facility linked to platform facility id: "
                     + facilityEntity.getId());
         }
+
+        Map<Long, DayOfWeekEntity> daysOfWeekById = allDaysOfWeek.stream()
+                .collect(Collectors.toMap(DayOfWeekEntity::getId, dayOfWeekEntity -> dayOfWeekEntity));
+        List<ResortFacilityOperatingHoursDayScheduleRequest> operatingHours = request.getOperatingHours();
+        ResortFacilityOperatingHoursScheduleValidator.validateWeekCompleteness(operatingHours, daysOfWeekById.keySet());
+        operatingHours.forEach(ResortFacilityOperatingHoursScheduleValidator::validateDayShape);
+        operatingHours.forEach(day -> ResortFacilityOperatingHoursScheduleValidator.validateWindowsDoNotOverlap(day.getWindows()));
+        ResortFacilityOperatingHoursScheduleValidator.validateSpilloverAcrossWeek(operatingHours, allDaysOfWeek);
 
         ResortFacilityEntity entity = ResortFacilityMapper.create(request, facilityEntity);
         resortEntity.addResortFacilityEntity(entity);
@@ -68,9 +87,32 @@ public class ResortFacilityServiceImpl implements ResortFacilityService {
         entity.addResortFacilityLocaleEntity(resortFacilityLocaleEntity);
         localeEntity.addResortFacilityLocaleEntity(resortFacilityLocaleEntity);
 
+        for (ResortFacilityOperatingHoursDayScheduleRequest day : operatingHours) {
+            DayOfWeekEntity dayOfWeekEntity = daysOfWeekById.get(day.getDayOfWeekId());
+            if (Boolean.TRUE.equals(day.getIsClosed()) || Boolean.TRUE.equals(day.getIsTwentyFourHours())) {
+                attachOperatingHoursRow(entity, dayOfWeekEntity, day.getIsClosed(), day.getIsTwentyFourHours(), null, null);
+            } else {
+                for (ResortFacilityOperatingHoursWindowRequest window : day.getWindows()) {
+                    attachOperatingHoursRow(entity, dayOfWeekEntity, false, false, window.getOpensAt(), window.getClosesAt());
+                }
+            }
+        }
+
         resortFacilityRepository.save(entity);
         log.info("ResortFacility created with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
+    }
+
+    private void attachOperatingHoursRow(ResortFacilityEntity resortFacilityEntity,
+                                         DayOfWeekEntity dayOfWeekEntity,
+                                         Boolean isClosed,
+                                         Boolean isTwentyFourHours,
+                                         LocalTime opensAt,
+                                         LocalTime closesAt) {
+        ResortFacilityOperatingHoursEntity row = ResortFacilityOperatingHoursMapper.create(
+                isClosed, isTwentyFourHours, opensAt, closesAt);
+        resortFacilityEntity.addResortFacilityOperatingHoursEntity(row);
+        dayOfWeekEntity.addResortFacilityOperatingHoursEntity(row);
     }
 
     @Override

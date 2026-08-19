@@ -24,7 +24,7 @@ public class CountryEntity extends AuditableEntity {
 
     @NotBlank
     @Size(max = 10)
-    @Column(name = "code", nullable = false, unique = true, length = 10)
+    @Column(name = "code", nullable = false, length = 10)
     private String code;
 
     @NotBlank

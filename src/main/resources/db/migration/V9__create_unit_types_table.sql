@@ -12,7 +12,7 @@ create table if not exists unit_types
     -- ENERGY
     -- PRESSURE
     -- OTHER
-    code       varchar(50)                  not null unique,
+    code       varchar(50)                  not null,
     sort_order integer                      not null default 0,
 
     created_by bigint references users (id) not null,
@@ -25,6 +25,10 @@ create table if not exists unit_types
     deleted_by bigint references users (id),
     deleted_at timestamp with time zone
 );
+
+create unique index if not exists uq_unit_types_code
+    on unit_types (code)
+    where is_active = true and is_deleted = false;
 
 create table if not exists unit_type_locales
 (
@@ -48,11 +52,12 @@ create table if not exists unit_type_locales
     is_active    boolean                                             not null default true,
     is_deleted   boolean                                             not null default false,
     deleted_by   bigint references users (id),
-    deleted_at   timestamp with time zone,
-
-    constraint uq_unit_type_locale
-        unique (unit_type_id, locale_id)
+    deleted_at   timestamp with time zone
 );
+
+create unique index if not exists uq_unit_type_locale
+    on unit_type_locales (unit_type_id, locale_id)
+    where is_active = true and is_deleted = false;
 
 DO
 $$
@@ -75,7 +80,7 @@ $$
                ('ENERGY', 8, sys_id, sys_id),
                ('PRESSURE', 9, sys_id, sys_id),
                ('OTHER', 10, sys_id, sys_id)
-        ON CONFLICT (code) DO NOTHING;
+        ON CONFLICT (code) WHERE is_active = true AND is_deleted = false DO NOTHING;
 
         -- =============================================
         -- 2. Unit Type Locales (English)
@@ -96,7 +101,7 @@ $$
                                10)) v(code, locale_code, name, description, sort_order)
                       ON ut.code = v.code
                  JOIN locales l ON l.code = v.locale_code
-        ON CONFLICT (unit_type_id, locale_id) DO NOTHING;
+        ON CONFLICT (unit_type_id, locale_id) WHERE is_active = true AND is_deleted = false DO NOTHING;
 
         -- =============================================
         -- 3. Unit Type Locales (Bengali)
@@ -117,7 +122,7 @@ $$
                                10)) v(code, locale_code, name, description, sort_order)
                       ON ut.code = v.code
                  JOIN locales l ON l.code = v.locale_code
-        ON CONFLICT (unit_type_id, locale_id) DO NOTHING;
+        ON CONFLICT (unit_type_id, locale_id) WHERE is_active = true AND is_deleted = false DO NOTHING;
 
     END
 $$;

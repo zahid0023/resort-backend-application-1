@@ -25,5 +25,7 @@ public class ResortFacilityLocaleDto {
 
     private String description;
 
+    private String notes;
+
     private Integer sortOrder;
 }

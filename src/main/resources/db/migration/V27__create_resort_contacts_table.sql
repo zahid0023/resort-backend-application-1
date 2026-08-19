@@ -47,14 +47,15 @@ create table if not exists resort_contacts
     is_active                 boolean                                        not null default true,
     is_deleted                boolean                                        not null default false,
     deleted_by                bigint references users (id),
-    deleted_at                timestamp with time zone,
-
-    constraint uq_resort_contact
-        unique (resort_id, contact_type_id, communication_channel_id, contact_value)
+    deleted_at                timestamp with time zone
 );
+
+create unique index if not exists uq_resort_contact
+    on resort_contacts (resort_id, contact_type_id, communication_channel_id, contact_value)
+    where is_active = true and is_deleted = false;
 
 -- only one primary contact is allowed for each
 -- resort + purpose + communication channel.
 create unique index if not exists uq_resort_primary_contact
     on resort_contacts (resort_id, contact_type_id, communication_channel_id)
-    where is_primary = true;
+    where is_primary = true and is_active = true and is_deleted = false;

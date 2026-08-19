@@ -1,5 +1,7 @@
 package com.example.resortbackendapplication1.resort.controller;
 
+import com.example.resortbackendapplication1.dayofweek.model.entity.DayOfWeekEntity;
+import com.example.resortbackendapplication1.dayofweek.service.DayOfWeekService;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
 import com.example.resortbackendapplication1.facility.service.FacilityService;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
@@ -19,6 +21,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/resorts/{resort-id}/facilities")
 public class ResortFacilityController {
@@ -28,17 +32,20 @@ public class ResortFacilityController {
     private final ResortFacilityGroupService resortFacilityGroupService;
     private final FacilityService facilityService;
     private final LocaleService localeService;
+    private final DayOfWeekService dayOfWeekService;
 
     public ResortFacilityController(ResortFacilityService resortFacilityService,
                                     ResortService resortService,
                                     ResortFacilityGroupService resortFacilityGroupService,
                                     FacilityService facilityService,
-                                    LocaleService localeService) {
+                                    LocaleService localeService,
+                                    DayOfWeekService dayOfWeekService) {
         this.resortFacilityService = resortFacilityService;
         this.resortService = resortService;
         this.resortFacilityGroupService = resortFacilityGroupService;
         this.facilityService = facilityService;
         this.localeService = localeService;
+        this.dayOfWeekService = dayOfWeekService;
     }
 
     @PostMapping
@@ -52,8 +59,10 @@ public class ResortFacilityController {
                 ? facilityService.getEntityById(request.getFacilityId())
                 : null;
         LocaleEntity localeEntity = localeService.getEntityByCode("en");
+        List<DayOfWeekEntity> allDaysOfWeek = dayOfWeekService.getAllActiveEntities();
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(resortFacilityService.create(request, resortEntity, resortFacilityGroupEntity, facilityEntity, localeEntity));
+                .body(resortFacilityService.create(request, resortEntity, resortFacilityGroupEntity, facilityEntity,
+                        localeEntity, allDaysOfWeek));
     }
 
     @GetMapping("/{id}")

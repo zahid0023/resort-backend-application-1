@@ -10,7 +10,7 @@ create table if not exists price_units
     -- PER_PERSON
     -- PER_ROOM
     -- PER_BOOKING
-    code       varchar(50)                  not null unique,
+    code       varchar(50)                  not null,
     -- Display order in administrative interfaces.
     sort_order integer                      not null default 0,
 
@@ -24,6 +24,10 @@ create table if not exists price_units
     deleted_by bigint references users (id),
     deleted_at timestamp with time zone
 );
+
+create unique index if not exists uq_price_units_code
+    on price_units (code)
+    where is_active = true and is_deleted = false;
 
 create table if not exists price_unit_locales
 (
@@ -57,11 +61,12 @@ create table if not exists price_unit_locales
     is_active     boolean                            not null default true,
     is_deleted    boolean                            not null default false,
     deleted_by    bigint references users (id),
-    deleted_at    timestamp with time zone,
-
-    constraint uq_price_unit_locale
-        unique (price_unit_id, locale_id)
+    deleted_at    timestamp with time zone
 );
+
+create unique index if not exists uq_price_unit_locale
+    on price_unit_locales (price_unit_id, locale_id)
+    where is_active = true and is_deleted = false;
 
 create table if not exists price_unit_scope_assignments
 (

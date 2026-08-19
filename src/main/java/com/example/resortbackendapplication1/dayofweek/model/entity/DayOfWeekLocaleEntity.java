@@ -16,7 +16,7 @@ import org.hibernate.annotations.OnDeleteAction;
 @Getter
 @Setter
 @Entity
-@Table(name = "days_of_week_locales", uniqueConstraints = @UniqueConstraint(columnNames = {"day_of_week_id", "locale_id"}))
+@Table(name = "days_of_week_locales")
 public class DayOfWeekLocaleEntity extends AuditableEntity {
 
     @Setter(AccessLevel.NONE)

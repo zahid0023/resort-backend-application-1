@@ -2,7 +2,7 @@ create table if not exists countries
 (
     id         bigserial primary key,
 
-    code       varchar(10)                  not null unique,
+    code       varchar(10)                  not null,
     iso3_code  varchar(3)                   not null,
     phone_code varchar(3)                   not null,
     flag_url   text                         not null default '',
@@ -18,6 +18,10 @@ create table if not exists countries
     deleted_by bigint references users (id),
     deleted_at timestamp with time zone
 );
+
+create unique index if not exists uq_countries_code
+    on countries (code)
+    where is_active = true and is_deleted = false;
 
 create table if not exists country_locales
 (
@@ -38,11 +42,12 @@ create table if not exists country_locales
     is_active   boolean                                            not null default true,
     is_deleted  boolean                                            not null default false,
     deleted_by  bigint references users (id),
-    deleted_at  timestamp with time zone,
-
-    constraint uq_country_locales_country_locale
-        unique (country_id, locale_id)
+    deleted_at  timestamp with time zone
 );
+
+create unique index if not exists uq_country_locales_country_locale
+    on country_locales (country_id, locale_id)
+    where is_active = true and is_deleted = false;
 
 insert into countries (code,
                        iso3_code,

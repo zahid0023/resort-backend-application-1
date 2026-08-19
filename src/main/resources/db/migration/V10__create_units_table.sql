@@ -12,14 +12,14 @@ create table if not exists units
     -- M
     -- CM
     -- PIECE
-    code              varchar(50)                       not null unique,
+    code              varchar(50)                       not null,
 
     -- kg
     -- g
     -- L
     -- m
     -- pcs
-    symbol            varchar(20)                       not null unique,
+    symbol            varchar(20)                       not null,
 
     -- Whether this is the base unit of its type.
     -- Example:
@@ -57,6 +57,14 @@ create table if not exists units
         check (conversion_factor > 0)
 );
 
+create unique index if not exists uq_units_code
+    on units (code)
+    where is_active = true and is_deleted = false;
+
+create unique index if not exists uq_units_symbol
+    on units (symbol)
+    where is_active = true and is_deleted = false;
+
 create table if not exists unit_locales
 (
     id          bigserial primary key,
@@ -82,11 +90,12 @@ create table if not exists unit_locales
     is_active   boolean                                        not null default true,
     is_deleted  boolean                                        not null default false,
     deleted_by  bigint references users (id),
-    deleted_at  timestamp with time zone,
-
-    constraint uq_unit_locale
-        unique (unit_id, locale_id)
+    deleted_at  timestamp with time zone
 );
+
+create unique index if not exists uq_unit_locale
+    on unit_locales (unit_id, locale_id)
+    where is_active = true and is_deleted = false;
 
 DO
 $$
@@ -151,7 +160,7 @@ $$
                   ('OTHER', 'UNIT', 'unit', true, 1.0,
                    1)) v(type_code, code, symbol, is_base_unit, conversion_factor, sort_order)
                  JOIN unit_types ut ON ut.code = v.type_code
-        ON CONFLICT (code) DO NOTHING;
+        ON CONFLICT (code) WHERE is_active = true AND is_deleted = false DO NOTHING;
 
         -- =============================================
         -- 2. Unit Locales (English)
@@ -204,7 +213,7 @@ $$
                                1)) v(code, locale_code, name, plural_name, description, sort_order)
                       ON u.code = v.code
                  JOIN locales l ON l.code = v.locale_code
-        ON CONFLICT (unit_id, locale_id) DO NOTHING;
+        ON CONFLICT (unit_id, locale_id) WHERE is_active = true AND is_deleted = false DO NOTHING;
 
         -- =============================================
         -- 3. Unit Locales (Bengali)
@@ -257,7 +266,7 @@ $$
                                2)) v(code, locale_code, name, plural_name, description, sort_order)
                       ON u.code = v.code
                  JOIN locales l ON l.code = v.locale_code
-        ON CONFLICT (unit_id, locale_id) DO NOTHING;
+        ON CONFLICT (unit_id, locale_id) WHERE is_active = true AND is_deleted = false DO NOTHING;
 
     END
 $$;

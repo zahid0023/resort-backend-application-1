@@ -6,7 +6,7 @@ create table if not exists roles
 (
     id         bigserial primary key,
 
-    name       varchar(50)              not null unique,
+    name       varchar(50)              not null,
 
     created_by bigint                   not null,
     created_at timestamp with time zone not null default current_timestamp,
@@ -23,7 +23,7 @@ create table if not exists users
 (
     id         bigserial primary key,
 
-    username   varchar(255)             not null unique,
+    username   varchar(255)             not null,
     password   varchar(255)             not null,
     role_id    bigint                   not null,
     enabled    boolean                  not null default true,
@@ -45,7 +45,7 @@ create table if not exists permissions
 (
     id          bigserial primary key,
 
-    name        varchar(100)             not null unique,
+    name        varchar(100)             not null,
     description varchar(255),
 
     created_by  bigint                   not null,
@@ -74,11 +74,29 @@ create table if not exists user_permissions
     is_active     boolean                  not null default true,
     is_deleted    boolean                  not null default false,
     deleted_by    bigint,
-    deleted_at    timestamp with time zone,
-
-    constraint uq_user_permissions_user_permission
-        unique (user_id, permission_id)
+    deleted_at    timestamp with time zone
 );
+
+-- ============================================================
+-- Uniqueness constraints — scoped to active, non-deleted rows only,
+-- so a soft-deleted row's name/username/pairing can be reused.
+-- ============================================================
+
+create unique index if not exists uq_roles_name
+    on roles (name)
+    where is_active = true and is_deleted = false;
+
+create unique index if not exists uq_users_username
+    on users (username)
+    where is_active = true and is_deleted = false;
+
+create unique index if not exists uq_permissions_name
+    on permissions (name)
+    where is_active = true and is_deleted = false;
+
+create unique index if not exists uq_user_permissions_user_permission
+    on user_permissions (user_id, permission_id)
+    where is_active = true and is_deleted = false;
 
 -- ============================================================
 -- Seed data — inserted before FK constraints are added,
@@ -105,7 +123,7 @@ values (3, 'ADMIN', 1, 1);
 
 insert into permissions (name, description, created_by, updated_by)
 values ('CREATE_SCOPE', 'Create a new scope', 1, 1)
-on conflict (name) do nothing;
+on conflict (name) where is_active = true and is_deleted = false do nothing;
 
 -- Advance sequences so next auto-generated IDs start above the seeded values
 select setval(pg_get_serial_sequence('roles', 'id'), (select max(id) from roles));

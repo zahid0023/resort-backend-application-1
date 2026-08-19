@@ -17,6 +17,8 @@ public class ResortFacilityLocaleRequest {
 
     private String description;
 
+    private String notes;
+
     @NotNull
     private Integer sortOrder;
 }

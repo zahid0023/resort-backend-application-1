@@ -21,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -57,5 +58,10 @@ public class DayOfWeekServiceImpl implements DayOfWeekService {
                 .findAll(specification, pageable)
                 .map(entity -> DayOfWeekMapper.toDto(entity).build());
         return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
+    }
+
+    @Override
+    public List<DayOfWeekEntity> getAllActiveEntities() {
+        return dayOfWeekRepository.findByIsActiveAndIsDeletedOrderBySortOrderAsc(true, false);
     }
 }

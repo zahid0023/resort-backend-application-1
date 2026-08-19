@@ -98,6 +98,7 @@ the same `code`.
 | `locale`      | Locale  | —        | read-only, resolved from `locale_id` at creation | The locale this translation is written in (`id`, `code`, `name`, `sort_order`)    |
 | `name`        | String  | Yes      | max 255 chars                                    | Localized facility name (override if linked, actual name if custom)               |
 | `description` | String  | Yes      | not null (defaults to `""`)                      | Localized facility description (override if linked, actual description if custom) |
+| `notes`       | String  | —        | not null (defaults to `""`)                      | Free-form notes about the facility (e.g. internal remarks, guest-facing caveats)  |
 | `sort_order`  | Integer | Yes      | default 1                                        | Display order among locale entries                                                |
 
 ---
@@ -106,7 +107,8 @@ the same `code`.
 
 `POST /api/v1/resorts/{resort-id}/facilities`
 
-Creates a new facility for the resort, together with exactly **one** initial locale translation.
+Creates a new facility for the resort, together with exactly **one** initial locale translation and its
+**entire weekly operating-hours schedule**.
 `resort_facility_group_id` is required and must reference an existing, active resort facility group belonging
 to the same resort — an unknown or cross-resort group id returns `404 ENTITY_NOT_FOUND`. `facility_id` is
 optional — supply it to base the new facility on a platform facility (its icon fields are copied onto the new
@@ -119,6 +121,17 @@ response** — see the note in [Data Model](#data-model) above.
 **The initial translation is always attached to the `en` locale, resolved by the server — the request carries
 no `locale_id` at all.** There is no option to submit multiple locales at creation time. Additional languages
 are added afterward via the Resort Facility Locales sub-resource below.
+
+**`operating_hours` is required and must cover every active day of week exactly once** — same shape and
+validation as [Set Weekly Schedule](resort-facility-operating-hours-api.md#set-weekly-schedule) on the
+[Resort Facility Operating Hours API](resort-facility-operating-hours-api.md): a facility is never created with
+a partial schedule. Each entry is `CLOSED` (`is_closed=true`), `OPEN_24_HOURS` (`is_twenty_four_hours=true`), or
+one-or-more custom `windows` (a day with a break, e.g. lunch/dinner). Same-day and cross-day overlap validation
+(including overnight windows spilling into the next day, wrapping Sunday back to Monday) runs exactly as
+described there — see that document for the full rule set and worked examples. Any violation aborts the whole
+`POST` before the facility itself is created — `400 INVALID_ARGUMENT` for shape/completeness errors,
+`409 CONFLICT` for overlap errors, `404 ENTITY_NOT_FOUND` for an unknown `day_of_week_id`. The created rows are
+not returned from this endpoint — fetch them afterward via `GET .../facilities/{id}/operating-hours`.
 
 ### Path Parameters
 
@@ -145,24 +158,104 @@ are added afterward via the Resort Facility Locales sub-resource below.
   "locale": {
     "name": "Main Restaurant",
     "description": "Full-service restaurant with buffet and à la carte options.",
+    "notes": "Reservations recommended on weekends.",
     "sort_order": 1
-  }
+  },
+  "operating_hours": [
+    {
+      "day_of_week_id": 1,
+      "is_closed": false,
+      "is_twenty_four_hours": false,
+      "windows": [
+        {
+          "opens_at": "09:00:00",
+          "closes_at": "14:00:00"
+        },
+        {
+          "opens_at": "17:00:00",
+          "closes_at": "23:00:00"
+        }
+      ]
+    },
+    {
+      "day_of_week_id": 2,
+      "is_closed": false,
+      "is_twenty_four_hours": false,
+      "windows": [
+        {
+          "opens_at": "09:00:00",
+          "closes_at": "23:00:00"
+        }
+      ]
+    },
+    {
+      "day_of_week_id": 3,
+      "is_closed": false,
+      "is_twenty_four_hours": false,
+      "windows": [
+        {
+          "opens_at": "09:00:00",
+          "closes_at": "23:00:00"
+        }
+      ]
+    },
+    {
+      "day_of_week_id": 4,
+      "is_closed": false,
+      "is_twenty_four_hours": false,
+      "windows": [
+        {
+          "opens_at": "09:00:00",
+          "closes_at": "23:00:00"
+        }
+      ]
+    },
+    {
+      "day_of_week_id": 5,
+      "is_closed": false,
+      "is_twenty_four_hours": false,
+      "windows": [
+        {
+          "opens_at": "09:00:00",
+          "closes_at": "23:00:00"
+        }
+      ]
+    },
+    {
+      "day_of_week_id": 6,
+      "is_closed": false,
+      "is_twenty_four_hours": false,
+      "windows": [
+        {
+          "opens_at": "09:00:00",
+          "closes_at": "23:00:00"
+        }
+      ]
+    },
+    {
+      "day_of_week_id": 7,
+      "is_closed": true,
+      "is_twenty_four_hours": false,
+      "windows": []
+    }
+  ]
 }
 ```
 
 ### Request Fields
 
-| Field                      | Type    | Required | Validation                                                                                  |
-|----------------------------|---------|----------|---------------------------------------------------------------------------------------------|
-| `resort_facility_group_id` | Long    | Yes      | Not null; must reference an existing, active resort facility group belonging to this resort |
-| `facility_id`              | Long    | —        | Nullable; if present, must reference an existing, active facility                           |
-| `code`                     | String  | Yes      | Not blank, max 100 chars; must be unique within this resort; immutable after creation       |
-| `sort_order`               | Integer | Yes      | Not null                                                                                    |
-| `is_highlighted`           | Boolean | Yes      | Not null                                                                                    |
-| `icon_type`                | String  | —        | Nullable, max 100 chars                                                                     |
-| `icon_value`               | String  | —        | Nullable                                                                                    |
-| `icon_meta`                | Object  | —        | Nullable, arbitrary JSON                                                                    |
-| `locale`                   | Object  | Yes      | Not null; validated (see below) — no `locale_id` field; always resolved to the `en` locale  |
+| Field                      | Type    | Required | Validation                                                                                     |
+|----------------------------|---------|----------|------------------------------------------------------------------------------------------------|
+| `resort_facility_group_id` | Long    | Yes      | Not null; must reference an existing, active resort facility group belonging to this resort    |
+| `facility_id`              | Long    | —        | Nullable; if present, must reference an existing, active facility                              |
+| `code`                     | String  | Yes      | Not blank, max 100 chars; must be unique within this resort; immutable after creation          |
+| `sort_order`               | Integer | Yes      | Not null                                                                                       |
+| `is_highlighted`           | Boolean | Yes      | Not null                                                                                       |
+| `icon_type`                | String  | —        | Nullable, max 100 chars                                                                        |
+| `icon_value`               | String  | —        | Nullable                                                                                       |
+| `icon_meta`                | Object  | —        | Nullable, arbitrary JSON                                                                       |
+| `locale`                   | Object  | Yes      | Not null; validated (see below) — no `locale_id` field; always resolved to the `en` locale     |
+| `operating_hours`          | Array   | Yes      | Not empty; exactly one entry per active day of week, no duplicates, no unknown ids — see below |
 
 **Locale entry (`locale`):**
 
@@ -170,7 +263,20 @@ are added afterward via the Resort Facility Locales sub-resource below.
 |---------------|---------|----------|--------------------------|
 | `name`        | String  | Yes      | Not blank, max 255 chars |
 | `description` | String  | —        | —                        |
+| `notes`       | String  | —        | —                        |
 | `sort_order`  | Integer | Yes      | Not null                 |
+
+**Operating hours entries (`operating_hours[]`)** — identical shape to [Set Weekly
+Schedule](resort-facility-operating-hours-api.md#set-weekly-schedule)'s `days[]`:
+
+| Field                                    | Type    | Required | Validation                                                                                                                |
+|------------------------------------------|---------|----------|---------------------------------------------------------------------------------------------------------------------------|
+| `operating_hours[].day_of_week_id`       | Long    | Yes      | Not null; must reference an existing, active day of week                                                                  |
+| `operating_hours[].is_closed`            | Boolean | Yes      | Not null; cannot be `true` together with `is_twenty_four_hours`                                                           |
+| `operating_hours[].is_twenty_four_hours` | Boolean | Yes      | Not null; cannot be `true` together with `is_closed`                                                                      |
+| `operating_hours[].windows`              | Array   | —        | Must be empty when `is_closed`/`is_twenty_four_hours` is `true`; at least one entry otherwise; no two entries may overlap |
+| `operating_hours[].windows[].opens_at`   | String  | Yes      | `HH:mm:ss`                                                                                                                |
+| `operating_hours[].windows[].closes_at`  | String  | Yes      | `HH:mm:ss`; `<= opens_at` means the window rolls past midnight into the next calendar day                                 |
 
 ### Response `201 Created`
 
@@ -226,6 +332,7 @@ translations at all). To fetch every translation, use
       },
       "name": "Main Restaurant",
       "description": "Full-service restaurant with buffet and à la carte options.",
+      "notes": "Reservations recommended on weekends.",
       "sort_order": 1
     }
   }
@@ -298,6 +405,7 @@ each row's `locale` field the same way as `GET /{id}`.
         },
         "name": "Main Restaurant",
         "description": "Full-service restaurant with buffet and à la carte options.",
+        "notes": "Reservations recommended on weekends.",
         "sort_order": 1
       }
     },
@@ -321,6 +429,7 @@ each row's `locale` field the same way as `GET /{id}`.
         },
         "name": "Swimming Pool",
         "description": "Outdoor infinity pool with sun deck and loungers.",
+        "notes": "",
         "sort_order": 2
       }
     }
@@ -426,7 +535,8 @@ any response.
 
 ## Resort Facility Locales
 
-Resort Facility Locale endpoints manage locale-specific name/description translations for a resort facility.
+Resort Facility Locale endpoints manage locale-specific name/description/notes translations for a resort
+facility.
 The `{resort-id}`/`{resort-facility-id}` path parameters must reference an existing, active resort and resort
 facility respectively (a `resort-facility-id` belonging to a different resort behaves the same as an unknown
 one — `404 ENTITY_NOT_FOUND`).
@@ -478,6 +588,7 @@ see more than the single Accept-Language-matched translation returned by
       },
       "name": "Main Restaurant",
       "description": "Full-service restaurant with buffet and à la carte options.",
+      "notes": "Reservations recommended on weekends.",
       "sort_order": 1
     },
     {
@@ -490,6 +601,7 @@ see more than the single Accept-Language-matched translation returned by
       },
       "name": "প্রধান রেস্তোরাঁ",
       "description": "",
+      "notes": "",
       "sort_order": 2
     }
   ],
@@ -530,6 +642,7 @@ pre-checked at the application level before any write (backed by a DB-level uniq
   "locale_id": 2,
   "name": "প্রধান রেস্তোরাঁ",
   "description": "বুফে এবং আ লা কার্ট বিকল্প সহ পূর্ণ-পরিষেবা রেস্তোরাঁ।",
+  "notes": "সাপ্তাহিক ছুটির দিনে রিজার্ভেশন সুপারিশ করা হয়।",
   "sort_order": 2
 }
 ```
@@ -541,6 +654,7 @@ pre-checked at the application level before any write (backed by a DB-level uniq
 | `locale_id`   | Long    | Yes      | Not null; must reference an existing locale |
 | `name`        | String  | Yes      | Not blank, max 255 chars                    |
 | `description` | String  | —        | —                                           |
+| `notes`       | String  | —        | —                                           |
 | `sort_order`  | Integer | Yes      | Not null                                    |
 
 #### Response `201 Created`
@@ -558,7 +672,7 @@ pre-checked at the application level before any write (backed by a DB-level uniq
 
 `PUT /api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/locales/{id}`
 
-Updates `name`, `description`, and `sort_order` for an existing resort facility locale translation. The
+Updates `name`, `description`, `notes`, and `sort_order` for an existing resort facility locale translation. The
 associated resort facility and locale cannot be changed after creation.
 
 #### Path Parameters
@@ -575,6 +689,7 @@ associated resort facility and locale cannot be changed after creation.
 {
   "name": "প্রধান রেস্তোরাঁ",
   "description": "বুফে এবং আ লা কার্ট বিকল্প সহ পূর্ণ-পরিষেবা রেস্তোরাঁ।",
+  "notes": "সাপ্তাহিক ছুটির দিনে রিজার্ভেশন সুপারিশ করা হয়।",
   "sort_order": 2
 }
 ```
@@ -585,6 +700,7 @@ associated resort facility and locale cannot be changed after creation.
 |---------------|---------|----------|--------------------------|
 | `name`        | String  | Yes      | Not blank, max 255 chars |
 | `description` | String  | —        | —                        |
+| `notes`       | String  | —        | —                        |
 | `sort_order`  | Integer | Yes      | Not null                 |
 
 #### Response `200 OK`
@@ -637,9 +753,9 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                                                                                                                                                                                                                                                                                                                                                                                  |
-|-------------|----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields; an unsupported `sortBy` query value                                                                                                                                                                                                                     |
-| 404         | `ENTITY_NOT_FOUND`         | Resort not found; resort facility not found for the given `resort-id`/`id` pair (including an `id` that belongs to a different resort); the resort facility group referenced by `resort_facility_group_id` not found (or belongs to a different resort); the platform facility referenced by `facility_id` not found; resort facility locale not found; the locale referenced by `locale_id` not found |
-| 409         | `CONFLICT`                 | The resort already has an active facility linked to the given `facility_id` (`create`, application-level check only — no DB constraint backs it); the resort facility already has a translation for the given `locale_id` (`create` locale, pre-checked at the application level)                                                                                                                      |
-| 409         | `DATA_INTEGRITY_VIOLATION` | Last-resort DB-level unique constraint on `(resort_facility_id, locale_id)`, should not normally be reachable now that the duplicate is pre-checked at the application level; a duplicate `code` within the same resort (backed by the `(resort_id, code)` unique index — not pre-checked at the application level)                                                                                    |
+| HTTP Status | Error Code                 | Cause                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+|-------------|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields; an unsupported `sortBy` query value; `create` only — `operating_hours` shape/completeness errors (duplicate or missing `day_of_week_id`, `is_closed`/`is_twenty_four_hours` both `true`, `windows` inconsistent with them) — see [Resort Facility Operating Hours API](resort-facility-operating-hours-api.md#error-responses) |
+| 404         | `ENTITY_NOT_FOUND`         | Resort not found; resort facility not found for the given `resort-id`/`id` pair (including an `id` that belongs to a different resort); the resort facility group referenced by `resort_facility_group_id` not found (or belongs to a different resort); the platform facility referenced by `facility_id` not found; resort facility locale not found; the locale referenced by `locale_id` not found; `create` only — an unknown `day_of_week_id` in `operating_hours`      |
+| 409         | `CONFLICT`                 | The resort already has an active facility linked to the given `facility_id` (`create`, application-level check only — no DB constraint backs it); the resort facility already has a translation for the given `locale_id` (`create` locale, pre-checked at the application level); `create` only — same-day or cross-day overlap in `operating_hours` (see [Resort Facility Operating Hours API](resort-facility-operating-hours-api.md#overlap-and-cross-day-validation))    |
+| 409         | `DATA_INTEGRITY_VIOLATION` | Last-resort DB-level unique constraint on `(resort_facility_id, locale_id)`, should not normally be reachable now that the duplicate is pre-checked at the application level; a duplicate `code` within the same resort (backed by the `(resort_id, code)` unique index — not pre-checked at the application level)                                                                                                                                                           |

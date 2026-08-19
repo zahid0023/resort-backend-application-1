@@ -5,6 +5,7 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
+import java.util.List;
 import java.util.Optional;
 
 @SuppressWarnings("unused")
@@ -13,5 +14,7 @@ public interface DayOfWeekRepository extends
         JpaSpecificationExecutor<@NonNull DayOfWeekEntity> {
 
     Optional<DayOfWeekEntity> findByIdAndIsActiveAndIsDeleted(Long id, Boolean isActive, Boolean isDeleted);
+
+    List<DayOfWeekEntity> findByIsActiveAndIsDeletedOrderBySortOrderAsc(Boolean isActive, Boolean isDeleted);
 
 }

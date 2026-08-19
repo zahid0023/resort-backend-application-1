@@ -44,7 +44,7 @@ public class CityEntity extends AuditableEntity {
     @NotBlank
     @Size(max = 3)
     @Pattern(regexp = "^[A-Z]{3}$")
-    @Column(name = "code", nullable = false, unique = true, length = 50)
+    @Column(name = "code", nullable = false, length = 50)
     private String code;
 
     @NotNull

@@ -2,7 +2,7 @@ create table if not exists resort_basic_info
 (
     id         bigserial primary key,
 
-    resort_id  bigint references resorts (id) not null unique,
+    resort_id  bigint references resorts (id) not null,
 
     estd       smallint                       not null,
 
@@ -18,6 +18,10 @@ create table if not exists resort_basic_info
     deleted_by bigint references users (id),
     deleted_at timestamp with time zone
 );
+
+create unique index if not exists uq_resort_basic_info_resort
+    on resort_basic_info (resort_id)
+    where is_active = true and is_deleted = false;
 
 create table if not exists resort_basic_info_locales
 (
@@ -40,8 +44,9 @@ create table if not exists resort_basic_info_locales
     is_active            boolean                                                    not null default true,
     is_deleted           boolean                                                    not null default false,
     deleted_by           bigint references users (id),
-    deleted_at           timestamp with time zone,
-
-    constraint uq_resort_basic_info_locale
-        unique (resort_basic_info_id, locale_id)
+    deleted_at           timestamp with time zone
 );
+
+create unique index if not exists uq_resort_basic_info_locale
+    on resort_basic_info_locales (resort_basic_info_id, locale_id)
+    where is_active = true and is_deleted = false;

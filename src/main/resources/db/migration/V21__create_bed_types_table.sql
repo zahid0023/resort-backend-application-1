@@ -13,7 +13,7 @@ create table if not exists bed_types
     -- BUNK
     -- FUTON
     -- MURPHY
-    code       varchar(50)                  not null unique,
+    code       varchar(50)                  not null,
     -- display order in admin ui.
     sort_order integer                      not null default 0,
 
@@ -27,6 +27,10 @@ create table if not exists bed_types
     deleted_by bigint references users (id),
     deleted_at timestamp with time zone
 );
+
+create unique index if not exists uq_bed_types_code
+    on bed_types (code)
+    where is_active = true and is_deleted = false;
 
 create table if not exists bed_type_locales
 (
@@ -59,11 +63,12 @@ create table if not exists bed_type_locales
     is_active   boolean                          not null default true,
     is_deleted  boolean                          not null default false,
     deleted_by  bigint references users (id),
-    deleted_at  timestamp with time zone,
-
-    constraint uq_bed_type_locale
-        unique (bed_type_id, locale_id)
+    deleted_at  timestamp with time zone
 );
+
+create unique index if not exists uq_bed_type_locale
+    on bed_type_locales (bed_type_id, locale_id)
+    where is_active = true and is_deleted = false;
 
 -- seed: bed types
 insert into bed_types (code, sort_order, created_by, updated_by)

@@ -133,7 +133,7 @@ public class PermissionServiceImpl implements PermissionService {
         for (PermissionEntity permission : permissionEntities) {
             boolean exists =
                     userPermissionRepository
-                            .existsByUserEntityAndPermissionEntity(userEntity, permission);
+                            .existsByUserEntityAndPermissionEntityAndIsActiveAndIsDeleted(userEntity, permission, true, false);
 
             if (!exists) {
                 UserPermissionEntity up = new UserPermissionEntity();

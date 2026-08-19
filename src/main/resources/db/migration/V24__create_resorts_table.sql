@@ -3,7 +3,7 @@ create table if not exists resorts
     id         bigserial primary key,
 
     -- Internal unique code identifying the resort.
-    code       varchar(100)                 not null unique,
+    code       varchar(100)                 not null,
 
     created_by bigint references users (id) not null,
     created_at timestamp with time zone     not null default current_timestamp,
@@ -15,6 +15,10 @@ create table if not exists resorts
     deleted_by bigint references users (id),
     deleted_at timestamp with time zone
 );
+
+create unique index if not exists uq_resorts_code
+    on resorts (code)
+    where is_active = true and is_deleted = false;
 
 create table if not exists resort_users
 (
@@ -35,11 +39,12 @@ create table if not exists resort_users
     is_active           boolean                                          not null default true,
     is_deleted          boolean                                          not null default false,
     deleted_by          bigint references users (id),
-    deleted_at          timestamp with time zone,
-
-    constraint uq_resort_user
-        unique (resort_id, user_id)
+    deleted_at          timestamp with time zone
 );
+
+create unique index if not exists uq_resort_user
+    on resort_users (resort_id, user_id)
+    where is_active = true and is_deleted = false;
 
 create table if not exists resort_user_permissions
 (
@@ -60,8 +65,9 @@ create table if not exists resort_user_permissions
     is_active                 boolean                                               not null default true,
     is_deleted                boolean                                               not null default false,
     deleted_by                bigint references users (id),
-    deleted_at                timestamp with time zone,
-
-    constraint uq_resort_user_permission
-        unique (resort_user_id, resort_permission_type_id)
+    deleted_at                timestamp with time zone
 );
+
+create unique index if not exists uq_resort_user_permission
+    on resort_user_permissions (resort_user_id, resort_permission_type_id)
+    where is_active = true and is_deleted = false;

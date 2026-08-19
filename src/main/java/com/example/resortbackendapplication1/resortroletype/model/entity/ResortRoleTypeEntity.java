@@ -22,7 +22,7 @@ public class ResortRoleTypeEntity extends AuditableEntity {
 
     @NotBlank
     @Size(max = 100)
-    @Column(name = "code", nullable = false, unique = true, length = 100)
+    @Column(name = "code", nullable = false, length = 100)
     private String code;
 
     @NotNull

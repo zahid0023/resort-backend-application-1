@@ -6,7 +6,7 @@ create table if not exists resort_role_types
     -- Examples:
     -- OWNER
     -- BOOKER
-    code       varchar(100)                 not null unique,
+    code       varchar(100)                 not null,
     -- display order in admin ui.
     sort_order integer                      not null default 1,
 
@@ -20,6 +20,10 @@ create table if not exists resort_role_types
     deleted_by bigint references users (id),
     deleted_at timestamp with time zone
 );
+
+create unique index if not exists uq_resort_role_types_code
+    on resort_role_types (code)
+    where is_active = true and is_deleted = false;
 
 create table if not exists resort_role_type_locales
 (
@@ -45,11 +49,12 @@ create table if not exists resort_role_type_locales
     is_active           boolean                                   not null default true,
     is_deleted          boolean                                   not null default false,
     deleted_by          bigint references users (id),
-    deleted_at          timestamp with time zone,
-
-    constraint uq_resort_role_type_locale
-        unique (resort_role_type_id, locale_id)
+    deleted_at          timestamp with time zone
 );
+
+create unique index if not exists uq_resort_role_type_locale
+    on resort_role_type_locales (resort_role_type_id, locale_id)
+    where is_active = true and is_deleted = false;
 
 -- seed: resort role types
 insert into resort_role_types (code, sort_order, created_by, updated_by)

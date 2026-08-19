@@ -7,7 +7,7 @@ create table if not exists image_hosting_providers
     -- CLOUDFLARE_R2
     -- AZURE_BLOB
     -- GOOGLE_CLOUD_STORAGE
-    code        varchar(50)                  not null unique,
+    code        varchar(50)                  not null,
 
     name        varchar(100)                 not null,
     description text                         not null default '',
@@ -24,6 +24,10 @@ create table if not exists image_hosting_providers
     deleted_by  bigint references users (id),
     deleted_at  timestamp with time zone
 );
+
+create unique index if not exists uq_image_hosting_providers_code
+    on image_hosting_providers (code)
+    where is_active = true and is_deleted = false;
 
 create table if not exists image_hosting_provider_config_fields
 (
@@ -54,11 +58,12 @@ create table if not exists image_hosting_provider_config_fields
     is_active                 boolean                                        not null default true,
     is_deleted                boolean                                        not null default false,
     deleted_by                bigint references users (id),
-    deleted_at                timestamp with time zone,
-
-    constraint uq_provider_key
-        unique (image_hosting_provider_id, key)
+    deleted_at                timestamp with time zone
 );
+
+create unique index if not exists uq_provider_key
+    on image_hosting_provider_config_fields (image_hosting_provider_id, key)
+    where is_active = true and is_deleted = false;
 
 insert into image_hosting_providers (code, name, description, sort_order, created_by, updated_by)
 values ('AWS_S3', 'Amazon S3', '', 1, (select id from users where username = 'system'),

@@ -39,7 +39,8 @@ create table if not exists resort_facilities
 
 -- resort-scoped code must be unique within a resort.
 create unique index if not exists uq_resort_facility_code
-    on resort_facilities (resort_id, code);
+    on resort_facilities (resort_id, code)
+    where is_active = true and is_deleted = false;
 
 create table if not exists resort_facility_locales
 (
@@ -52,6 +53,8 @@ create table if not exists resort_facility_locales
     -- if this is a custom facility, these are the actual values.
     name               varchar(255)                             not null,
     description        text                                     not null default '',
+    -- free-form notes about this facility (e.g. internal remarks, guest-facing caveats).
+    notes              text                                     not null default '',
     sort_order         integer                                  not null default 1,
 
     created_by         bigint references users (id)             not null,
@@ -62,8 +65,9 @@ create table if not exists resort_facility_locales
     is_active          boolean                                  not null default true,
     is_deleted         boolean                                  not null default false,
     deleted_by         bigint references users (id),
-    deleted_at         timestamp with time zone,
-
-    constraint uq_resort_facility_locale
-        unique (resort_facility_id, locale_id)
+    deleted_at         timestamp with time zone
 );
+
+create unique index if not exists uq_resort_facility_locale
+    on resort_facility_locales (resort_facility_id, locale_id)
+    where is_active = true and is_deleted = false;

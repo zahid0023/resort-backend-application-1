@@ -2,7 +2,7 @@ create table if not exists price_scopes
 (
     id         bigserial primary key,
 
-    code       varchar(50)                  not null unique,
+    code       varchar(50)                  not null,
     sort_order integer                      not null default 0,
 
     created_by bigint references users (id) not null,
@@ -15,6 +15,10 @@ create table if not exists price_scopes
     deleted_by bigint references users (id),
     deleted_at timestamp with time zone
 );
+
+create unique index if not exists uq_price_scopes_code
+    on price_scopes (code)
+    where is_active = true and is_deleted = false;
 
 create table if not exists price_scope_locales
 (
@@ -35,11 +39,12 @@ create table if not exists price_scope_locales
     is_active      boolean                             not null default true,
     is_deleted     boolean                             not null default false,
     deleted_by     bigint references users (id),
-    deleted_at     timestamp with time zone,
-
-    constraint uq_price_scope_locale
-        unique (price_scope_id, locale_id)
+    deleted_at     timestamp with time zone
 );
+
+create unique index if not exists uq_price_scope_locale
+    on price_scope_locales (price_scope_id, locale_id)
+    where is_active = true and is_deleted = false;
 
 -- seed: price scopes
 insert into price_scopes (code, sort_order, created_by, updated_by)

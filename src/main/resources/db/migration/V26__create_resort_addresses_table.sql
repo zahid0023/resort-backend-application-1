@@ -2,7 +2,7 @@ create table if not exists resort_addresses
 (
     id          bigserial primary key,
 
-    resort_id   bigint references resorts (id)   not null unique,
+    resort_id   bigint references resorts (id)   not null,
 
     country_id  bigint references countries (id) not null,
     city_id     bigint references cities (id)    not null,
@@ -23,6 +23,10 @@ create table if not exists resort_addresses
     deleted_at  timestamp with time zone
 );
 
+create unique index if not exists uq_resort_addresses_resort
+    on resort_addresses (resort_id)
+    where is_active = true and is_deleted = false;
+
 create table if not exists resort_address_locales
 (
     id                bigserial primary key,
@@ -41,8 +45,9 @@ create table if not exists resort_address_locales
     is_active         boolean                                 not null default true,
     is_deleted        boolean                                 not null default false,
     deleted_by        bigint references users (id),
-    deleted_at        timestamp with time zone,
-
-    constraint uq_resort_address_locale
-        unique (resort_address_id, locale_id)
+    deleted_at        timestamp with time zone
 );
+
+create unique index if not exists uq_resort_address_locale
+    on resort_address_locales (resort_address_id, locale_id)
+    where is_active = true and is_deleted = false;

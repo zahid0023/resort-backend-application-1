@@ -8,7 +8,7 @@ create table if not exists price_types
     -- WKD
     -- WKE
     -- HOL
-    code       varchar(50)                  not null unique,
+    code       varchar(50)                  not null,
     -- display order in administrative interfaces.
     sort_order integer                      not null default 0,
 
@@ -22,6 +22,10 @@ create table if not exists price_types
     deleted_by bigint references users (id),
     deleted_at timestamp with time zone
 );
+
+create unique index if not exists uq_price_types_code
+    on price_types (code)
+    where is_active = true and is_deleted = false;
 
 create table if not exists price_type_locales
 (
@@ -60,11 +64,12 @@ create table if not exists price_type_locales
     is_active     boolean                            not null default true,
     is_deleted    boolean                            not null default false,
     deleted_by    bigint references users (id),
-    deleted_at    timestamp with time zone,
-
-    constraint uq_price_type_locale
-        unique (price_type_id, locale_id)
+    deleted_at    timestamp with time zone
 );
+
+create unique index if not exists uq_price_type_locale
+    on price_type_locales (price_type_id, locale_id)
+    where is_active = true and is_deleted = false;
 
 create table if not exists price_type_scope_assignments
 (

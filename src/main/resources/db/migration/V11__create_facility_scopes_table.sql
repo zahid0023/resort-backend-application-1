@@ -2,7 +2,7 @@ create table if not exists facility_scopes
 (
     id         bigserial primary key,
 
-    code       varchar(50)                  not null unique,
+    code       varchar(50)                  not null,
     sort_order integer                      not null default 0,
 
     created_by bigint references users (id) not null,
@@ -15,6 +15,10 @@ create table if not exists facility_scopes
     deleted_by bigint references users (id),
     deleted_at timestamp with time zone
 );
+
+create unique index if not exists uq_facility_scopes_code
+    on facility_scopes (code)
+    where is_active = true and is_deleted = false;
 
 create table if not exists facility_scope_locales
 (
@@ -35,11 +39,12 @@ create table if not exists facility_scope_locales
     is_active         boolean                                not null default true,
     is_deleted        boolean                                not null default false,
     deleted_by        bigint references users (id),
-    deleted_at        timestamp with time zone,
-
-    constraint uq_facility_scope_locale
-        unique (facility_scope_id, locale_id)
+    deleted_at        timestamp with time zone
 );
+
+create unique index if not exists uq_facility_scope_locale
+    on facility_scope_locales (facility_scope_id, locale_id)
+    where is_active = true and is_deleted = false;
 
 insert into facility_scopes (code, sort_order, created_by, updated_by)
 values ('RESORT', 1, (select id from users where username = 'system'),

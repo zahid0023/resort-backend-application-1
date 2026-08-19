@@ -31,7 +31,7 @@ public class ResortBasicInfoEntity extends AuditableEntity {
     @NotNull
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.RESTRICT)
-    @JoinColumn(name = "resort_id", nullable = false, unique = true)
+    @JoinColumn(name = "resort_id", nullable = false)
     private ResortEntity resortEntity;
 
     /** Internal — call via {@link ResortEntity#assignResortBasicInfoEntity}. */

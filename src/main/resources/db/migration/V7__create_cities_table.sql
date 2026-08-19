@@ -4,7 +4,7 @@ create table if not exists cities
 
     country_id bigint references countries (id) on delete restrict not null,
 
-    code       char(3)                                             not null unique,
+    code       char(3)                                             not null,
     sort_order integer                                             not null default 0,
 
     created_by bigint references users (id)                        not null,
@@ -17,6 +17,10 @@ create table if not exists cities
     deleted_by bigint references users (id),
     deleted_at timestamp with time zone
 );
+
+create unique index if not exists uq_cities_code
+    on cities (code)
+    where is_active = true and is_deleted = false;
 
 create table if not exists city_locales
 (
@@ -37,11 +41,12 @@ create table if not exists city_locales
     is_active   boolean                                           not null default true,
     is_deleted  boolean                                           not null default false,
     deleted_by  bigint references users (id),
-    deleted_at  timestamp with time zone,
-
-    constraint uq_city_locales_city_locale
-        unique (city_id, locale_id)
+    deleted_at  timestamp with time zone
 );
+
+create unique index if not exists uq_city_locales_city_locale
+    on city_locales (city_id, locale_id)
+    where is_active = true and is_deleted = false;
 
 insert into cities (code, country_id, sort_order, created_by, updated_by)
 values ('DHK', (select id from countries where code = 'BD'), 1, (select id from users where username = 'system'),

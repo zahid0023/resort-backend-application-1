@@ -67,6 +67,11 @@ public class ResortFacilityLocaleEntity extends AuditableEntity {
     private String description = "";
 
     @NotNull
+    @ColumnDefault("''")
+    @Column(name = "notes", nullable = false, columnDefinition = "text")
+    private String notes = "";
+
+    @NotNull
     @ColumnDefault("1")
     @Column(name = "sort_order", nullable = false)
     private Integer sortOrder = 1;

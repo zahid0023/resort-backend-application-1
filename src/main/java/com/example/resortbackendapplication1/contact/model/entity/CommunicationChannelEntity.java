@@ -22,7 +22,7 @@ public class CommunicationChannelEntity extends AuditableEntity {
 
     @NotBlank
     @Size(max = 50)
-    @Column(name = "code", nullable = false, unique = true, length = 50)
+    @Column(name = "code", nullable = false, length = 50)
     private String code;
 
     @NotNull

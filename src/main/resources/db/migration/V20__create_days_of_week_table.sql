@@ -11,7 +11,7 @@ create table if not exists days_of_week
     -- FRIDAY
     -- SATURDAY
     -- SUNDAY
-    code       varchar(50)                  not null unique,
+    code       varchar(50)                  not null,
     -- display order in admin ui.
     sort_order integer                      not null default 0,
 
@@ -25,6 +25,10 @@ create table if not exists days_of_week
     deleted_by bigint references users (id),
     deleted_at timestamp with time zone
 );
+
+create unique index if not exists uq_days_of_week_code
+    on days_of_week (code)
+    where is_active = true and is_deleted = false;
 
 create table if not exists days_of_week_locales
 (
@@ -47,11 +51,12 @@ create table if not exists days_of_week_locales
     is_active      boolean                             not null default true,
     is_deleted     boolean                             not null default false,
     deleted_by     bigint references users (id),
-    deleted_at     timestamp with time zone,
-
-    constraint uq_days_of_week_locale
-        unique (day_of_week_id, locale_id)
+    deleted_at     timestamp with time zone
 );
+
+create unique index if not exists uq_days_of_week_locale
+    on days_of_week_locales (day_of_week_id, locale_id)
+    where is_active = true and is_deleted = false;
 
 -- seed: days of week
 insert into days_of_week (code, sort_order, created_by, updated_by)

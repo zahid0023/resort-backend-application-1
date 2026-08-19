@@ -1,6 +1,7 @@
 package com.example.resortbackendapplication1.dayofweek.model.entity;
 
 import com.example.resortbackendapplication1.commons.model.entity.AuditableEntity;
+import com.example.resortbackendapplication1.resort.model.entity.ResortFacilityOperatingHoursEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -22,7 +23,7 @@ public class DayOfWeekEntity extends AuditableEntity {
 
     @NotBlank
     @Size(max = 50)
-    @Column(name = "code", nullable = false, unique = true, length = 50)
+    @Column(name = "code", nullable = false, length = 50)
     private String code;
 
     @NotNull
@@ -32,6 +33,9 @@ public class DayOfWeekEntity extends AuditableEntity {
 
     @OneToMany(mappedBy = "dayOfWeekEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<DayOfWeekLocaleEntity> dayOfWeekLocaleEntities = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "dayOfWeekEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ResortFacilityOperatingHoursEntity> resortFacilityOperatingHoursEntities = new LinkedHashSet<>();
 
     // -------------------------------------------------------------------------
     // DayOfWeek Locale relationship helpers
@@ -43,5 +47,17 @@ public class DayOfWeekEntity extends AuditableEntity {
 
     public void removeDayOfWeekLocaleEntity(DayOfWeekLocaleEntity entity) {
         removeChild(dayOfWeekLocaleEntities, entity, (child, ignored) -> child.unassignDayOfWeek());
+    }
+
+    // -------------------------------------------------------------------------
+    // ResortFacilityOperatingHours relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addResortFacilityOperatingHoursEntity(ResortFacilityOperatingHoursEntity entity) {
+        addChild(resortFacilityOperatingHoursEntities, entity, ResortFacilityOperatingHoursEntity::assignDayOfWeek, this);
+    }
+
+    public void removeResortFacilityOperatingHoursEntity(ResortFacilityOperatingHoursEntity entity) {
+        removeChild(resortFacilityOperatingHoursEntities, entity, (child, ignored) -> child.unassignDayOfWeek());
     }
 }
