@@ -5,13 +5,14 @@ import com.example.resortbackendapplication1.commons.utils.LocaleJoinSortInfo;
 import com.example.resortbackendapplication1.commons.utils.LocaleRequiredFilterable;
 import com.example.resortbackendapplication1.commons.utils.LocaleSortable;
 import com.example.resortbackendapplication1.commons.utils.SpecificationUtils;
+import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupScopeAssignmentEntity;
 import com.example.resortbackendapplication1.facility.model.enums.FacilityGroupSearchField;
 import com.example.resortbackendapplication1.facility.model.enums.FacilityGroupSortField;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -30,11 +31,20 @@ public class FacilityGroupFilterRequest extends PaginatedRequest implements Loca
     public List<Predicate> toPredicates(Root<?> root, CriteriaQuery<?> query, CriteriaBuilder cb, Long localeId) {
         List<Predicate> predicates = SpecificationUtils.buildSearchPredicates(this, FacilityGroupSearchField.values(), root, query, cb, localeId);
         if (facilityScopeIds != null && !facilityScopeIds.isEmpty()) {
-            Join<?, ?> assignmentJoin = root.join("facilityGroupScopeAssignmentEntities");
-            predicates.add(assignmentJoin.get("facilityScopeEntity").get("id").in(facilityScopeIds));
-            predicates.add(cb.isTrue(assignmentJoin.get("isActive")));
-            predicates.add(cb.isFalse(assignmentJoin.get("isDeleted")));
-            query.distinct(true);
+            // Correlated EXISTS subquery instead of a join — a join against this to-many
+            // collection would duplicate parent rows and require query.distinct(true),
+            // which Postgres rejects when combined with an ORDER BY on a joined locale
+            // column that isn't in the select list (see SpecificationUtils.addJoinSort).
+            Subquery<Long> assignmentExists = query.subquery(Long.class);
+            Root<FacilityGroupScopeAssignmentEntity> assignmentRoot = assignmentExists.from(FacilityGroupScopeAssignmentEntity.class);
+            assignmentExists.select(assignmentRoot.get("id"))
+                    .where(
+                            cb.equal(assignmentRoot.get("facilityGroupEntity"), root),
+                            assignmentRoot.get("facilityScopeEntity").get("id").in(facilityScopeIds),
+                            cb.isTrue(assignmentRoot.get("isActive")),
+                            cb.isFalse(assignmentRoot.get("isDeleted"))
+                    );
+            predicates.add(cb.exists(assignmentExists));
         }
         return predicates;
     }

@@ -17,6 +17,8 @@ public interface ResortPermissionTypeService {
 
     ResortPermissionTypeEntity getEntityById(Long id);
 
+    ResortPermissionTypeEntity getEntityByCode(String code);
+
     ResortPermissionTypeResponse getById(Long id);
 
     PaginatedResponse<ResortPermissionTypeDto> getAll(ResortPermissionTypeFilterRequest request);

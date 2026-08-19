@@ -77,6 +77,12 @@ public class GlobalExceptionHandler {
         if (rootMessage.contains("facility_scope_assignments_pkey")) {
             return "This facility scope is already assigned to the facility.";
         }
+        if (rootMessage.contains("uq_resort_facility_group_code")) {
+            return "A facility group with this code already exists for this resort.";
+        }
+        if (rootMessage.contains("uq_resort_facility_code")) {
+            return "A facility with this code already exists for this resort.";
+        }
         return rootMessage;
     }
 

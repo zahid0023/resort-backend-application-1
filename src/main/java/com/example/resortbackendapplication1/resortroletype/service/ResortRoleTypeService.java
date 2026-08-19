@@ -17,6 +17,8 @@ public interface ResortRoleTypeService {
 
     ResortRoleTypeEntity getEntityById(Long id);
 
+    ResortRoleTypeEntity getEntityByCode(String code);
+
     ResortRoleTypeResponse getById(Long id);
 
     PaginatedResponse<ResortRoleTypeDto> getAll(ResortRoleTypeFilterRequest request);

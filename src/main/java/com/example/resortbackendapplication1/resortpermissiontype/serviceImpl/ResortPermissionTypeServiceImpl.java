@@ -69,6 +69,12 @@ public class ResortPermissionTypeServiceImpl implements ResortPermissionTypeServ
     }
 
     @Override
+    public ResortPermissionTypeEntity getEntityByCode(String code) {
+        return resortPermissionTypeRepository.findByCodeAndIsActiveAndIsDeleted(code, true, false)
+                .orElseThrow(() -> new EntityNotFoundException("ResortPermissionType not found with code: " + code));
+    }
+
+    @Override
     public ResortPermissionTypeResponse getById(Long id) {
         ResortPermissionTypeEntity entity = getEntityById(id);
         ResortPermissionTypeDto dto = ResortPermissionTypeMapper.toDto(entity).build();

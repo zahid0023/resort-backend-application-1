@@ -69,6 +69,12 @@ public class ResortRoleTypeServiceImpl implements ResortRoleTypeService {
     }
 
     @Override
+    public ResortRoleTypeEntity getEntityByCode(String code) {
+        return resortRoleTypeRepository.findByCodeAndIsActiveAndIsDeleted(code, true, false)
+                .orElseThrow(() -> new EntityNotFoundException("ResortRoleType not found with code: " + code));
+    }
+
+    @Override
     public ResortRoleTypeResponse getById(Long id) {
         ResortRoleTypeEntity entity = getEntityById(id);
         ResortRoleTypeDto dto = ResortRoleTypeMapper.toDto(entity).build();

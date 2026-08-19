@@ -14,6 +14,8 @@ public interface ResortPermissionTypeRepository extends
 
     Optional<ResortPermissionTypeEntity> findByIdAndIsActiveAndIsDeleted(Long id, Boolean isActive, Boolean isDeleted);
 
+    Optional<ResortPermissionTypeEntity> findByCodeAndIsActiveAndIsDeleted(String code, Boolean isActive, Boolean isDeleted);
+
     boolean existsByCodeAndIsActiveAndIsDeleted(String code, Boolean isActive, Boolean isDeleted);
 
 }

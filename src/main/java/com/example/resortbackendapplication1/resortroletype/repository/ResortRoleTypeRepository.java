@@ -14,6 +14,8 @@ public interface ResortRoleTypeRepository extends
 
     Optional<ResortRoleTypeEntity> findByIdAndIsActiveAndIsDeleted(Long id, Boolean isActive, Boolean isDeleted);
 
+    Optional<ResortRoleTypeEntity> findByCodeAndIsActiveAndIsDeleted(String code, Boolean isActive, Boolean isDeleted);
+
     boolean existsByCodeAndIsActiveAndIsDeleted(String code, Boolean isActive, Boolean isDeleted);
 
 }
