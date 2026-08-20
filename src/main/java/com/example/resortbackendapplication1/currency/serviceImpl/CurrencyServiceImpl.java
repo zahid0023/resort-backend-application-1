@@ -110,6 +110,12 @@ public class CurrencyServiceImpl implements CurrencyService {
     public SuccessResponse delete(CurrencyEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
+
+        entity.getCurrencyLocaleEntities().forEach(localeEntity -> {
+            localeEntity.setIsDeleted(true);
+            localeEntity.setIsActive(false);
+        });
+
         currencyRepository.save(entity);
         log.info("Currency soft-deleted with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());

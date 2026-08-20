@@ -19,6 +19,10 @@ public interface ResortContactRepository extends
             Long resortId, Long contactTypeId, Long communicationChannelId, String contactValue,
             Boolean isActive, Boolean isDeleted);
 
+    boolean existsByResortEntity_IdAndContactTypeEntity_IdAndCommunicationChannelEntity_IdAndContactValueAndIdNotAndIsActiveAndIsDeleted(
+            Long resortId, Long contactTypeId, Long communicationChannelId, String contactValue, Long id,
+            Boolean isActive, Boolean isDeleted);
+
     Optional<ResortContactEntity> findByResortEntity_IdAndContactTypeEntity_IdAndCommunicationChannelEntity_IdAndIsPrimaryTrueAndIsActiveAndIsDeleted(
             Long resortId, Long contactTypeId, Long communicationChannelId,
             Boolean isActive, Boolean isDeleted);

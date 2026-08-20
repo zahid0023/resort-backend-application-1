@@ -115,6 +115,12 @@ public class FacilityScopeServiceImpl implements FacilityScopeService {
     public SuccessResponse delete(FacilityScopeEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
+
+        entity.getFacilityScopeLocaleEntities().forEach(localeEntity -> {
+            localeEntity.setIsDeleted(true);
+            localeEntity.setIsActive(false);
+        });
+
         facilityScopeRepository.save(entity);
         log.info("FacilityScope soft-deleted with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());

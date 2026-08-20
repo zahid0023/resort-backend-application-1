@@ -13,8 +13,7 @@ import org.hibernate.annotations.ColumnDefault;
 @Getter
 @Setter
 @Entity
-@Table(name = "image_hosting_provider_config_fields",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"image_hosting_provider_id", "key"}))
+@Table(name = "image_hosting_provider_config_fields")
 public class ImageHostingProviderConfigFieldEntity extends AuditableEntity {
 
     @Setter(AccessLevel.NONE)

@@ -99,6 +99,32 @@ public class CountryServiceImpl implements CountryService {
     public SuccessResponse delete(CountryEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
+
+        entity.getCountryLocaleEntities().forEach(localeEntity -> {
+            localeEntity.setIsDeleted(true);
+            localeEntity.setIsActive(false);
+        });
+
+        // City/Currency rows are cascade=ALL and already managed entities in this transaction,
+        // so the field changes flush with entity below.
+        entity.getCityEntities().forEach(cityEntity -> {
+            cityEntity.setIsDeleted(true);
+            cityEntity.setIsActive(false);
+            cityEntity.getCityLocaleEntities().forEach(cityLocaleEntity -> {
+                cityLocaleEntity.setIsDeleted(true);
+                cityLocaleEntity.setIsActive(false);
+            });
+        });
+
+        entity.getCurrencyEntities().forEach(currencyEntity -> {
+            currencyEntity.setIsDeleted(true);
+            currencyEntity.setIsActive(false);
+            currencyEntity.getCurrencyLocaleEntities().forEach(currencyLocaleEntity -> {
+                currencyLocaleEntity.setIsDeleted(true);
+                currencyLocaleEntity.setIsActive(false);
+            });
+        });
+
         countryRepository.save(entity);
         log.info("Country soft-deleted with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());

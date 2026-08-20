@@ -149,6 +149,12 @@ public class FacilityGroupServiceImpl implements FacilityGroupService {
     public SuccessResponse delete(FacilityGroupEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
+
+        entity.getFacilityGroupLocaleEntities().forEach(localeEntity -> {
+            localeEntity.setIsDeleted(true);
+            localeEntity.setIsActive(false);
+        });
+
         facilityGroupRepository.save(entity);
         log.info("FacilityGroup soft-deleted with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());

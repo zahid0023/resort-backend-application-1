@@ -169,6 +169,12 @@ public class FacilityServiceImpl implements FacilityService {
     public SuccessResponse delete(FacilityEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
+
+        entity.getFacilityLocaleEntities().forEach(localeEntity -> {
+            localeEntity.setIsDeleted(true);
+            localeEntity.setIsActive(false);
+        });
+
         facilityRepository.save(entity);
         log.info("Facility soft-deleted with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());

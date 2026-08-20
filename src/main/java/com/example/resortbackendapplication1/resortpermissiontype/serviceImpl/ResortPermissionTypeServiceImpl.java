@@ -106,6 +106,12 @@ public class ResortPermissionTypeServiceImpl implements ResortPermissionTypeServ
     public SuccessResponse delete(ResortPermissionTypeEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
+
+        entity.getResortPermissionTypeLocaleEntities().forEach(localeEntity -> {
+            localeEntity.setIsDeleted(true);
+            localeEntity.setIsActive(false);
+        });
+
         resortPermissionTypeRepository.save(entity);
         log.info("ResortPermissionType soft-deleted with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());

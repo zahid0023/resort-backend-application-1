@@ -8,7 +8,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -19,8 +18,7 @@ import org.hibernate.annotations.ColumnDefault;
 @Getter
 @Setter
 @Entity
-@Table(name = "resort_address_locales",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"resort_address_id", "locale_id"}))
+@Table(name = "resort_address_locales")
 public class ResortAddressLocaleEntity extends AuditableEntity {
 
     @Setter(AccessLevel.NONE)

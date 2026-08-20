@@ -99,6 +99,12 @@ public class ContactTypeServiceImpl implements ContactTypeService {
     public SuccessResponse delete(ContactTypeEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
+
+        entity.getContactTypeLocaleEntities().forEach(localeEntity -> {
+            localeEntity.setIsDeleted(true);
+            localeEntity.setIsActive(false);
+        });
+
         contactTypeRepository.save(entity);
         log.info("ContactType soft-deleted with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());

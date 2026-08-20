@@ -161,6 +161,12 @@ public class ResortFacilityServiceImpl implements ResortFacilityService {
     public SuccessResponse delete(ResortFacilityEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
+
+        entity.getResortFacilityLocaleEntities().forEach(localeEntity -> {
+            localeEntity.setIsDeleted(true);
+            localeEntity.setIsActive(false);
+        });
+
         resortFacilityRepository.save(entity);
         log.info("ResortFacility soft-deleted with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());

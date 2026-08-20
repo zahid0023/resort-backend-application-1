@@ -99,6 +99,12 @@ public class BedTypeServiceImpl implements BedTypeService {
     public SuccessResponse delete(BedTypeEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
+
+        entity.getBedTypeLocaleEntities().forEach(localeEntity -> {
+            localeEntity.setIsDeleted(true);
+            localeEntity.setIsActive(false);
+        });
+
         bedTypeRepository.save(entity);
         log.info("BedType soft-deleted with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());

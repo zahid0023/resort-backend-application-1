@@ -115,6 +115,12 @@ public class PriceScopeServiceImpl implements PriceScopeService {
     public SuccessResponse delete(PriceScopeEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
+
+        entity.getPriceScopeLocaleEntities().forEach(localeEntity -> {
+            localeEntity.setIsDeleted(true);
+            localeEntity.setIsActive(false);
+        });
+
         priceScopeRepository.save(entity);
         log.info("PriceScope soft-deleted with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());

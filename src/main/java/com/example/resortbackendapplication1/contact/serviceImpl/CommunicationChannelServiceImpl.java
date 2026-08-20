@@ -99,6 +99,12 @@ public class CommunicationChannelServiceImpl implements CommunicationChannelServ
     public SuccessResponse delete(CommunicationChannelEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
+
+        entity.getCommunicationChannelLocaleEntities().forEach(localeEntity -> {
+            localeEntity.setIsDeleted(true);
+            localeEntity.setIsActive(false);
+        });
+
         communicationChannelRepository.save(entity);
         log.info("CommunicationChannel soft-deleted with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());

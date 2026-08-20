@@ -110,6 +110,12 @@ public class CityServiceImpl implements CityService {
     public SuccessResponse delete(CityEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
+
+        entity.getCityLocaleEntities().forEach(localeEntity -> {
+            localeEntity.setIsDeleted(true);
+            localeEntity.setIsActive(false);
+        });
+
         cityRepository.save(entity);
         log.info("City soft-deleted with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());

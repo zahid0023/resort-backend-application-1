@@ -98,6 +98,12 @@ public class UnitTypeServiceImpl implements UnitTypeService {
     public SuccessResponse delete(UnitTypeEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
+
+        entity.getUnitTypeLocaleEntities().forEach(localeEntity -> {
+            localeEntity.setIsDeleted(true);
+            localeEntity.setIsActive(false);
+        });
+
         unitTypeRepository.save(entity);
         log.info("UnitType soft-deleted with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());

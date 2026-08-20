@@ -101,6 +101,13 @@ public class ResortContactServiceImpl implements ResortContactService {
     @Transactional
     @Override
     public SuccessResponse update(ResortContactEntity entity, UpdateResortContactRequest request) {
+        if (resortContactRepository.existsByResortEntity_IdAndContactTypeEntity_IdAndCommunicationChannelEntity_IdAndContactValueAndIdNotAndIsActiveAndIsDeleted(
+                entity.getResortEntity().getId(), entity.getContactTypeEntity().getId(),
+                entity.getCommunicationChannelEntity().getId(), request.getContactValue(), entity.getId(), true, false)) {
+            throw new IllegalStateException(
+                    "ResortContact with this contact type, communication channel, and value already exists for this resort");
+        }
+
         if (Boolean.TRUE.equals(request.getIsPrimary()) && !Boolean.TRUE.equals(entity.getIsPrimary())) {
             unsetExistingPrimary(entity.getResortEntity().getId(), entity.getContactTypeEntity().getId(),
                     entity.getCommunicationChannelEntity().getId());

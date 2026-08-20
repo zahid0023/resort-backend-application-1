@@ -107,6 +107,23 @@ public class ResortFacilityGroupServiceImpl implements ResortFacilityGroupServic
     public SuccessResponse delete(ResortFacilityGroupEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
+
+        entity.getResortFacilityGroupLocaleEntities().forEach(localeEntity -> {
+            localeEntity.setIsDeleted(true);
+            localeEntity.setIsActive(false);
+        });
+
+        // ResortFacility rows are cascade=ALL and already managed entities in this transaction,
+        // so the field changes flush with entity below.
+        entity.getResortFacilityEntities().forEach(resortFacilityEntity -> {
+            resortFacilityEntity.setIsDeleted(true);
+            resortFacilityEntity.setIsActive(false);
+            resortFacilityEntity.getResortFacilityLocaleEntities().forEach(facilityLocaleEntity -> {
+                facilityLocaleEntity.setIsDeleted(true);
+                facilityLocaleEntity.setIsActive(false);
+            });
+        });
+
         resortFacilityGroupRepository.save(entity);
         log.info("ResortFacilityGroup soft-deleted with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());

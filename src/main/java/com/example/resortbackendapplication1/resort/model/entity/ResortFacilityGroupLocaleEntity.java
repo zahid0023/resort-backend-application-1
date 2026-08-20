@@ -8,7 +8,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -20,8 +19,7 @@ import org.hibernate.annotations.ColumnDefault;
 @Getter
 @Setter
 @Entity
-@Table(name = "resort_facility_group_locales",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"resort_facility_group_id", "locale_id"}))
+@Table(name = "resort_facility_group_locales")
 public class ResortFacilityGroupLocaleEntity extends AuditableEntity {
 
     @Setter(AccessLevel.NONE)

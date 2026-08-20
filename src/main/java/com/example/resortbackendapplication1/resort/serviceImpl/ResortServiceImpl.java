@@ -186,10 +186,18 @@ public class ResortServiceImpl implements ResortService {
         ResortBasicInfoEntity resortBasicInfoEntity = resortBasicInfoService.getEntityByResortId(entity.getId());
         resortBasicInfoEntity.setIsDeleted(true);
         resortBasicInfoEntity.setIsActive(false);
+        resortBasicInfoEntity.getResortBasicInfoLocaleEntities().forEach(localeEntity -> {
+            localeEntity.setIsDeleted(true);
+            localeEntity.setIsActive(false);
+        });
 
         ResortAddressEntity resortAddressEntity = resortAddressService.getEntityByResortId(entity.getId());
         resortAddressEntity.setIsDeleted(true);
         resortAddressEntity.setIsActive(false);
+        resortAddressEntity.getResortAddressLocaleEntities().forEach(localeEntity -> {
+            localeEntity.setIsDeleted(true);
+            localeEntity.setIsActive(false);
+        });
 
         resortRepository.save(entity);
 

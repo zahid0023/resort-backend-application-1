@@ -126,6 +126,12 @@ public class PriceTypeServiceImpl implements PriceTypeService {
     public SuccessResponse delete(PriceTypeEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
+
+        entity.getPriceTypeLocaleEntities().forEach(localeEntity -> {
+            localeEntity.setIsDeleted(true);
+            localeEntity.setIsActive(false);
+        });
+
         priceTypeRepository.save(entity);
         log.info("PriceType soft-deleted with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());

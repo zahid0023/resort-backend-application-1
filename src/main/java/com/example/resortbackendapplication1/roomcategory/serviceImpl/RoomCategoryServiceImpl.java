@@ -99,6 +99,12 @@ public class RoomCategoryServiceImpl implements RoomCategoryService {
     public SuccessResponse delete(RoomCategoryEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
+
+        entity.getRoomCategoryLocaleEntities().forEach(localeEntity -> {
+            localeEntity.setIsDeleted(true);
+            localeEntity.setIsActive(false);
+        });
+
         roomCategoryRepository.save(entity);
         log.info("RoomCategory soft-deleted with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());

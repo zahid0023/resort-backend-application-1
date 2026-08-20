@@ -126,6 +126,12 @@ public class PriceUnitServiceImpl implements PriceUnitService {
     public SuccessResponse delete(PriceUnitEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
+
+        entity.getPriceUnitLocaleEntities().forEach(localeEntity -> {
+            localeEntity.setIsDeleted(true);
+            localeEntity.setIsActive(false);
+        });
+
         priceUnitRepository.save(entity);
         log.info("PriceUnit soft-deleted with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());

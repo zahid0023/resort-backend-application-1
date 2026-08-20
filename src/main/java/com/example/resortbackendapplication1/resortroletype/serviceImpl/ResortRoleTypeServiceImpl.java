@@ -106,6 +106,12 @@ public class ResortRoleTypeServiceImpl implements ResortRoleTypeService {
     public SuccessResponse delete(ResortRoleTypeEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
+
+        entity.getResortRoleTypeLocaleEntities().forEach(localeEntity -> {
+            localeEntity.setIsDeleted(true);
+            localeEntity.setIsActive(false);
+        });
+
         resortRoleTypeRepository.save(entity);
         log.info("ResortRoleType soft-deleted with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());

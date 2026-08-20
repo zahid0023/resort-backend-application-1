@@ -115,6 +115,12 @@ public class UnitServiceImpl implements UnitService {
     public SuccessResponse delete(UnitEntity entity) {
         entity.setIsDeleted(true);
         entity.setIsActive(false);
+
+        entity.getUnitLocaleEntities().forEach(localeEntity -> {
+            localeEntity.setIsDeleted(true);
+            localeEntity.setIsActive(false);
+        });
+
         unitRepository.save(entity);
         log.info("Unit soft-deleted with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
