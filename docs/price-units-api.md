@@ -208,6 +208,12 @@ optional; omitting them returns all price units. Each `LIKE`-type filter perform
 match. `Accept-Language` selects each price unit's `locale` field the same way as `GET /{id}` (exact match,
 falls back to `en`, then `null`).
 
+To fetch every price unit usable in a given context (e.g. every price unit a [Resort Facility
+Price](resort-facility-prices-api.md) may reference), filter by `priceScopeCodes`:
+`?priceScopeCodes=RESORT_FACILITY`. `priceScopeCodes` matches against `price_scopes.code` directly (e.g.
+`ROOM_CATEGORY`, `ROOM`, `RESORT_FACILITY`) so the frontend doesn't need to resolve a scope id first; a price
+unit with *any* active assignment to one of the given codes matches (multiple codes are OR'd together).
+
 > **Note:** `id` is not a selectable `sortBy` value — passing `?sortBy=id` throws
 > `400 INVALID_ARGUMENT: Invalid sort field: id`. It's used only as the implicit sort when `sortBy` is
 > omitted entirely.
@@ -217,14 +223,15 @@ falls back to `en`, then `null`).
 > **Note:** Query parameters bind directly onto `PriceUnitFilterRequest`'s Java field names, so they are
 > **camelCase** — not the snake_case used in JSON request/response bodies.
 
-| Parameter | Type   | Default         | Constraints                                       | Description                                                                               |
-|-----------|--------|-----------------|---------------------------------------------------|-------------------------------------------------------------------------------------------|
-| `code`    | String | —               | —                                                 | Filter by code (partial, case-insensitive)                                                |
-| `name`    | String | —               | —                                                 | Filter by locale-specific name (partial, case-insensitive), scoped to the resolved locale |
-| `page`    | int    | `0`             | >= 0                                              | Zero-based page index                                                                     |
-| `size`    | int    | `10`            | 1 – 50                                            | Number of items per page                                                                  |
-| `sortBy`  | String | `id` (implicit) | `createdAt`, `code`, `name` (`id` NOT selectable) | Field to sort by                                                                          |
-| `sortDir` | String | `ASC`           | `ASC`, `DESC`                                     | Sort direction                                                                            |
+| Parameter          | Type     | Default         | Constraints                                       | Description                                                                                    |
+|---------------------|----------|-----------------|---------------------------------------------------|--------------------------------------------------------------------------------------------------|
+| `code`              | String   | —               | —                                                 | Filter by code (partial, case-insensitive)                                                       |
+| `name`              | String   | —               | —                                                 | Filter by locale-specific name (partial, case-insensitive), scoped to the resolved locale        |
+| `priceScopeCodes`   | String[] | —               | must match an existing `price_scopes.code`        | Filter to price units assigned to any of the given price scope codes (e.g. `RESORT_FACILITY`)    |
+| `page`              | int      | `0`             | >= 0                                              | Zero-based page index                                                                             |
+| `size`              | int      | `10`            | 1 – 50                                            | Number of items per page                                                                          |
+| `sortBy`            | String   | `id` (implicit) | `createdAt`, `code`, `name` (`id` NOT selectable) | Field to sort by                                                                                  |
+| `sortDir`           | String   | `ASC`           | `ASC`, `DESC`                                     | Sort direction                                                                                    |
 
 > **Note:** `sort_order`, `purpose`, and `usage_example` are not filterable or sortable — only `code` and
 > locale `name` are wired into the search/sort infrastructure for this endpoint.

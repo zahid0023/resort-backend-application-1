@@ -30,7 +30,10 @@ an `id` that exists but belongs to a different resort returns `404 ENTITY_NOT_FO
 
 A resort facility's display name/description are locale-specific and managed through a companion sub-resource
 — Resort Facility Locales — reached via `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/locales`.
-All records support soft-delete — deleted records are hidden from all responses.
+A resort facility's pricing (most facilities have none) is managed through another companion sub-resource —
+[Resort Facility Prices](resort-facility-prices-api.md) — reached via
+`/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/prices`. All records support soft-delete — deleted
+records are hidden from all responses.
 
 **`Accept-Language` is required on every endpoint below, with no exceptions** — a request missing (or with a
 blank) `Accept-Language` header is rejected with `400 INVALID_ARGUMENT` before it reaches any endpoint (see
@@ -60,6 +63,10 @@ used to shape the response:
 | POST   | `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/locales`      | Create a resort facility locale     |
 | PUT    | `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/locales/{id}` | Update a resort facility locale     |
 | DELETE | `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/locales/{id}` | Delete a resort facility locale     |
+
+Resort facility prices have their own full endpoint set — see the [Resort Facility Prices
+API](resort-facility-prices-api.md) — reached via
+`/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/prices`.
 
 ---
 
@@ -107,8 +114,8 @@ the same `code`.
 
 `POST /api/v1/resorts/{resort-id}/facilities`
 
-Creates a new facility for the resort, together with exactly **one** initial locale translation and its
-**entire weekly operating-hours schedule**.
+Creates a new facility for the resort, together with exactly **one** initial locale translation and, optionally,
+its entire weekly operating-hours schedule.
 `resort_facility_group_id` is required and must reference an existing, active resort facility group belonging
 to the same resort — an unknown or cross-resort group id returns `404 ENTITY_NOT_FOUND`. `facility_id` is
 optional — supply it to base the new facility on a platform facility (its icon fields are copied onto the new
@@ -122,16 +129,29 @@ response** — see the note in [Data Model](#data-model) above.
 no `locale_id` at all.** There is no option to submit multiple locales at creation time. Additional languages
 are added afterward via the Resort Facility Locales sub-resource below.
 
-**`operating_hours` is required and must cover every active day of week exactly once** — same shape and
-validation as [Set Weekly Schedule](resort-facility-operating-hours-api.md#set-weekly-schedule) on the
-[Resort Facility Operating Hours API](resort-facility-operating-hours-api.md): a facility is never created with
-a partial schedule. Each entry is `CLOSED` (`is_closed=true`), `OPEN_24_HOURS` (`is_twenty_four_hours=true`), or
-one-or-more custom `windows` (a day with a break, e.g. lunch/dinner). Same-day and cross-day overlap validation
-(including overnight windows spilling into the next day, wrapping Sunday back to Monday) runs exactly as
-described there — see that document for the full rule set and worked examples. Any violation aborts the whole
-`POST` before the facility itself is created — `400 INVALID_ARGUMENT` for shape/completeness errors,
-`409 CONFLICT` for overlap errors, `404 ENTITY_NOT_FOUND` for an unknown `day_of_week_id`. The created rows are
-not returned from this endpoint — fetch them afterward via `GET .../facilities/{id}/operating-hours`.
+**`operating_hours` is optional — most facilities don't have one.** Omit it, or send an empty array, to create
+the facility with no schedule at all; it can still be added later via [Set Weekly
+Schedule](resort-facility-operating-hours-api.md#set-weekly-schedule). When it *is* supplied, it must cover
+every active day of week exactly once — same shape and validation as [Set Weekly
+Schedule](resort-facility-operating-hours-api.md#set-weekly-schedule) on the [Resort Facility Operating Hours
+API](resort-facility-operating-hours-api.md): a partial schedule is rejected, it's all-or-nothing. Each entry is
+`CLOSED` (`is_closed=true`), `OPEN_24_HOURS` (`is_twenty_four_hours=true`), or one-or-more custom `windows` (a
+day with a break, e.g. lunch/dinner). Same-day and cross-day overlap validation (including overnight windows
+spilling into the next day, wrapping Sunday back to Monday) runs exactly as described there — see that document
+for the full rule set and worked examples. Any violation aborts the whole `POST` before the facility itself is
+created — `400 INVALID_ARGUMENT` for shape/completeness errors, `409 CONFLICT` for overlap errors,
+`404 ENTITY_NOT_FOUND` for an unknown `day_of_week_id`. The created rows (if any) are not returned from this
+endpoint — fetch them afterward via `GET .../facilities/{id}/operating-hours`.
+
+**`price` is optional — most facilities have no price at all.** Omit it to create the facility with no price;
+one can still be added later
+via [Create Resort Facility Price](resort-facility-prices-api.md#create-resort-facility-price).
+When supplied, it is created exactly like `POST .../prices` on the [Resort Facility Prices
+API](resort-facility-prices-api.md) — same fields and validation (`price_type_id` and `currency_id` required,
+`price_unit_id` optional, all three immutable afterward) — except the resort facility itself is always resolved
+from the URL path, never from the request body. Any violation aborts the whole `POST` before the facility itself
+is created — `404 ENTITY_NOT_FOUND` for an unknown `price_type_id`/`price_unit_id`/`currency_id`. The created row
+(if any) is not returned from this endpoint — fetch it afterward via `GET .../facilities/{id}/prices`.
 
 ### Path Parameters
 
@@ -140,6 +160,9 @@ not returned from this endpoint — fetch them afterward via `GET .../facilities
 | `resort-id` | Long | ID of the owning resort |
 
 ### Request Body
+
+The example below includes `operating_hours` and `price` to show their full shape; omit either field entirely
+for the common case of a facility with no schedule and/or no price.
 
 ```json
 {
@@ -238,24 +261,32 @@ not returned from this endpoint — fetch them afterward via `GET .../facilities
       "is_twenty_four_hours": false,
       "windows": []
     }
-  ]
+  ],
+  "price": {
+    "price_type_id": 3,
+    "price_unit_id": 1,
+    "currency_id": 1,
+    "amount": 25.0000,
+    "note": "Per adult, children under 12 free."
+  }
 }
 ```
 
 ### Request Fields
 
-| Field                      | Type    | Required | Validation                                                                                     |
-|----------------------------|---------|----------|------------------------------------------------------------------------------------------------|
-| `resort_facility_group_id` | Long    | Yes      | Not null; must reference an existing, active resort facility group belonging to this resort    |
-| `facility_id`              | Long    | —        | Nullable; if present, must reference an existing, active facility                              |
-| `code`                     | String  | Yes      | Not blank, max 100 chars; must be unique within this resort; immutable after creation          |
-| `sort_order`               | Integer | Yes      | Not null                                                                                       |
-| `is_highlighted`           | Boolean | Yes      | Not null                                                                                       |
-| `icon_type`                | String  | —        | Nullable, max 100 chars                                                                        |
-| `icon_value`               | String  | —        | Nullable                                                                                       |
-| `icon_meta`                | Object  | —        | Nullable, arbitrary JSON                                                                       |
-| `locale`                   | Object  | Yes      | Not null; validated (see below) — no `locale_id` field; always resolved to the `en` locale     |
-| `operating_hours`          | Array   | Yes      | Not empty; exactly one entry per active day of week, no duplicates, no unknown ids — see below |
+| Field                      | Type    | Required | Validation                                                                                                                                                    |
+|----------------------------|---------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `resort_facility_group_id` | Long    | Yes      | Not null; must reference an existing, active resort facility group belonging to this resort                                                                   |
+| `facility_id`              | Long    | —        | Nullable; if present, must reference an existing, active facility                                                                                             |
+| `code`                     | String  | Yes      | Not blank, max 100 chars; must be unique within this resort; immutable after creation                                                                         |
+| `sort_order`               | Integer | Yes      | Not null                                                                                                                                                      |
+| `is_highlighted`           | Boolean | Yes      | Not null                                                                                                                                                      |
+| `icon_type`                | String  | —        | Nullable, max 100 chars                                                                                                                                       |
+| `icon_value`               | String  | —        | Nullable                                                                                                                                                      |
+| `icon_meta`                | Object  | —        | Nullable, arbitrary JSON                                                                                                                                      |
+| `locale`                   | Object  | Yes      | Not null; validated (see below) — no `locale_id` field; always resolved to the `en` locale                                                                    |
+| `operating_hours`          | Array   | —        | Nullable/omittable; if present, exactly one entry per active day of week, no duplicates, no unknown ids — see below                                           |
+| `price`                    | Object  | —        | Nullable/omittable; if present, validated exactly like [Create Resort Facility Price](resort-facility-prices-api.md#create-resort-facility-price) — see below |
 
 **Locale entry (`locale`):**
 
@@ -277,6 +308,17 @@ Schedule](resort-facility-operating-hours-api.md#set-weekly-schedule)'s `days[]`
 | `operating_hours[].windows`              | Array   | —        | Must be empty when `is_closed`/`is_twenty_four_hours` is `true`; at least one entry otherwise; no two entries may overlap |
 | `operating_hours[].windows[].opens_at`   | String  | Yes      | `HH:mm:ss`                                                                                                                |
 | `operating_hours[].windows[].closes_at`  | String  | Yes      | `HH:mm:ss`; `<= opens_at` means the window rolls past midnight into the next calendar day                                 |
+
+**Price entry (`price`)** — identical shape to [Create Resort Facility
+Price](resort-facility-prices-api.md#create-resort-facility-price)'s request body:
+
+| Field                 | Type    | Required | Validation                                                                                    |
+|-----------------------|---------|----------|-----------------------------------------------------------------------------------------------|
+| `price.price_type_id` | Long    | Yes      | Not null; must reference an existing, active price type; immutable after creation             |
+| `price.price_unit_id` | Long    | —        | Nullable; if present, must reference an existing, active price unit; immutable after creation |
+| `price.currency_id`   | Long    | Yes      | Not null; must reference an existing, active currency; immutable after creation               |
+| `price.amount`        | Decimal | —        | Nullable; numeric(19,4). Omit/null for `FREE`/`INCLUDED` pricing types                        |
+| `price.note`          | String  | —        | Nullable (defaults to `""`)                                                                   |
 
 ### Response `201 Created`
 
@@ -753,9 +795,9 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-|-------------|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields; an unsupported `sortBy` query value; `create` only — `operating_hours` shape/completeness errors (duplicate or missing `day_of_week_id`, `is_closed`/`is_twenty_four_hours` both `true`, `windows` inconsistent with them) — see [Resort Facility Operating Hours API](resort-facility-operating-hours-api.md#error-responses) |
-| 404         | `ENTITY_NOT_FOUND`         | Resort not found; resort facility not found for the given `resort-id`/`id` pair (including an `id` that belongs to a different resort); the resort facility group referenced by `resort_facility_group_id` not found (or belongs to a different resort); the platform facility referenced by `facility_id` not found; resort facility locale not found; the locale referenced by `locale_id` not found; `create` only — an unknown `day_of_week_id` in `operating_hours`      |
-| 409         | `CONFLICT`                 | The resort already has an active facility linked to the given `facility_id` (`create`, application-level check only — no DB constraint backs it); the resort facility already has a translation for the given `locale_id` (`create` locale, pre-checked at the application level); `create` only — same-day or cross-day overlap in `operating_hours` (see [Resort Facility Operating Hours API](resort-facility-operating-hours-api.md#overlap-and-cross-day-validation))    |
-| 409         | `DATA_INTEGRITY_VIOLATION` | Last-resort DB-level unique constraint on `(resort_facility_id, locale_id)`, should not normally be reachable now that the duplicate is pre-checked at the application level; a duplicate `code` within the same resort (backed by the `(resort_id, code)` unique index — not pre-checked at the application level)                                                                                                                                                           |
+| HTTP Status | Error Code                 | Cause                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+|-------------|----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields; an unsupported `sortBy` query value; `create` only — `operating_hours` shape/completeness errors (duplicate or missing `day_of_week_id`, `is_closed`/`is_twenty_four_hours` both `true`, `windows` inconsistent with them) — see [Resort Facility Operating Hours API](resort-facility-operating-hours-api.md#error-responses)                                                                                                                                                   |
+| 404         | `ENTITY_NOT_FOUND`         | Resort not found; resort facility not found for the given `resort-id`/`id` pair (including an `id` that belongs to a different resort); the resort facility group referenced by `resort_facility_group_id` not found (or belongs to a different resort); the platform facility referenced by `facility_id` not found; resort facility locale not found; the locale referenced by `locale_id` not found; `create` only — an unknown `day_of_week_id` in `operating_hours`; an unknown `price_type_id`/`price_unit_id`/`currency_id` in `price` — see [Resort Facility Prices API](resort-facility-prices-api.md#error-responses) |
+| 409         | `CONFLICT`                 | The resort already has an active facility linked to the given `facility_id` (`create`, application-level check only — no DB constraint backs it); the resort facility already has a translation for the given `locale_id` (`create` locale, pre-checked at the application level); `create` only — same-day or cross-day overlap in `operating_hours` (see [Resort Facility Operating Hours API](resort-facility-operating-hours-api.md#overlap-and-cross-day-validation))                                                                                                                                                      |
+| 409         | `DATA_INTEGRITY_VIOLATION` | Last-resort DB-level unique constraint on `(resort_facility_id, locale_id)`, should not normally be reachable now that the duplicate is pre-checked at the application level; a duplicate `code` within the same resort (backed by the `(resort_id, code)` unique index — not pre-checked at the application level)                                                                                                                                                                                                                                                                                                             |

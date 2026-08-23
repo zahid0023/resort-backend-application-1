@@ -4,14 +4,18 @@ import com.example.resortbackendapplication1.commons.context.LocaleContext;
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.commons.utils.Pagination;
+import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
 import com.example.resortbackendapplication1.dayofweek.model.entity.DayOfWeekEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.price.model.entity.PriceTypeEntity;
+import com.example.resortbackendapplication1.price.model.entity.PriceUnitEntity;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.CreateResortFacilityRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.ResortFacilityFilterRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.UpdateResortFacilityRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacilityoperatinghours.ResortFacilityOperatingHoursDayScheduleRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacilityoperatinghours.ResortFacilityOperatingHoursWindowRequest;
+import com.example.resortbackendapplication1.resort.dto.request.resortfacilityprice.CreateResortFacilityPriceRequest;
 import com.example.resortbackendapplication1.resort.dto.response.resortfacilities.ResortFacilityResponse;
 import com.example.resortbackendapplication1.resort.model.dto.ResortFacilityDto;
 import com.example.resortbackendapplication1.resort.model.entity.ResortEntity;
@@ -19,11 +23,13 @@ import com.example.resortbackendapplication1.resort.model.entity.ResortFacilityE
 import com.example.resortbackendapplication1.resort.model.entity.ResortFacilityGroupEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortFacilityLocaleEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortFacilityOperatingHoursEntity;
+import com.example.resortbackendapplication1.resort.model.entity.ResortFacilityPriceEntity;
 import com.example.resortbackendapplication1.resort.model.enums.ResortFacilitySearchField;
 import com.example.resortbackendapplication1.resort.model.enums.ResortFacilitySortField;
 import com.example.resortbackendapplication1.resort.model.mapper.ResortFacilityLocaleMapper;
 import com.example.resortbackendapplication1.resort.model.mapper.ResortFacilityMapper;
 import com.example.resortbackendapplication1.resort.model.mapper.ResortFacilityOperatingHoursMapper;
+import com.example.resortbackendapplication1.resort.model.mapper.ResortFacilityPriceMapper;
 import com.example.resortbackendapplication1.resort.repository.ResortFacilityRepository;
 import com.example.resortbackendapplication1.resort.service.ResortFacilityService;
 import com.example.resortbackendapplication1.resort.specification.ResortFacilitySpecification;
@@ -63,7 +69,10 @@ public class ResortFacilityServiceImpl implements ResortFacilityService {
                                   ResortFacilityGroupEntity resortFacilityGroupEntity,
                                   FacilityEntity facilityEntity,
                                   LocaleEntity localeEntity,
-                                  List<DayOfWeekEntity> allDaysOfWeek) {
+                                  List<DayOfWeekEntity> allDaysOfWeek,
+                                  PriceTypeEntity priceTypeEntity,
+                                  PriceUnitEntity priceUnitEntity,
+                                  CurrencyEntity currencyEntity) {
         if (facilityEntity != null && resortFacilityRepository
                 .existsByResortEntity_IdAndFacilityEntity_IdAndIsActiveAndIsDeleted(
                         resortEntity.getId(), facilityEntity.getId(), true, false)) {
@@ -71,13 +80,17 @@ public class ResortFacilityServiceImpl implements ResortFacilityService {
                     + facilityEntity.getId());
         }
 
-        Map<Long, DayOfWeekEntity> daysOfWeekById = allDaysOfWeek.stream()
-                .collect(Collectors.toMap(DayOfWeekEntity::getId, dayOfWeekEntity -> dayOfWeekEntity));
         List<ResortFacilityOperatingHoursDayScheduleRequest> operatingHours = request.getOperatingHours();
-        ResortFacilityOperatingHoursScheduleValidator.validateWeekCompleteness(operatingHours, daysOfWeekById.keySet());
-        operatingHours.forEach(ResortFacilityOperatingHoursScheduleValidator::validateDayShape);
-        operatingHours.forEach(day -> ResortFacilityOperatingHoursScheduleValidator.validateWindowsDoNotOverlap(day.getWindows()));
-        ResortFacilityOperatingHoursScheduleValidator.validateSpilloverAcrossWeek(operatingHours, allDaysOfWeek);
+        boolean hasOperatingHours = operatingHours != null && !operatingHours.isEmpty();
+        Map<Long, DayOfWeekEntity> daysOfWeekById = hasOperatingHours
+                ? allDaysOfWeek.stream().collect(Collectors.toMap(DayOfWeekEntity::getId, dayOfWeekEntity -> dayOfWeekEntity))
+                : Map.of();
+        if (hasOperatingHours) {
+            ResortFacilityOperatingHoursScheduleValidator.validateWeekCompleteness(operatingHours, daysOfWeekById.keySet());
+            operatingHours.forEach(ResortFacilityOperatingHoursScheduleValidator::validateDayShape);
+            operatingHours.forEach(day -> ResortFacilityOperatingHoursScheduleValidator.validateWindowsDoNotOverlap(day.getWindows()));
+            ResortFacilityOperatingHoursScheduleValidator.validateSpilloverAcrossWeek(operatingHours, allDaysOfWeek);
+        }
 
         ResortFacilityEntity entity = ResortFacilityMapper.create(request, facilityEntity);
         resortEntity.addResortFacilityEntity(entity);
@@ -87,15 +100,24 @@ public class ResortFacilityServiceImpl implements ResortFacilityService {
         entity.addResortFacilityLocaleEntity(resortFacilityLocaleEntity);
         localeEntity.addResortFacilityLocaleEntity(resortFacilityLocaleEntity);
 
-        for (ResortFacilityOperatingHoursDayScheduleRequest day : operatingHours) {
-            DayOfWeekEntity dayOfWeekEntity = daysOfWeekById.get(day.getDayOfWeekId());
-            if (Boolean.TRUE.equals(day.getIsClosed()) || Boolean.TRUE.equals(day.getIsTwentyFourHours())) {
-                attachOperatingHoursRow(entity, dayOfWeekEntity, day.getIsClosed(), day.getIsTwentyFourHours(), null, null);
-            } else {
-                for (ResortFacilityOperatingHoursWindowRequest window : day.getWindows()) {
-                    attachOperatingHoursRow(entity, dayOfWeekEntity, false, false, window.getOpensAt(), window.getClosesAt());
+        if (hasOperatingHours) {
+            for (ResortFacilityOperatingHoursDayScheduleRequest day : operatingHours) {
+                DayOfWeekEntity dayOfWeekEntity = daysOfWeekById.get(day.getDayOfWeekId());
+                if (Boolean.TRUE.equals(day.getIsClosed()) || Boolean.TRUE.equals(day.getIsTwentyFourHours())) {
+                    attachOperatingHoursRow(entity, dayOfWeekEntity, day.getIsClosed(), day.getIsTwentyFourHours(), null, null);
+                } else {
+                    for (ResortFacilityOperatingHoursWindowRequest window : day.getWindows()) {
+                        attachOperatingHoursRow(entity, dayOfWeekEntity, false, false, window.getOpensAt(), window.getClosesAt());
+                    }
                 }
             }
+        }
+
+        CreateResortFacilityPriceRequest priceRequest = request.getPrice();
+        if (priceRequest != null) {
+            ResortFacilityPriceEntity priceEntity = ResortFacilityPriceMapper.create(
+                    priceRequest, priceTypeEntity, priceUnitEntity, currencyEntity);
+            entity.addResortFacilityPriceEntity(priceEntity);
         }
 
         resortFacilityRepository.save(entity);

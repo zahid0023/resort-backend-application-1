@@ -2,9 +2,12 @@ package com.example.resortbackendapplication1.resort.service;
 
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
+import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
 import com.example.resortbackendapplication1.dayofweek.model.entity.DayOfWeekEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityEntity;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.price.model.entity.PriceTypeEntity;
+import com.example.resortbackendapplication1.price.model.entity.PriceUnitEntity;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.CreateResortFacilityRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.ResortFacilityFilterRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.UpdateResortFacilityRequest;
@@ -23,7 +26,10 @@ public interface ResortFacilityService {
                            ResortFacilityGroupEntity resortFacilityGroupEntity,
                            FacilityEntity facilityEntity,
                            LocaleEntity localeEntity,
-                           List<DayOfWeekEntity> allDaysOfWeek);
+                           List<DayOfWeekEntity> allDaysOfWeek,
+                           PriceTypeEntity priceTypeEntity,
+                           PriceUnitEntity priceUnitEntity,
+                           CurrencyEntity currencyEntity);
 
     ResortFacilityEntity getEntityById(Long resortId, Long id);
 

@@ -239,20 +239,24 @@ calls — every call soft-deletes the old rows and creates new ones, even for da
 
 ## 7. Create Resort Facility's embedded schedule
 
-**`POST /api/v1/resorts/{resort-id}/facilities` (Create Resort Facility) requires an `operating_hours` field
-with the exact same shape and rules as §6** — a facility is never created without its full weekly schedule
-(see `docs/resort-facilities-api.md#create-resort-facility`). `ResortFacilityServiceImpl#create` runs the
-identical four-step validation from §5 directly against `request.getOperatingHours()`, then — instead of
-calling `setWeeklySchedule` against an already-persisted facility — builds each
-`ResortFacilityOperatingHoursEntity` row itself (via the same
+**`POST /api/v1/resorts/{resort-id}/facilities` (Create Resort Facility) accepts an optional `operating_hours`
+field with the exact same shape and rules as §6** (see `docs/resort-facilities-api.md#create-resort-facility`).
+**Most facilities don't have a schedule at all** — `operating_hours` is nullable/omittable, and a `null` or
+empty value creates the facility with zero operating-hours rows; a schedule can always be attached later via
+`PUT .../operating-hours/schedule` (§6). When `operating_hours` *is* supplied, it's still all-or-nothing exactly
+as before: `ResortFacilityServiceImpl#create` runs the identical four-step validation from §5 directly against
+`request.getOperatingHours()`, then — instead of calling `setWeeklySchedule` against an already-persisted
+facility — builds each `ResortFacilityOperatingHoursEntity` row itself (via the same
 `ResortFacilityOperatingHoursMapper.create(isClosed, isTwentyFourHours, opensAt, closesAt)` overload `buildRow`
 uses) and attaches it to the *in-memory, not-yet-saved* `ResortFacilityEntity` and its resolved
 `DayOfWeekEntity` before the single `resortFacilityRepository.save(entity)` call. Because
 `ResortFacilityEntity`'s `resortFacilityOperatingHoursEntities` collection is `cascade = CascadeType.ALL` (§3),
-that one save cascades the facility, its locale, and every operating-hours row in one INSERT batch — there's no
-separate call into `ResortFacilityOperatingHoursRepository` or `ResortFacilityOperatingHoursService` at all.
-This mirrors how the facility's initial locale is already attached before save, and follows the codebase-wide
-"cascade owned children through the parent's single save, not a child service call" convention.
+that one save cascades the facility, its locale, and every operating-hours row (if any) in one INSERT batch —
+there's no separate call into `ResortFacilityOperatingHoursRepository` or `ResortFacilityOperatingHoursService`
+at all. This mirrors how the facility's initial locale is already attached before save, and follows the
+codebase-wide "cascade owned children through the parent's single save, not a child service call" convention.
+The controller only fetches `DayOfWeekService.getAllActiveEntities()` (needed for §5's completeness and
+cross-day checks) when `operating_hours` is actually present, since the common case supplies none.
 
 Cross-day spillover validation here (`validateSpilloverAcrossWeek`) only ever runs against the request's own
 seven days — a brand-new facility has no existing rows to conflict with, so unlike §6 there's no
@@ -260,8 +264,9 @@ seven days — a brand-new facility has no existing rows to conflict with, so un
 `ResortFacilityRepository.existsByResortEntity_IdAndFacilityEntity_IdAndIsActiveAndIsDeleted` for the unrelated
 platform-facility-link uniqueness check that already existed before this feature.
 
-If `operating_hours` validation fails, the entire `POST` is rejected before the facility, its locale, or
-anything else is created — see §10's note on the lack of a partial-success path.
+If a *supplied* `operating_hours` fails validation, the entire `POST` is rejected before the facility, its
+locale, or anything else is created — see §10's note on the lack of a partial-success path. Omitting
+`operating_hours` sidesteps this entirely, since there's then nothing to validate.
 
 ---
 
