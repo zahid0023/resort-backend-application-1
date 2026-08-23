@@ -12,9 +12,9 @@ public class EntityValidator {
     private EntityValidator() {
     }
 
-    public static <T> void validateAllFound(Set<Long> requestedIds, List<T> entities, Function<T, Long> idExtractor, String entityName) {
-        Set<Long> foundIds = entities.stream().map(idExtractor).collect(Collectors.toSet());
-        Set<Long> missingIds = requestedIds.stream()
+    public static <K, T> void validateAllFound(Set<K> requestedIds, List<T> entities, Function<T, K> idExtractor, String entityName) {
+        Set<K> foundIds = entities.stream().map(idExtractor).collect(Collectors.toSet());
+        Set<K> missingIds = requestedIds.stream()
                 .filter(id -> !foundIds.contains(id))
                 .collect(Collectors.toSet());
 

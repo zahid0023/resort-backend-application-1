@@ -17,4 +17,7 @@ public interface ResortFacilityGroupRepository extends
 
     boolean existsByResortEntity_IdAndFacilityGroupEntity_IdAndIsActiveAndIsDeleted(
             Long resortId, Long facilityGroupId, Boolean isActive, Boolean isDeleted);
+
+    boolean existsByResortEntity_IdAndCodeAndIsActiveAndIsDeleted(
+            Long resortId, String code, Boolean isActive, Boolean isDeleted);
 }

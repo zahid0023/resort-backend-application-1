@@ -19,6 +19,8 @@ public interface FacilityScopeRepository extends
 
     List<@NonNull FacilityScopeEntity> findAllByIdInAndIsActiveAndIsDeleted(Set<Long> ids, Boolean isActive, Boolean isDeleted);
 
+    List<@NonNull FacilityScopeEntity> findAllByCodeInAndIsActiveAndIsDeleted(Set<String> codes, Boolean isActive, Boolean isDeleted);
+
     boolean existsByCodeAndIsActiveAndIsDeleted(String code, Boolean isActive, Boolean isDeleted);
 
     @Query("select f.code from FacilityScopeEntity f where f.isActive = :isActive and f.isDeleted = :isDeleted")

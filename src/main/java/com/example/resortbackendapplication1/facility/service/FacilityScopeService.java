@@ -23,6 +23,8 @@ public interface FacilityScopeService {
 
     List<FacilityScopeEntity> getAll(Set<Long> ids);
 
+    List<FacilityScopeEntity> getAllByCodes(Set<String> codes);
+
     FacilityScopeResponse getById(Long id);
 
     PaginatedResponse<FacilityScopeDto> getAll(FacilityScopeFilterRequest request);

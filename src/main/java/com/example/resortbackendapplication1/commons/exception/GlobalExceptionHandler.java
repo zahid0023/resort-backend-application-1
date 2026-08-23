@@ -68,8 +68,14 @@ public class GlobalExceptionHandler {
 
     private String resolveConstraintMessage(String rootMessage) {
         if (rootMessage == null) return "A data integrity constraint was violated.";
-        if (rootMessage.contains("uk_resort_facility_groups_resort_platform")) {
+        if (rootMessage.contains("uq_resort_facility_group_platform")) {
             return "This facility group is already assigned to the resort.";
+        }
+        if (rootMessage.contains("uq_resort_room_category_facility_group_platform")) {
+            return "This facility group is already assigned to the resort room category.";
+        }
+        if (rootMessage.contains("uq_resort_room_category_facility_group_code")) {
+            return "A facility group with this code already exists for this resort room category.";
         }
         if (rootMessage.contains("facility_group_scope_assignments_pkey")) {
             return "This facility scope is already assigned to the facility group.";
@@ -82,6 +88,9 @@ public class GlobalExceptionHandler {
         }
         if (rootMessage.contains("uq_resort_facility_code")) {
             return "A facility with this code already exists for this resort.";
+        }
+        if (rootMessage.contains("uq_resort_room_category_facility_code")) {
+            return "A facility with this code already exists for this resort room category.";
         }
         return rootMessage;
     }

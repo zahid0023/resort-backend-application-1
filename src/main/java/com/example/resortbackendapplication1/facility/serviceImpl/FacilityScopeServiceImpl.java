@@ -78,6 +78,13 @@ public class FacilityScopeServiceImpl implements FacilityScopeService {
     }
 
     @Override
+    public List<FacilityScopeEntity> getAllByCodes(Set<String> codes) {
+        List<FacilityScopeEntity> facilityScopeEntities = facilityScopeRepository.findAllByCodeInAndIsActiveAndIsDeleted(codes, true, false);
+        EntityValidator.validateAllFound(codes, facilityScopeEntities, FacilityScopeEntity::getCode, "FacilityScope");
+        return facilityScopeEntities;
+    }
+
+    @Override
     public FacilityScopeResponse getById(Long id) {
         FacilityScopeEntity entity = getEntityById(id);
         FacilityScopeDto dto = FacilityScopeMapper.toDto(entity).build();

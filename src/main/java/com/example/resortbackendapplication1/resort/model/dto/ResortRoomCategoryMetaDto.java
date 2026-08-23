@@ -1,5 +1,6 @@
 package com.example.resortbackendapplication1.resort.model.dto;
 
+import com.example.resortbackendapplication1.unit.model.dto.UnitDto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,7 +31,7 @@ public class ResortRoomCategoryMetaDto {
 
     private BigDecimal roomSize;
 
-    private Long roomSizeUnitId;
+    private UnitDto roomSizeUnit;
 
     private Integer bedroomCount;
 

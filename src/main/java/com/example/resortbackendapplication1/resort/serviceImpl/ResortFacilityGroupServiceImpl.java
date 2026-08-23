@@ -51,6 +51,11 @@ public class ResortFacilityGroupServiceImpl implements ResortFacilityGroupServic
                                   ResortEntity resortEntity,
                                   FacilityGroupEntity facilityGroupEntity,
                                   LocaleEntity localeEntity) {
+        if (resortFacilityGroupRepository.existsByResortEntity_IdAndCodeAndIsActiveAndIsDeleted(
+                resortEntity.getId(), request.getCode(), true, false)) {
+            throw new IllegalStateException("Resort already has a facility group with code: " + request.getCode());
+        }
+
         if (facilityGroupEntity != null && resortFacilityGroupRepository
                 .existsByResortEntity_IdAndFacilityGroupEntity_IdAndIsActiveAndIsDeleted(
                         resortEntity.getId(), facilityGroupEntity.getId(), true, false)) {

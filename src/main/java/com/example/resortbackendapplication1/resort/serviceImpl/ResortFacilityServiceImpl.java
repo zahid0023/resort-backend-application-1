@@ -73,6 +73,11 @@ public class ResortFacilityServiceImpl implements ResortFacilityService {
                                   PriceTypeEntity priceTypeEntity,
                                   PriceUnitEntity priceUnitEntity,
                                   CurrencyEntity currencyEntity) {
+        if (resortFacilityRepository.existsByResortEntity_IdAndCodeAndIsActiveAndIsDeleted(
+                resortEntity.getId(), request.getCode(), true, false)) {
+            throw new IllegalStateException("Resort already has a facility with code: " + request.getCode());
+        }
+
         if (facilityEntity != null && resortFacilityRepository
                 .existsByResortEntity_IdAndFacilityEntity_IdAndIsActiveAndIsDeleted(
                         resortEntity.getId(), facilityEntity.getId(), true, false)) {
@@ -187,6 +192,16 @@ public class ResortFacilityServiceImpl implements ResortFacilityService {
         entity.getResortFacilityLocaleEntities().forEach(localeEntity -> {
             localeEntity.setIsDeleted(true);
             localeEntity.setIsActive(false);
+        });
+
+        entity.getResortFacilityOperatingHoursEntities().forEach(operatingHoursEntity -> {
+            operatingHoursEntity.setIsDeleted(true);
+            operatingHoursEntity.setIsActive(false);
+        });
+
+        entity.getResortFacilityPriceEntities().forEach(priceEntity -> {
+            priceEntity.setIsDeleted(true);
+            priceEntity.setIsActive(false);
         });
 
         resortFacilityRepository.save(entity);

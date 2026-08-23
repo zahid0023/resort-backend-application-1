@@ -29,7 +29,7 @@ public interface FacilityGroupService {
 
     PaginatedResponse<FacilityGroupDto> getAll(FacilityGroupFilterRequest request);
 
-    FacilityGroupCountResponse getCount(List<FacilityScopeEntity> facilityScopeEntities);
+    FacilityGroupCountResponse getCount(Set<String> scopeCodes);
 
     SuccessResponse update(FacilityGroupEntity entity,
                            UpdateFacilityGroupRequest request);

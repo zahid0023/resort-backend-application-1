@@ -37,7 +37,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -114,12 +113,9 @@ public class FacilityGroupServiceImpl implements FacilityGroupService {
     }
 
     @Override
-    public FacilityGroupCountResponse getCount(List<FacilityScopeEntity> facilityScopeEntities) {
-        Set<Long> facilityScopeIds = facilityScopeEntities.stream()
-                .map(FacilityScopeEntity::getId)
-                .collect(Collectors.toSet());
+    public FacilityGroupCountResponse getCount(Set<String> scopeCodes) {
         FacilityGroupFilterRequest filterRequest = new FacilityGroupFilterRequest();
-        filterRequest.setFacilityScopeIds(facilityScopeIds);
+        filterRequest.setScopeCodes(scopeCodes);
         Specification<@NonNull FacilityGroupEntity> specification =
                 FacilityGroupSpecification.filter(filterRequest, LocaleContext.getLocaleId());
         long count = facilityGroupRepository.count(specification);

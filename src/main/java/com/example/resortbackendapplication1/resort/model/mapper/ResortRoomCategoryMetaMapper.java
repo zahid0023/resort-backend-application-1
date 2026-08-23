@@ -6,6 +6,7 @@ import com.example.resortbackendapplication1.resort.dto.request.resortroomcatego
 import com.example.resortbackendapplication1.resort.model.dto.ResortRoomCategoryMetaDto;
 import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryMetaEntity;
 import com.example.resortbackendapplication1.unit.model.entity.UnitEntity;
+import com.example.resortbackendapplication1.unit.model.mapper.UnitMapper;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -43,7 +44,7 @@ public class ResortRoomCategoryMetaMapper {
                 .maxInfants(entity.getMaxInfants())
                 .maxOccupancy(entity.getMaxOccupancy())
                 .roomSize(entity.getRoomSize())
-                .roomSizeUnitId(entity.getRoomSizeUnitEntity() != null ? entity.getRoomSizeUnitEntity().getId() : null)
+                .roomSizeUnit(entity.getRoomSizeUnitEntity() != null ? UnitMapper.toDto(entity.getRoomSizeUnitEntity()).build() : null)
                 .bedroomCount(entity.getBedroomCount())
                 .bathroomCount(entity.getBathroomCount())
                 .minimumStayNights(entity.getMinimumStayNights())

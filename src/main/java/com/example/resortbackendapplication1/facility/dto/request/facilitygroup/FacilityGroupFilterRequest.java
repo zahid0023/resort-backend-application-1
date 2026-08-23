@@ -25,12 +25,12 @@ public class FacilityGroupFilterRequest extends PaginatedRequest implements Loca
 
     private String code;
     private String name;
-    private Set<Long> facilityScopeIds;
+    private Set<String> scopeCodes;
 
     @Override
     public List<Predicate> toPredicates(Root<?> root, CriteriaQuery<?> query, CriteriaBuilder cb, Long localeId) {
         List<Predicate> predicates = SpecificationUtils.buildSearchPredicates(this, FacilityGroupSearchField.values(), root, query, cb, localeId);
-        if (facilityScopeIds != null && !facilityScopeIds.isEmpty()) {
+        if (scopeCodes != null && !scopeCodes.isEmpty()) {
             // Correlated EXISTS subquery instead of a join — a join against this to-many
             // collection would duplicate parent rows and require query.distinct(true),
             // which Postgres rejects when combined with an ORDER BY on a joined locale
@@ -40,7 +40,7 @@ public class FacilityGroupFilterRequest extends PaginatedRequest implements Loca
             assignmentExists.select(assignmentRoot.get("id"))
                     .where(
                             cb.equal(assignmentRoot.get("facilityGroupEntity"), root),
-                            assignmentRoot.get("facilityScopeEntity").get("id").in(facilityScopeIds),
+                            assignmentRoot.get("facilityScopeEntity").get("code").in(scopeCodes),
                             cb.isTrue(assignmentRoot.get("isActive")),
                             cb.isFalse(assignmentRoot.get("isDeleted"))
                     );

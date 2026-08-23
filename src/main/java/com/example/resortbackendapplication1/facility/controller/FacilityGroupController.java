@@ -48,8 +48,8 @@ public class FacilityGroupController {
 
     @GetMapping("/count")
     public ResponseEntity<?> getCount(@Valid @ParameterObject FacilityGroupCountRequest request) {
-        List<FacilityScopeEntity> facilityScopeEntities = facilityScopeService.getAll(request.getFacilityScopeIds());
-        return ResponseEntity.ok(facilityGroupService.getCount(facilityScopeEntities));
+        facilityScopeService.getAllByCodes(request.getScopeCodes());
+        return ResponseEntity.ok(facilityGroupService.getCount(request.getScopeCodes()));
     }
 
     @GetMapping

@@ -18,6 +18,8 @@ import com.example.resortbackendapplication1.resort.model.entity.ResortAddressLo
 import com.example.resortbackendapplication1.resort.model.entity.ResortBasicInfoLocaleEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortFacilityGroupLocaleEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortFacilityLocaleEntity;
+import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryFacilityGroupLocaleEntity;
+import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryFacilityLocaleEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryLocaleEntity;
 import com.example.resortbackendapplication1.resortpermissiontype.model.entity.ResortPermissionTypeLocaleEntity;
 import com.example.resortbackendapplication1.resortroletype.model.entity.ResortRoleTypeLocaleEntity;
@@ -129,6 +131,12 @@ public class LocaleEntity extends AuditableEntity {
 
     @OneToMany(mappedBy = "localeEntity")
     private Set<ResortRoomCategoryLocaleEntity> resortRoomCategoryLocaleEntities = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "localeEntity")
+    private Set<ResortRoomCategoryFacilityGroupLocaleEntity> resortRoomCategoryFacilityGroupLocaleEntities = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "localeEntity")
+    private Set<ResortRoomCategoryFacilityLocaleEntity> resortRoomCategoryFacilityLocaleEntities = new LinkedHashSet<>();
 
     // -------------------------------------------------------------------------
     // Country Locale relationship helpers
@@ -404,6 +412,30 @@ public class LocaleEntity extends AuditableEntity {
 
     public void removeResortRoomCategoryLocaleEntity(ResortRoomCategoryLocaleEntity entity) {
         removeChild(resortRoomCategoryLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
+    }
+
+    // -------------------------------------------------------------------------
+    // ResortRoomCategoryFacilityGroup Locale relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addResortRoomCategoryFacilityGroupLocaleEntity(ResortRoomCategoryFacilityGroupLocaleEntity entity) {
+        addChild(resortRoomCategoryFacilityGroupLocaleEntities, entity, ResortRoomCategoryFacilityGroupLocaleEntity::assignLocale, this);
+    }
+
+    public void removeResortRoomCategoryFacilityGroupLocaleEntity(ResortRoomCategoryFacilityGroupLocaleEntity entity) {
+        removeChild(resortRoomCategoryFacilityGroupLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
+    }
+
+    // -------------------------------------------------------------------------
+    // ResortRoomCategoryFacility Locale relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addResortRoomCategoryFacilityLocaleEntity(ResortRoomCategoryFacilityLocaleEntity entity) {
+        addChild(resortRoomCategoryFacilityLocaleEntities, entity, ResortRoomCategoryFacilityLocaleEntity::assignLocale, this);
+    }
+
+    public void removeResortRoomCategoryFacilityLocaleEntity(ResortRoomCategoryFacilityLocaleEntity entity) {
+        removeChild(resortRoomCategoryFacilityLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
     }
 
 }

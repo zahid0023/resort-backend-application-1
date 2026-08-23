@@ -88,8 +88,8 @@ API](resort-room-category-beds-api.md) — reached via
 | `max_children`        | Integer | Yes      | default 0                                                           | Maximum number of children                          |
 | `max_infants`         | Integer | Yes      | default 0                                                           | Maximum number of infants                           |
 | `max_occupancy`       | Integer | Yes      | default 2; must be >= `max_adults` + `max_children` + `max_infants` | Maximum total occupancy                             |
-| `room_size`           | Decimal | —        | nullable; > 0 if not null                                           | Room size, in the unit given by `room_size_unit_id` |
-| `room_size_unit_id`   | Long    | —        | nullable; must reference an existing unit if supplied               | Unit `room_size` is measured in (e.g. sqm, sqft)    |
+| `room_size`           | Decimal | —        | nullable; > 0 if not null                                           | Room size, in the unit given by `room_size_unit`    |
+| `room_size_unit`      | Object  | —        | read-only; nullable; see [Unit](units-api.md#data-model)            | The unit `room_size` is measured in (e.g. sqm, sqft); set at write time via `room_size_unit_id` (see Request Fields below) |
 | `bedroom_count`       | Integer | Yes      | default 1; > 0                                                      | Number of bedrooms                                  |
 | `bathroom_count`      | Integer | Yes      | default 1; > 0                                                      | Number of bathrooms                                 |
 | `minimum_stay_nights` | Integer | Yes      | default 1; > 0                                                      | Minimum stay length, in nights                      |
@@ -282,7 +282,27 @@ fetch every translation, use [List Resort Room Category Locales](#list-resort-ro
       "max_infants": 0,
       "max_occupancy": 3,
       "room_size": 45.50,
-      "room_size_unit_id": 1,
+      "room_size_unit": {
+        "id": 1,
+        "code": "SQM",
+        "symbol": "m²",
+        "is_base_unit": true,
+        "conversion_factor": 1,
+        "sort_order": 0,
+        "locale": {
+          "id": 1,
+          "locale": {
+            "id": 1,
+            "code": "en",
+            "name": "English",
+            "sort_order": 1
+          },
+          "name": "Square Meter",
+          "plural_name": "Square Meters",
+          "description": "Metric unit of area",
+          "sort_order": 1
+        }
+      },
       "bedroom_count": 1,
       "bathroom_count": 1,
       "minimum_stay_nights": 1,
@@ -294,7 +314,19 @@ fetch every translation, use [List Resort Room Category Locales](#list-resort-ro
         "bed_type": {
           "id": 3,
           "code": "KING",
-          "sort_order": 1
+          "sort_order": 1,
+          "locale": {
+            "id": 5,
+            "locale": {
+              "id": 1,
+              "code": "en",
+              "name": "English",
+              "sort_order": 1
+            },
+            "name": "King Bed",
+            "description": "",
+            "sort_order": 1
+          }
         },
         "quantity": 1,
         "is_extra_bed_allowed": true,
@@ -384,7 +416,27 @@ object and `beds` array, same as `GET /{id}`.
         "max_infants": 0,
         "max_occupancy": 3,
         "room_size": 45.50,
-        "room_size_unit_id": 1,
+        "room_size_unit": {
+          "id": 1,
+          "code": "SQM",
+          "symbol": "m²",
+          "is_base_unit": true,
+          "conversion_factor": 1,
+          "sort_order": 0,
+          "locale": {
+            "id": 1,
+            "locale": {
+              "id": 1,
+              "code": "en",
+              "name": "English",
+              "sort_order": 1
+            },
+            "name": "Square Meter",
+            "plural_name": "Square Meters",
+            "description": "Metric unit of area",
+            "sort_order": 1
+          }
+        },
         "bedroom_count": 1,
         "bathroom_count": 1,
         "minimum_stay_nights": 1,
@@ -396,7 +448,19 @@ object and `beds` array, same as `GET /{id}`.
           "bed_type": {
             "id": 3,
             "code": "KING",
-            "sort_order": 1
+            "sort_order": 1,
+            "locale": {
+              "id": 5,
+              "locale": {
+                "id": 1,
+                "code": "en",
+                "name": "English",
+                "sort_order": 1
+              },
+              "name": "King Bed",
+              "description": "",
+              "sort_order": 1
+            }
           },
           "quantity": 1,
           "is_extra_bed_allowed": true,

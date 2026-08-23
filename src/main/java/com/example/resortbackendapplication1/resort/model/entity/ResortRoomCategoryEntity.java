@@ -123,4 +123,34 @@ public class ResortRoomCategoryEntity extends AuditableEntity {
     public void removeResortRoomCategoryBedEntity(ResortRoomCategoryBedEntity entity) {
         removeChild(resortRoomCategoryBedEntities, entity, (child, ignored) -> child.unassignResortRoomCategory());
     }
+
+    @OneToMany(mappedBy = "resortRoomCategoryEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ResortRoomCategoryFacilityGroupEntity> resortRoomCategoryFacilityGroupEntities = new LinkedHashSet<>();
+
+    // -------------------------------------------------------------------------
+    // ResortRoomCategoryFacilityGroup relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addResortRoomCategoryFacilityGroupEntity(ResortRoomCategoryFacilityGroupEntity entity) {
+        addChild(resortRoomCategoryFacilityGroupEntities, entity, ResortRoomCategoryFacilityGroupEntity::assignResortRoomCategory, this);
+    }
+
+    public void removeResortRoomCategoryFacilityGroupEntity(ResortRoomCategoryFacilityGroupEntity entity) {
+        removeChild(resortRoomCategoryFacilityGroupEntities, entity, (child, ignored) -> child.unassignResortRoomCategory());
+    }
+
+    @OneToMany(mappedBy = "resortRoomCategoryEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ResortRoomCategoryFacilityEntity> resortRoomCategoryFacilityEntities = new LinkedHashSet<>();
+
+    // -------------------------------------------------------------------------
+    // ResortRoomCategoryFacility relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addResortRoomCategoryFacilityEntity(ResortRoomCategoryFacilityEntity entity) {
+        addChild(resortRoomCategoryFacilityEntities, entity, ResortRoomCategoryFacilityEntity::assignResortRoomCategory, this);
+    }
+
+    public void removeResortRoomCategoryFacilityEntity(ResortRoomCategoryFacilityEntity entity) {
+        removeChild(resortRoomCategoryFacilityEntities, entity, (child, ignored) -> child.unassignResortRoomCategory());
+    }
 }

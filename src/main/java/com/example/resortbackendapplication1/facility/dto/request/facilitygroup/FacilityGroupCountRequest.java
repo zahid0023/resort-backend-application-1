@@ -9,5 +9,5 @@ import java.util.Set;
 public class FacilityGroupCountRequest {
 
     @NotEmpty
-    private Set<Long> facilityScopeIds;
+    private Set<String> scopeCodes;
 }

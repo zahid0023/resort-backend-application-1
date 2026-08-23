@@ -225,15 +225,15 @@ partial match. `Accept-Language` selects each facility group's `locale` field th
 > **Note:** Query parameters bind directly onto `FacilityGroupFilterRequest`'s Java field names, so they are
 > **camelCase** — not the snake_case used in JSON request/response bodies.
 
-| Parameter          | Type   | Default         | Constraints                                       | Description                                                                                                                            |
-|--------------------|--------|-----------------|---------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
-| `code`             | String | —               | —                                                 | Filter by code (partial, case-insensitive)                                                                                             |
-| `facilityScopeIds` | Long[] | —               | comma-separated                                   | Filter to facility groups assigned to **any** of the given facility scopes (union/OR, not intersection — a group needs only one match) |
-| `name`             | String | —               | —                                                 | Filter by locale-specific name (partial, case-insensitive), scoped to the resolved locale                                              |
-| `page`             | int    | `0`             | >= 0                                              | Zero-based page index                                                                                                                  |
-| `size`             | int    | `10`            | 1 – 50                                            | Number of items per page                                                                                                               |
-| `sortBy`           | String | `id` (implicit) | `createdAt`, `code`, `name` (`id` NOT selectable) | Field to sort by                                                                                                                       |
-| `sortDir`          | String | `ASC`           | `ASC`, `DESC`                                     | Sort direction                                                                                                                         |
+| Parameter    | Type     | Default         | Constraints                                       | Description                                                                                                                                                                                      |
+|--------------|----------|-----------------|---------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `code`       | String   | —               | —                                                 | Filter by code (partial, case-insensitive)                                                                                                                                                       |
+| `scopeCodes` | String[] | —               | comma-separated, e.g. `RESORT,ROOM_CATEGORY`      | Filter to facility groups assigned to **any** of the given facility scope codes (union/OR, not intersection — a group needs only one match). Unknown codes simply match nothing — not validated. |
+| `name`       | String   | —               | —                                                 | Filter by locale-specific name (partial, case-insensitive), scoped to the resolved locale                                                                                                        |
+| `page`       | int      | `0`             | >= 0                                              | Zero-based page index                                                                                                                                                                            |
+| `size`       | int      | `10`            | 1 – 50                                            | Number of items per page                                                                                                                                                                         |
+| `sortBy`     | String   | `id` (implicit) | `createdAt`, `code`, `name` (`id` NOT selectable) | Field to sort by                                                                                                                                                                                 |
+| `sortDir`    | String   | `ASC`           | `ASC`, `DESC`                                     | Sort direction                                                                                                                                                                                   |
 
 > **Note:** `sort_order`, `icon_type`, `icon_value`, and `icon_meta` are not filterable or sortable — only
 > `code` and locale `name` are wired into the search/sort infrastructure for this endpoint.
@@ -337,17 +337,18 @@ partial match. `Accept-Language` selects each facility group's `locale` field th
 `GET /api/v1/facility-groups/count`
 
 Returns how many active facility groups are assigned to **any** of the given facility scopes (union/OR, not
-intersection — a group needs only one matching scope) — this mirrors the `facilityScopeIds` filter semantics on
+intersection — a group needs only one matching scope) — this mirrors the `scopeCodes` filter semantics on
 [List / Search Facility Groups](#list--search-facility-groups). Useful for checking, e.g., how many facility
-groups are eligible to be assigned to a facility that is itself scoped to `RESORT` and `ROOM_CATEGORY`. Every
-id in `facilityScopeIds` must reference an existing, active facility scope — any unknown id returns
-`404 ENTITY_NOT_FOUND` listing the missing ids.
+groups are eligible to be assigned to a facility that is itself scoped to `RESORT` and `ROOM_CATEGORY`. Unlike
+the list endpoint's `scopeCodes` filter, every
+code in `scopeCodes` here **is** validated to reference an existing, active facility scope — any unknown code
+returns `404 ENTITY_NOT_FOUND` listing the missing codes.
 
 ### Query Parameters
 
-| Parameter          | Type   | Required | Constraints                | Description                                                    |
-|--------------------|--------|----------|----------------------------|----------------------------------------------------------------|
-| `facilityScopeIds` | Long[] | Yes      | comma-separated; not empty | Count facility groups assigned to any of these facility scopes |
+| Parameter    | Type     | Required | Constraints                                             | Description                                                         |
+|--------------|----------|----------|---------------------------------------------------------|---------------------------------------------------------------------|
+| `scopeCodes` | String[] | Yes      | comma-separated, e.g. `RESORT,ROOM_CATEGORY`; not empty | Count facility groups assigned to any of these facility scope codes |
 
 ### Response `200 OK`
 
@@ -676,5 +677,5 @@ All errors follow a common structure:
 | HTTP Status | Error Code         | Cause                                                                                                                                                                                                                                                                                        |
 |-------------|--------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 400         | `INVALID_ARGUMENT` | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields; or an unsupported `sortBy` query value                                                                                                        |
-| 404         | `ENTITY_NOT_FOUND` | Facility group not found, facility group locale not found, any facility scope referenced in `facility_scope_ids` not found (`create`), any facility scope referenced in `facilityScopeIds` not found (`count`), or the locale referenced by `locale_id` not found (locale creation)          |
+| 404         | `ENTITY_NOT_FOUND` | Facility group not found, facility group locale not found, any facility scope referenced in `facility_scope_ids` not found (`create`), any facility scope referenced in `scopeCodes` not found (`count`), or the locale referenced by `locale_id` not found (locale creation)                |
 | 409         | `CONFLICT`         | `code` already in use by another active facility group (`create`); the facility group already has a translation for the given `locale_id` (`create` locale, pre-checked); or `name` already in use by another active translation for the same locale (`create`/`update` locale, pre-checked) |
