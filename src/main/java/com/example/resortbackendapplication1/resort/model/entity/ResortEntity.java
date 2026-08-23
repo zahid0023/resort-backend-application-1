@@ -116,4 +116,19 @@ public class ResortEntity extends AuditableEntity {
     public void removeResortFacilityEntity(ResortFacilityEntity entity) {
         removeChild(resortFacilityEntities, entity, (child, ignored) -> child.unassignResort());
     }
+
+    @OneToMany(mappedBy = "resortEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ResortRoomCategoryEntity> resortRoomCategoryEntities = new LinkedHashSet<>();
+
+    // -------------------------------------------------------------------------
+    // ResortRoomCategory relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addResortRoomCategoryEntity(ResortRoomCategoryEntity entity) {
+        addChild(resortRoomCategoryEntities, entity, ResortRoomCategoryEntity::assignResort, this);
+    }
+
+    public void removeResortRoomCategoryEntity(ResortRoomCategoryEntity entity) {
+        removeChild(resortRoomCategoryEntities, entity, (child, ignored) -> child.unassignResort());
+    }
 }

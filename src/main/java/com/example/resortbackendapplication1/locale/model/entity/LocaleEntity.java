@@ -18,6 +18,7 @@ import com.example.resortbackendapplication1.resort.model.entity.ResortAddressLo
 import com.example.resortbackendapplication1.resort.model.entity.ResortBasicInfoLocaleEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortFacilityGroupLocaleEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortFacilityLocaleEntity;
+import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryLocaleEntity;
 import com.example.resortbackendapplication1.resortpermissiontype.model.entity.ResortPermissionTypeLocaleEntity;
 import com.example.resortbackendapplication1.resortroletype.model.entity.ResortRoleTypeLocaleEntity;
 import com.example.resortbackendapplication1.roomcategory.model.entity.RoomCategoryLocaleEntity;
@@ -125,6 +126,9 @@ public class LocaleEntity extends AuditableEntity {
 
     @OneToMany(mappedBy = "localeEntity")
     private Set<ResortFacilityLocaleEntity> resortFacilityLocaleEntities = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "localeEntity")
+    private Set<ResortRoomCategoryLocaleEntity> resortRoomCategoryLocaleEntities = new LinkedHashSet<>();
 
     // -------------------------------------------------------------------------
     // Country Locale relationship helpers
@@ -388,6 +392,18 @@ public class LocaleEntity extends AuditableEntity {
 
     public void removeResortFacilityLocaleEntity(ResortFacilityLocaleEntity entity) {
         removeChild(resortFacilityLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
+    }
+
+    // -------------------------------------------------------------------------
+    // ResortRoomCategory Locale relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addResortRoomCategoryLocaleEntity(ResortRoomCategoryLocaleEntity entity) {
+        addChild(resortRoomCategoryLocaleEntities, entity, ResortRoomCategoryLocaleEntity::assignLocale, this);
+    }
+
+    public void removeResortRoomCategoryLocaleEntity(ResortRoomCategoryLocaleEntity entity) {
+        removeChild(resortRoomCategoryLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
     }
 
 }

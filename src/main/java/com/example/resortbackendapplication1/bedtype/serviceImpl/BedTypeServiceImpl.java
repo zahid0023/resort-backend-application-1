@@ -17,6 +17,7 @@ import com.example.resortbackendapplication1.bedtype.specification.BedTypeSpecif
 import com.example.resortbackendapplication1.commons.context.LocaleContext;
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
+import com.example.resortbackendapplication1.commons.utils.EntityValidator;
 import com.example.resortbackendapplication1.commons.utils.Pagination;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import jakarta.persistence.EntityNotFoundException;
@@ -28,6 +29,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -66,6 +68,13 @@ public class BedTypeServiceImpl implements BedTypeService {
     public BedTypeEntity getEntityById(Long id) {
         return bedTypeRepository.findByIdAndIsActiveAndIsDeleted(id, true, false)
                 .orElseThrow(() -> new EntityNotFoundException("BedType not found with id: " + id));
+    }
+
+    @Override
+    public List<BedTypeEntity> getAll(Set<Long> ids) {
+        List<BedTypeEntity> bedTypeEntities = bedTypeRepository.findAllByIdInAndIsActiveAndIsDeleted(ids, true, false);
+        EntityValidator.validateAllFound(ids, bedTypeEntities, BedTypeEntity::getId, "BedType");
+        return bedTypeEntities;
     }
 
     @Override

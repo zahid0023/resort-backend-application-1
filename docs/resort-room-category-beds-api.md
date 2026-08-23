@@ -1,0 +1,332 @@
+# Resort Room Category Beds API
+
+Base URL: `/api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/beds`
+
+A resort room category bed row describes one bed configuration for a [Resort Room
+Category](resort-room-categories-api.md) — a platform [Bed Type](bed-types-api.md) (`bed_type`, e.g.
+`KING`/`QUEEN`/`SOFA_BED`) plus a `quantity`, and optional extra-bed rules (`is_extra_bed_allowed`,
+`max_extra_beds`). A room category typically has more than one row — e.g. 1 king bed + 1 sofa bed for the same
+room. **At least one bed row is required** — every resort room category must be created with at least one
+bed configuration, via the required `beds` array on [Create Resort Room
+Category](resort-room-categories-api.md#create-resort-room-category) — the same per-entry shape as [Create
+Resort Room Category Bed](#create-resort-room-category-bed) below, with the resort room category resolved from
+the URL path rather than the request body. Additional beds are added afterward through this sub-resource.
+
+Resort room category beds are always reached nested under their owning resort room category; there is no
+top-level `/api/v1/resort-room-category-beds` route. Every endpoint below also validates the
+`{resort-id}`/`{resort-room-category-id}` pair first — an unknown resort, an unknown resort room category, or
+a resort room category that exists but belongs to a different resort all return `404 ENTITY_NOT_FOUND`. `{id}`
+on the single-row endpoints is additionally scoped to `{resort-room-category-id}` — a bed `id` that exists but
+belongs to a different resort room category behaves the same as an unknown `id`.
+
+`bed_type_id` is **immutable after creation** — [Update Resort Room Category Bed](#update-resort-room-category-bed)
+only changes `quantity`/`is_extra_bed_allowed`/`max_extra_beds`; to change the bed type, delete the row and
+create a new one. A resort room category may have at most one active row per bed type — attempting to add a
+second row for a bed type it already has returns `409 CONFLICT`. All records support soft-delete — deleted
+records are hidden from all responses.
+
+**`Accept-Language` is required on every endpoint below, with no exceptions** — a request missing (or with a
+blank) `Accept-Language` header is rejected with `400 INVALID_ARGUMENT` before it reaches any endpoint (see
+[Error Responses](#error-responses)). This entity has no `locale` field of its own, but the header's value still
+shapes the response: it selects the locale-matched translation embedded on `bed_type.locale`, the same as `GET`
+on [bed types](bed-types-api.md) directly.
+
+---
+
+## Endpoints
+
+| Method | Path                                                                                | Description                        |
+|--------|--------------------------------------------------------------------------------------|-------------------------------------|
+| POST   | `/api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/beds`         | Create a resort room category bed  |
+| GET    | `/api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/beds`         | List a resort room category's beds |
+| GET    | `/api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/beds/{id}`    | Get a resort room category bed     |
+| PUT    | `/api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/beds/{id}`    | Update a resort room category bed  |
+| DELETE | `/api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/beds/{id}`    | Delete a resort room category bed  |
+
+---
+
+## Data Model
+
+### ResortRoomCategoryBed
+
+| Field                   | Type    | Required | Constraints                                                         | Description                                                                                       |
+|--------------------------|---------|----------|-----------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
+| `id`                     | Long    | —        | read-only                                                             | Auto-generated identifier                                                                            |
+| `resort_room_category`   | Object  | —        | read-only; see [ResortRoomCategory](resort-room-categories-api.md)   | The room category this bed row belongs to. Resolved from the URL path, never a request body field   |
+| `bed_type`               | Object  | —        | read-only; see [BedType](bed-types-api.md); resolved from `bed_type_id` | The platform bed type this row represents. Immutable after creation                                |
+| `quantity`               | Integer | Yes      | default 1; >= 1                                                       | Number of beds of this type                                                                          |
+| `is_extra_bed_allowed`   | Boolean | Yes      | default false                                                         | Whether an extra bed of this type can be added on request                                            |
+| `max_extra_beds`         | Integer | Yes      | default 0; >= 0                                                       | Maximum extra beds of this type allowed                                                              |
+
+> **Note:** `bed_type_id` (used to resolve `bed_type`) is a write-only input, supplied only at creation — see
+> [Create Resort Room Category Bed](#create-resort-room-category-bed) — and does not appear on this data model
+> because the response always returns the resolved object instead. `bed_type` embeds only `id`, `code`,
+> `sort_order`, and the Accept-Language-matched `locale` — a bed type's own nested collections are never
+> embedded here.
+
+---
+
+## Create Resort Room Category Bed
+
+`POST /api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/beds`
+
+Adds a new bed row to an existing resort room category. `bed_type_id` must reference an existing, active [Bed
+Type](bed-types-api.md) — an unknown id returns `404 ENTITY_NOT_FOUND`. The combination of resort room category
+and bed type must be unique — adding a bed type it already has a row for returns `409 CONFLICT`.
+
+### Path Parameters
+
+| Parameter                 | Type | Description                           |
+|-----------------------------|------|-----------------------------------------|
+| `resort-id`                | Long | ID of the owning resort                 |
+| `resort-room-category-id`  | Long | ID of the owning resort room category   |
+
+### Request Body
+
+```json
+{
+  "bed_type_id": 4,
+  "quantity": 2,
+  "is_extra_bed_allowed": false,
+  "max_extra_beds": 0
+}
+```
+
+### Request Fields
+
+| Field                   | Type    | Required | Validation                                                   |
+|--------------------------|---------|----------|------------------------------------------------------------------|
+| `bed_type_id`            | Long    | Yes      | Not null; must reference an existing, active bed type; immutable after creation |
+| `quantity`                | Integer | Yes      | Not null; >= 1                                                   |
+| `is_extra_bed_allowed`    | Boolean | Yes      | Not null                                                         |
+| `max_extra_beds`          | Integer | Yes      | Not null; >= 0                                                   |
+
+### Response `201 Created`
+
+```json
+{
+  "success": true,
+  "id": 9
+}
+```
+
+---
+
+## Get Resort Room Category Bed
+
+`GET /api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/beds/{id}`
+
+Returns a single active resort room category bed, scoped to its owning room category — an `id` that exists
+but belongs to a different resort room category (or a resort room category that belongs to a different
+resort) returns `404 ENTITY_NOT_FOUND`, the same as an unknown `id`.
+
+### Path Parameters
+
+| Parameter                 | Type | Description                            |
+|-----------------------------|------|-------------------------------------------|
+| `resort-id`                | Long | ID of the owning resort                   |
+| `resort-room-category-id`  | Long | ID of the owning resort room category     |
+| `id`                        | Long | ID of the resort room category bed        |
+
+### Response `200 OK`
+
+```json
+{
+  "data": {
+    "id": 6,
+    "resort_room_category": {
+      "id": 10,
+      "code": "DLX-SEA",
+      "sort_order": 1
+    },
+    "bed_type": {
+      "id": 3,
+      "code": "KING",
+      "sort_order": 1,
+      "locale": {
+        "id": 5,
+        "locale": {
+          "id": 1,
+          "code": "en",
+          "name": "English",
+          "sort_order": 1
+        },
+        "name": "King Bed",
+        "description": "",
+        "sort_order": 1
+      }
+    },
+    "quantity": 1,
+    "is_extra_bed_allowed": true,
+    "max_extra_beds": 1
+  }
+}
+```
+
+---
+
+## List Resort Room Category Beds
+
+`GET /api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/beds`
+
+Returns a paginated list of every active bed row belonging to the resort room category. Optionally filtered to
+a single `bed_type_id`.
+
+> **Note:** `sortBy` accepts only `createdAt` — passing any other value throws
+> `400 INVALID_ARGUMENT: Invalid sort field: <value>`. Omitting `sortBy` entirely sorts by `id` (implicit).
+
+### Path Parameters
+
+| Parameter                 | Type | Description                            |
+|-----------------------------|------|-------------------------------------------|
+| `resort-id`                | Long | ID of the owning resort                   |
+| `resort-room-category-id`  | Long | ID of the owning resort room category     |
+
+### Query Parameters
+
+| Parameter      | Type   | Default         | Constraints      | Description                       |
+|-----------------|--------|-------------------|--------------------|--------------------------------------|
+| `bed_type_id`   | Long   | —                 | —                  | Filter to rows for this bed type     |
+| `page`          | int    | `0`               | >= 0               | Zero-based page index                |
+| `size`          | int    | `10`              | 1 – 50             | Number of items per page             |
+| `sortBy`        | String | `id` (implicit)   | `createdAt` only   | Field to sort by                     |
+| `sortDir`       | String | `ASC`             | `ASC`, `DESC`      | Sort direction                       |
+
+### Response `200 OK`
+
+```json
+{
+  "data": [
+    {
+      "id": 6,
+      "resort_room_category": null,
+      "bed_type": {
+        "id": 3,
+        "code": "KING",
+        "sort_order": 1,
+        "locale": {
+          "id": 5,
+          "locale": {
+            "id": 1,
+            "code": "en",
+            "name": "English",
+            "sort_order": 1
+          },
+          "name": "King Bed",
+          "description": "",
+          "sort_order": 1
+        }
+      },
+      "quantity": 1,
+      "is_extra_bed_allowed": true,
+      "max_extra_beds": 1
+    }
+  ],
+  "current_page": 0,
+  "total_pages": 1,
+  "total_elements": 1,
+  "page_size": 10,
+  "has_next": false,
+  "has_previous": false,
+  "sortable_fields": [
+    "createdAt"
+  ],
+  "searchable_fields": []
+}
+```
+
+> **Note:** unlike [Get Resort Room Category Bed](#get-resort-room-category-bed), list rows omit
+> `resort_room_category` entirely (`null`, dropped by `JsonInclude.NON_NULL`) — it's identical on every row and
+> already known from the URL path.
+
+---
+
+## Update Resort Room Category Bed
+
+`PUT /api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/beds/{id}`
+
+Updates `quantity`, `is_extra_bed_allowed`, and `max_extra_beds` only. `bed_type_id` is set at creation and
+cannot be changed — to change the bed type, delete the row and create a new one.
+
+### Path Parameters
+
+| Parameter                 | Type | Description                            |
+|-----------------------------|------|-------------------------------------------|
+| `resort-id`                | Long | ID of the owning resort                   |
+| `resort-room-category-id`  | Long | ID of the owning resort room category     |
+| `id`                        | Long | ID of the resort room category bed        |
+
+### Request Body
+
+```json
+{
+  "quantity": 2,
+  "is_extra_bed_allowed": true,
+  "max_extra_beds": 1
+}
+```
+
+### Request Fields
+
+| Field                   | Type    | Required | Validation      |
+|--------------------------|---------|----------|--------------------|
+| `quantity`                | Integer | Yes      | Not null; >= 1     |
+| `is_extra_bed_allowed`    | Boolean | Yes      | Not null           |
+| `max_extra_beds`          | Integer | Yes      | Not null; >= 0     |
+
+### Response `200 OK`
+
+```json
+{
+  "success": true,
+  "id": 9
+}
+```
+
+---
+
+## Delete Resort Room Category Bed
+
+`DELETE /api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/beds/{id}`
+
+Soft-deletes the resort room category bed. The record is not removed from the database but will no longer
+appear in any response.
+
+### Path Parameters
+
+| Parameter                 | Type | Description                            |
+|-----------------------------|------|-------------------------------------------|
+| `resort-id`                | Long | ID of the owning resort                   |
+| `resort-room-category-id`  | Long | ID of the owning resort room category     |
+| `id`                        | Long | ID of the resort room category bed        |
+
+### Response `200 OK`
+
+```json
+{
+  "success": true,
+  "id": 9
+}
+```
+
+---
+
+## Error Responses
+
+All errors follow a common structure:
+
+```json
+{
+  "request_id": "abc-123",
+  "status": 404,
+  "error": "ENTITY_NOT_FOUND",
+  "message": "ResortRoomCategoryBed not found with id: 99"
+}
+```
+
+| HTTP Status | Error Code                 | Cause                                                                                                                                                                                                                                                                                                                                                                                             |
+|-------------|-----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields (`bed_type_id` null on create); an unsupported `sortBy` query value                                                                                                                                                                                  |
+| 404         | `ENTITY_NOT_FOUND`         | Resort not found; resort room category not found for the given `resort-id`/`resort-room-category-id` pair (including a `resort-room-category-id` that belongs to a different resort); resort room category bed not found for the given `resort-room-category-id`/`id` pair (including an `id` that belongs to a different resort room category); the bed type referenced by `bed_type_id` not found |
+| 409         | `CONFLICT`                 | The resort room category already has an active bed row for the given `bed_type_id` (pre-checked at the application level)                                                                                                                                                                                                                                                                          |
+| 409         | `DATA_INTEGRITY_VIOLATION` | Last-resort DB-level unique constraint on `(resort_room_category_id, bed_type_id)`, or a foreign key (`bed_type_id`, `resort_room_category_id`) somehow referencing a row that no longer exists — should not normally be reachable, since each is resolved and validated before the write                                                                                                        |
