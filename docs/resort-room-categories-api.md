@@ -14,6 +14,16 @@ Its bed configuration (one row per bed type, e.g. 1 king + 1 sofa bed) lives in 
 creation time (see `beds` below); further beds are added afterward through that sub-resource. Unlike locale
 and meta, a room category's bed rows are embedded directly as the `beds` array on this entity's own `GET`
 responses (see [Data Model](#data-model) below) in addition to being manageable through the sub-resource.
+
+Its pricing lives in a **1:N Prices sub-resource** — [Resort Room Category
+Prices](resort-room-category-prices-api.md) — reached via
+`/api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/prices`. **At least one currency's full
+BASE/WEEKDAY/WEEKEND price set is required at creation time** (see `prices` below) — every resort room category
+must be created already knowing what it costs, in at least one currency, for every day of the week. Additional
+currencies, and additional HOLIDAY/SPECIAL prices, are added afterward through that sub-resource. **Unlike
+`beds`, `prices` is not embedded on this entity's `GET` responses** — fetch [List Resort Room Category
+Prices](resort-room-category-prices-api.md#list-resort-room-category-prices) separately to see them.
+
 All records support soft-delete — deleted records are hidden from all responses.
 
 **`Accept-Language` is required on every endpoint below, with no exceptions** — a request missing (or with
@@ -50,7 +60,10 @@ actually used to shape the response:
 
 Resort room category beds have their own full endpoint set — see the [Resort Room Category Beds
 API](resort-room-category-beds-api.md) — reached via
-`/api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/beds`.
+`/api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/beds`. Resort room category prices
+likewise have their own full endpoint set — see the [Resort Room Category Prices
+API](resort-room-category-prices-api.md) — reached via
+`/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/prices`.
 
 ---
 
@@ -81,19 +94,19 @@ API](resort-room-category-beds-api.md) — reached via
 
 ### ResortRoomCategoryMeta
 
-| Field                 | Type    | Required | Constraints                                                         | Description                                         |
-|-----------------------|---------|----------|---------------------------------------------------------------------|-----------------------------------------------------|
-| `id`                  | Long    | —        | read-only                                                           | Auto-generated identifier                           |
-| `max_adults`          | Integer | Yes      | default 2                                                           | Maximum number of adults                            |
-| `max_children`        | Integer | Yes      | default 0                                                           | Maximum number of children                          |
-| `max_infants`         | Integer | Yes      | default 0                                                           | Maximum number of infants                           |
-| `max_occupancy`       | Integer | Yes      | default 2; must be >= `max_adults` + `max_children` + `max_infants` | Maximum total occupancy                             |
-| `room_size`           | Decimal | —        | nullable; > 0 if not null                                           | Room size, in the unit given by `room_size_unit`    |
+| Field                 | Type    | Required | Constraints                                                         | Description                                                                                                                |
+|-----------------------|---------|----------|---------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|
+| `id`                  | Long    | —        | read-only                                                           | Auto-generated identifier                                                                                                  |
+| `max_adults`          | Integer | Yes      | default 2                                                           | Maximum number of adults                                                                                                   |
+| `max_children`        | Integer | Yes      | default 0                                                           | Maximum number of children                                                                                                 |
+| `max_infants`         | Integer | Yes      | default 0                                                           | Maximum number of infants                                                                                                  |
+| `max_occupancy`       | Integer | Yes      | default 2; must be >= `max_adults` + `max_children` + `max_infants` | Maximum total occupancy                                                                                                    |
+| `room_size`           | Decimal | —        | nullable; > 0 if not null                                           | Room size, in the unit given by `room_size_unit`                                                                           |
 | `room_size_unit`      | Object  | —        | read-only; nullable; see [Unit](units-api.md#data-model)            | The unit `room_size` is measured in (e.g. sqm, sqft); set at write time via `room_size_unit_id` (see Request Fields below) |
-| `bedroom_count`       | Integer | Yes      | default 1; > 0                                                      | Number of bedrooms                                  |
-| `bathroom_count`      | Integer | Yes      | default 1; > 0                                                      | Number of bathrooms                                 |
-| `minimum_stay_nights` | Integer | Yes      | default 1; > 0                                                      | Minimum stay length, in nights                      |
-| `maximum_stay_nights` | Integer | —        | nullable; if not null, must be >= `minimum_stay_nights`             | Maximum stay length, in nights                      |
+| `bedroom_count`       | Integer | Yes      | default 1; > 0                                                      | Number of bedrooms                                                                                                         |
+| `bathroom_count`      | Integer | Yes      | default 1; > 0                                                      | Number of bathrooms                                                                                                        |
+| `minimum_stay_nights` | Integer | Yes      | default 1; > 0                                                      | Minimum stay length, in nights                                                                                             |
+| `maximum_stay_nights` | Integer | —        | nullable; if not null, must be >= `minimum_stay_nights`             | Maximum stay length, in nights                                                                                             |
 
 `ResortRoomCategoryBed` (the shape of each entry in `beds`) is documented in full in the [Resort Room Category
 Beds API](resort-room-category-beds-api.md#data-model), including its own dedicated endpoints.
@@ -123,6 +136,18 @@ at least one bed configuration row. `bed_type_id` must be unique across the entr
 as [Create Resort Room Category Bed](resort-room-category-beds-api.md#create-resort-room-category-bed), minus
 the resort room category (resolved from the URL path there instead). Additional beds can be added afterward
 via that same endpoint.
+
+**`prices` is required and must contain at least one entry, one per currency** — `currency_id` must be unique
+across the entries in a single request (duplicates are rejected). Each entry creates exactly three [Resort Room
+Category Price](resort-room-category-prices-api.md) rows for that currency — `BAS` (named `"Base Price"`),
+`WKD` (`"Weekday Price"`), and `WKE` (`"Weekend Price"`) — there is no way to create only one or two of the
+three through this endpoint. `weekday_price`/`weekend_price` cannot exceed `base_price` for the same entry
+(`400 INVALID_ARGUMENT` otherwise, mirroring the same rule on the standalone [Create Resort Room Category
+Price](resort-room-category-prices-api.md#create-resort-room-category-price) endpoint). Every price unit id
+(`base_price_unit_id`/`weekday_price_unit_id`/`weekend_price_unit_id`) must reference an existing, active price
+unit — each of the three can be different. `weekday_day_of_week_ids`/`weekend_day_of_week_ids` must each be
+non-empty and every id must reference an existing, active [Day of Week](days-of-week-api.md). `HOL`/`SPECIAL`
+prices cannot be created here — add them afterward via `POST .../prices`.
 
 ### Path Parameters
 
@@ -161,6 +186,27 @@ via that same endpoint.
       "is_extra_bed_allowed": true,
       "max_extra_beds": 1
     }
+  ],
+  "prices": [
+    {
+      "currency_id": 1,
+      "base_price_unit_id": 1,
+      "base_price": 100.00,
+      "weekday_price_unit_id": 1,
+      "weekday_price": 90.00,
+      "weekday_day_of_week_ids": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "weekend_price_unit_id": 1,
+      "weekend_price": 130.00,
+      "weekend_day_of_week_ids": [
+        5,
+        6
+      ]
+    }
   ]
 }
 ```
@@ -175,6 +221,7 @@ via that same endpoint.
 | `locale`           | Object  | Yes      | Not null; validated (see below) — no `locale_id` field; always resolved to the `en` locale |
 | `meta`             | Object  | Yes      | Not null; validated (see below)                                                            |
 | `beds`             | Array   | Yes      | Not empty; each entry validated (see below); `bed_type_id` must be unique within the array |
+| `prices`           | Array   | Yes      | Not empty; each entry validated (see below); `currency_id` must be unique within the array |
 
 **Locale entry (`locale`):**
 
@@ -207,6 +254,20 @@ via that same endpoint.
 | `quantity`             | Integer | Yes      | Not null; >= 1                                |
 | `is_extra_bed_allowed` | Boolean | Yes      | Not null                                      |
 | `max_extra_beds`       | Integer | Yes      | Not null; >= 0                                |
+
+**Price group entry (each item in `prices`) — one currency's BASE/WEEKDAY/WEEKEND set:**
+
+| Field                     | Type    | Required | Validation                                                                     |
+|---------------------------|---------|----------|--------------------------------------------------------------------------------|
+| `currency_id`             | Long    | Yes      | Not null; must reference an existing, active currency; unique within the array |
+| `base_price_unit_id`      | Long    | Yes      | Not null; must reference an existing, active price unit                        |
+| `base_price`              | Decimal | Yes      | Not null; >= 0                                                                 |
+| `weekday_price_unit_id`   | Long    | Yes      | Not null; must reference an existing, active price unit                        |
+| `weekday_price`           | Decimal | Yes      | Not null; >= 0; cannot exceed `base_price`                                     |
+| `weekday_day_of_week_ids` | Long[]  | Yes      | Not empty; each id must reference an existing, active day of week              |
+| `weekend_price_unit_id`   | Long    | Yes      | Not null; must reference an existing, active price unit                        |
+| `weekend_price`           | Decimal | Yes      | Not null; >= 0; cannot exceed `base_price`                                     |
+| `weekend_day_of_week_ids` | Long[]  | Yes      | Not empty; each id must reference an existing, active day of week              |
 
 ### Response `201 Created`
 
@@ -820,12 +881,16 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code                 | Cause                                                                                                                                                                                                                                                                                                                                                                   |
-|-------------|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields (including an empty `beds` array or a duplicate `bed_type_id` within it at create); or an unsupported `sortBy` query value                                                                                                |
-| 404         | `ENTITY_NOT_FOUND`         | Resort not found, room category not found (`room_category_id` at create), unit not found (`room_size_unit_id` if supplied), bed type not found (any `bed_type_id` in `beds` at create), resort room category not found, resort room category meta not found, resort room category locale not found, or the locale referenced by `locale_id` not found (locale creation) |
-| 409         | `CONFLICT`                 | `code` already in use by another active resort room category for this resort (`create`); the resort already has this room category linked (`create`); or the resort room category already has a translation for the given `locale_id` (`create` locale, pre-checked at the application level)                                                                           |
-| 409         | `DATA_INTEGRITY_VIOLATION` | Last-resort DB-level unique constraints on `(resort_id, code)`, `(resort_id, room_category_id)`, `resort_room_category_id` (meta), or `(resort_room_category_id, locale_id)`, should not normally be reachable now that duplicates are pre-checked at the application level                                                                                             |
+| HTTP Status | Error Code                 | Cause                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+|-------------|----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields (including an empty `beds`/`prices` array, a duplicate `bed_type_id` within `beds`, or a duplicate `currency_id` within `prices` at create); a `weekday_price`/`weekend_price` greater than `base_price` for the same `prices` entry; or an unsupported `sortBy` query value                        |
+| 404         | `ENTITY_NOT_FOUND`         | Resort not found, room category not found (`room_category_id` at create), unit not found (`room_size_unit_id` if supplied), bed type not found (any `bed_type_id` in `beds` at create), currency/price unit/day of week not found (any id in `prices` at create), resort room category not found, resort room category meta not found, resort room category locale not found, or the locale referenced by `locale_id` not found (locale creation) |
+| 409         | `CONFLICT`                 | `code` already in use by another active resort room category for this resort (`create`); the resort already has this room category linked (`create`); or the resort room category already has a translation for the given `locale_id` (`create` locale, pre-checked at the application level)                                                                                                                                                     |
+| 409         | `DATA_INTEGRITY_VIOLATION` | Last-resort DB-level unique constraints on `(resort_id, code)`, `(resort_id, room_category_id)`, `resort_room_category_id` (meta), `(resort_room_category_id, locale_id)`, or the `prices`/day-of-week backstops described in the [Resort Room Category Prices API](resort-room-category-prices-api.md#error-responses) — should not normally be reachable now that duplicates are pre-checked at the application level                           |
 
 See the [Resort Room Category Beds API](resort-room-category-beds-api.md#error-responses) for errors specific
-to the standalone beds sub-resource endpoints (e.g. the `409 CONFLICT` when a bed type is already in use).
+to the standalone beds sub-resource endpoints (e.g. the `409 CONFLICT` when a bed type is already in use), and
+the [Resort Room Category Prices API](resort-room-category-prices-api.md#error-responses) for errors specific
+to the standalone prices sub-resource endpoints (including the `500 INTERNAL_SERVER_ERROR` caveat for
+DB-trigger-only rules that this creation flow's own `weekday`/`weekend`-vs-`base` check does not fully replace,
+e.g. price scope assignment).

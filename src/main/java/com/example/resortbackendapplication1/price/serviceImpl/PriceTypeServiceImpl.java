@@ -82,6 +82,12 @@ public class PriceTypeServiceImpl implements PriceTypeService {
     }
 
     @Override
+    public PriceTypeEntity getEntityByCode(String code) {
+        return priceTypeRepository.findByCodeAndIsActiveAndIsDeleted(code, true, false)
+                .orElseThrow(() -> new EntityNotFoundException("PriceType not found with code: " + code));
+    }
+
+    @Override
     public PriceTypeResponse getById(Long id) {
         PriceTypeEntity entity = getEntityById(id);
         PriceTypeDto dto = PriceTypeMapper.toDto(entity)

@@ -21,6 +21,8 @@ public interface PriceTypeService {
 
     PriceTypeEntity getEntityById(Long id);
 
+    PriceTypeEntity getEntityByCode(String code);
+
     PriceTypeResponse getById(Long id);
 
     PaginatedResponse<PriceTypeDto> getAll(PriceTypeFilterRequest request);

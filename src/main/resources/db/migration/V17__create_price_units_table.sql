@@ -134,3 +134,18 @@ values ((select id from price_units where code = 'PER_NIGHT'), (select id from l
         'Used for flat fees that don''t scale with nights, guests, or rooms.',
         'A one-time cleaning fee of $30 is charged per booking, regardless of stay length.',
         (select id from users where username = 'system'), (select id from users where username = 'system'));
+
+-- seed: price unit scope assignments
+insert into price_unit_scope_assignments (price_scope_id, price_unit_id, created_by, updated_by)
+values ((select id from price_scopes where code = 'ROOM_CATEGORY'), (select id from price_units where code = 'PER_NIGHT'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from price_scopes where code = 'ROOM_CATEGORY'), (select id from price_units where code = 'PER_DAY'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from price_scopes where code = 'ROOM_CATEGORY'), (select id from price_units where code = 'PER_HOUR'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from price_scopes where code = 'ROOM_CATEGORY'), (select id from price_units where code = 'PER_PERSON'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from price_scopes where code = 'ROOM_CATEGORY'), (select id from price_units where code = 'PER_ROOM'),
+        (select id from users where username = 'system'), (select id from users where username = 'system')),
+       ((select id from price_scopes where code = 'ROOM_CATEGORY'), (select id from price_units where code = 'PER_BOOKING'),
+        (select id from users where username = 'system'), (select id from users where username = 'system'));

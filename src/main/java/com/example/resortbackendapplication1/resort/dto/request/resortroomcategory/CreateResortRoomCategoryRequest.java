@@ -3,6 +3,7 @@ package com.example.resortbackendapplication1.resort.dto.request.resortroomcateg
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategory.locale.ResortRoomCategoryLocaleRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategorybed.CreateResortRoomCategoryBedRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategorymeta.CreateResortRoomCategoryMetaRequest;
+import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.CreateResortRoomCategoryPriceGroupRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -41,4 +42,12 @@ public class CreateResortRoomCategoryRequest extends ResortRoomCategoryRequest {
     @Valid
     @NotEmpty
     private List<CreateResortRoomCategoryBedRequest> beds;
+
+    /**
+     * At least one currency's BASE/WEEKDAY/WEEKEND price set is required, one entry per currency.
+     * Additional prices (including HOLIDAY/SPECIAL) can be added afterward via POST /prices.
+     */
+    @Valid
+    @NotEmpty
+    private List<CreateResortRoomCategoryPriceGroupRequest> prices;
 }

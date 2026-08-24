@@ -2,12 +2,21 @@ package com.example.resortbackendapplication1.resort.controller;
 
 import com.example.resortbackendapplication1.bedtype.model.entity.BedTypeEntity;
 import com.example.resortbackendapplication1.bedtype.service.BedTypeService;
+import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
+import com.example.resortbackendapplication1.currency.service.CurrencyService;
+import com.example.resortbackendapplication1.dayofweek.model.entity.DayOfWeekEntity;
+import com.example.resortbackendapplication1.dayofweek.service.DayOfWeekService;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.locale.service.LocaleService;
+import com.example.resortbackendapplication1.price.model.entity.PriceTypeEntity;
+import com.example.resortbackendapplication1.price.model.entity.PriceUnitEntity;
+import com.example.resortbackendapplication1.price.service.PriceTypeService;
+import com.example.resortbackendapplication1.price.service.PriceUnitService;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategory.CreateResortRoomCategoryRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategory.ResortRoomCategoryFilterRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategory.UpdateResortRoomCategoryRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategorybed.CreateResortRoomCategoryBedRequest;
+import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.CreateResortRoomCategoryPriceGroupRequest;
 import com.example.resortbackendapplication1.resort.model.entity.ResortEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryEntity;
 import com.example.resortbackendapplication1.resort.service.ResortRoomCategoryService;
@@ -25,6 +34,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/api/v1/resorts/{resort-id}/room-categories")
@@ -36,19 +46,31 @@ public class ResortRoomCategoryController {
     private final LocaleService localeService;
     private final UnitService unitService;
     private final BedTypeService bedTypeService;
+    private final PriceTypeService priceTypeService;
+    private final PriceUnitService priceUnitService;
+    private final CurrencyService currencyService;
+    private final DayOfWeekService dayOfWeekService;
 
     public ResortRoomCategoryController(ResortRoomCategoryService resortRoomCategoryService,
                                         ResortService resortService,
                                         RoomCategoryService roomCategoryService,
                                         LocaleService localeService,
                                         UnitService unitService,
-                                        BedTypeService bedTypeService) {
+                                        BedTypeService bedTypeService,
+                                        PriceTypeService priceTypeService,
+                                        PriceUnitService priceUnitService,
+                                        CurrencyService currencyService,
+                                        DayOfWeekService dayOfWeekService) {
         this.resortRoomCategoryService = resortRoomCategoryService;
         this.resortService = resortService;
         this.roomCategoryService = roomCategoryService;
         this.localeService = localeService;
         this.unitService = unitService;
         this.bedTypeService = bedTypeService;
+        this.priceTypeService = priceTypeService;
+        this.priceUnitService = priceUnitService;
+        this.currencyService = currencyService;
+        this.dayOfWeekService = dayOfWeekService;
     }
 
     @PostMapping
@@ -65,8 +87,31 @@ public class ResortRoomCategoryController {
                 .map(CreateResortRoomCategoryBedRequest::getBedTypeId)
                 .collect(Collectors.toSet());
         List<BedTypeEntity> bedTypeEntities = bedTypeService.getAll(bedTypeIds);
+
+        PriceTypeEntity basePriceTypeEntity = priceTypeService.getEntityByCode("BAS");
+        PriceTypeEntity weekdayPriceTypeEntity = priceTypeService.getEntityByCode("WKD");
+        PriceTypeEntity weekendPriceTypeEntity = priceTypeService.getEntityByCode("WKE");
+        List<CurrencyEntity> currencyEntities = request.getPrices().stream()
+                .map(CreateResortRoomCategoryPriceGroupRequest::getCurrencyId)
+                .distinct()
+                .map(currencyService::getEntityById)
+                .toList();
+        List<PriceUnitEntity> priceUnitEntities = request.getPrices().stream()
+                .flatMap(priceGroup -> Stream.of(
+                        priceGroup.getBasePriceUnitId(), priceGroup.getWeekdayPriceUnitId(), priceGroup.getWeekendPriceUnitId()))
+                .distinct()
+                .map(priceUnitService::getEntityById)
+                .toList();
+        List<DayOfWeekEntity> dayOfWeekEntities = request.getPrices().stream()
+                .flatMap(priceGroup -> Stream.concat(
+                        priceGroup.getWeekdayDayOfWeekIds().stream(), priceGroup.getWeekendDayOfWeekIds().stream()))
+                .distinct()
+                .map(dayOfWeekService::getEntityById)
+                .toList();
+
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(resortRoomCategoryService.create(request, resortEntity, roomCategoryEntity, localeEntity, roomSizeUnitEntity, bedTypeEntities));
+                .body(resortRoomCategoryService.create(request, resortEntity, roomCategoryEntity, localeEntity, roomSizeUnitEntity, bedTypeEntities,
+                        basePriceTypeEntity, weekdayPriceTypeEntity, weekendPriceTypeEntity, currencyEntities, priceUnitEntities, dayOfWeekEntities));
     }
 
     @GetMapping("/{id}")

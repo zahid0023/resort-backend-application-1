@@ -2,6 +2,7 @@ package com.example.resortbackendapplication1.dayofweek.model.entity;
 
 import com.example.resortbackendapplication1.commons.model.entity.AuditableEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortFacilityOperatingHoursEntity;
+import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryPriceDayEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -59,5 +60,20 @@ public class DayOfWeekEntity extends AuditableEntity {
 
     public void removeResortFacilityOperatingHoursEntity(ResortFacilityOperatingHoursEntity entity) {
         removeChild(resortFacilityOperatingHoursEntities, entity, (child, ignored) -> child.unassignDayOfWeek());
+    }
+
+    @OneToMany(mappedBy = "dayOfWeekEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ResortRoomCategoryPriceDayEntity> resortRoomCategoryPriceDayEntities = new LinkedHashSet<>();
+
+    // -------------------------------------------------------------------------
+    // ResortRoomCategoryPriceDay relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addResortRoomCategoryPriceDayEntity(ResortRoomCategoryPriceDayEntity entity) {
+        addChild(resortRoomCategoryPriceDayEntities, entity, ResortRoomCategoryPriceDayEntity::assignDayOfWeek, this);
+    }
+
+    public void removeResortRoomCategoryPriceDayEntity(ResortRoomCategoryPriceDayEntity entity) {
+        removeChild(resortRoomCategoryPriceDayEntities, entity, (child, ignored) -> child.unassignDayOfWeek());
     }
 }
