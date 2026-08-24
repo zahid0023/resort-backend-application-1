@@ -55,6 +55,7 @@ used to shape the response:
 | PUT    | `/api/v1/resorts/{resort-id}/facility-groups/{id}`                             | Update a resort facility group           |
 | DELETE | `/api/v1/resorts/{resort-id}/facility-groups/{id}`                             | Delete a resort facility group           |
 | GET    | `/api/v1/resorts/{resort-id}/facility-groups/{facility-group-id}/locales`      | List a resort facility group's locales   |
+| GET    | `/api/v1/resorts/{resort-id}/facility-groups/{facility-group-id}/locales/count` | Count a resort facility group's used platform locales |
 | POST   | `/api/v1/resorts/{resort-id}/facility-groups/{facility-group-id}/locales`      | Create a resort facility group locale    |
 | PUT    | `/api/v1/resorts/{resort-id}/facility-groups/{facility-group-id}/locales/{id}` | Update a resort facility group locale    |
 | DELETE | `/api/v1/resorts/{resort-id}/facility-groups/{facility-group-id}/locales/{id}` | Delete a resort facility group locale    |
@@ -486,6 +487,37 @@ whose `code` contains a given substring.
   "has_previous": false,
   "sortable_fields": null,
   "searchable_fields": null
+}
+```
+
+---
+
+### Count Resort Facility Group Locales
+
+`GET /api/v1/resorts/{resort-id}/facility-groups/{facility-group-id}/locales/count`
+
+Returns how many active, non-deleted platform [Locale](locales-api.md) codes this resort facility group already
+has an active translation for, together with each one's `code`. Matched via `locale_id`. `count` is always
+`codes.length`. Use this to gray out/disable locales already present in `codes` when building the picker for
+[Create Resort Facility Group Locale](#create-resort-facility-group-locale) — `locale_id` must not already have
+a translation for this resort facility group, or the create call returns `409 CONFLICT`.
+
+#### Path Parameters
+
+| Parameter           | Type | Description                            |
+|----------------------|------|------------------------------------------|
+| `resort-id`         | Long | ID of the owning resort                |
+| `facility-group-id` | Long | ID of the parent resort facility group |
+
+#### Response `200 OK`
+
+```json
+{
+  "count": 2,
+  "codes": [
+    "en",
+    "bn"
+  ]
 }
 ```
 

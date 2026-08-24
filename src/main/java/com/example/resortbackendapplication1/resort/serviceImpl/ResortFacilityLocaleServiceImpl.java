@@ -7,6 +7,7 @@ import com.example.resortbackendapplication1.commons.utils.Pagination;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.locale.CreateResortFacilityLocaleRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortfacility.locale.UpdateResortFacilityLocaleRequest;
+import com.example.resortbackendapplication1.resort.dto.response.resortfacilitylocales.ResortFacilityLocaleCountResponse;
 import com.example.resortbackendapplication1.resort.model.dto.ResortFacilityLocaleDto;
 import com.example.resortbackendapplication1.resort.model.entity.ResortFacilityEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortFacilityLocaleEntity;
@@ -21,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -67,6 +69,13 @@ public class ResortFacilityLocaleServiceImpl implements ResortFacilityLocaleServ
                         resortFacilityId, localeCode, true, false, pageable))
                 .map(ResortFacilityLocaleMapper::toDto);
         return Pagination.buildPaginatedResponse(dtoPage);
+    }
+
+    @Override
+    public ResortFacilityLocaleCountResponse getActiveCount(Long resortFacilityId) {
+        List<String> codes = resortFacilityLocaleRepository
+                .findLocaleCodeByResortFacilityEntity_IdAndIsActiveAndIsDeleted(resortFacilityId, true, false);
+        return new ResortFacilityLocaleCountResponse((long) codes.size(), codes);
     }
 
     @Transactional

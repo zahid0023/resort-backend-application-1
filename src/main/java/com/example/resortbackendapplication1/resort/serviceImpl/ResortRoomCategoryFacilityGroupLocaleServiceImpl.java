@@ -7,6 +7,7 @@ import com.example.resortbackendapplication1.commons.utils.Pagination;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryfacilitygroup.locale.CreateResortRoomCategoryFacilityGroupLocaleRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryfacilitygroup.locale.UpdateResortRoomCategoryFacilityGroupLocaleRequest;
+import com.example.resortbackendapplication1.resort.dto.response.resortroomcategoryfacilitygrouplocales.ResortRoomCategoryFacilityGroupLocaleCountResponse;
 import com.example.resortbackendapplication1.resort.model.dto.ResortRoomCategoryFacilityGroupLocaleDto;
 import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryFacilityGroupEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryFacilityGroupLocaleEntity;
@@ -21,11 +22,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 
 @Service
 @Slf4j
-public class ResortRoomCategoryFacilityGroupLocaleServiceImpl implements ResortRoomCategoryFacilityGroupLocaleService {
+public
+class ResortRoomCategoryFacilityGroupLocaleServiceImpl implements ResortRoomCategoryFacilityGroupLocaleService {
 
     private final ResortRoomCategoryFacilityGroupLocaleRepository resortRoomCategoryFacilityGroupLocaleRepository;
 
@@ -67,6 +70,13 @@ public class ResortRoomCategoryFacilityGroupLocaleServiceImpl implements ResortR
                         resortRoomCategoryFacilityGroupId, localeCode, true, false, pageable))
                 .map(ResortRoomCategoryFacilityGroupLocaleMapper::toDto);
         return Pagination.buildPaginatedResponse(dtoPage);
+    }
+
+    @Override
+    public ResortRoomCategoryFacilityGroupLocaleCountResponse getActiveCount(Long resortRoomCategoryFacilityGroupId) {
+        List<String> codes = resortRoomCategoryFacilityGroupLocaleRepository
+                .findLocaleCodeByResortRoomCategoryFacilityGroupEntity_IdAndIsActiveAndIsDeleted(resortRoomCategoryFacilityGroupId, true, false);
+        return new ResortRoomCategoryFacilityGroupLocaleCountResponse((long) codes.size(), codes);
     }
 
     @Transactional

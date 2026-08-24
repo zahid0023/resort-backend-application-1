@@ -6,7 +6,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
 import java.util.Optional;
 
 @SuppressWarnings("unused")
@@ -57,4 +59,10 @@ public interface ResortRoleTypeLocaleRepository extends
             Boolean isDeleted,
             Pageable pageable
     );
+
+    @Query("select rrtl.localeEntity.code from ResortRoleTypeLocaleEntity rrtl "
+            + "where rrtl.resortRoleTypeEntity.id = :resortRoleTypeId "
+            + "and rrtl.isActive = :isActive and rrtl.isDeleted = :isDeleted")
+    List<String> findLocaleCodeByResortRoleTypeEntity_IdAndIsActiveAndIsDeleted(
+            Long resortRoleTypeId, Boolean isActive, Boolean isDeleted);
 }

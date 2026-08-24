@@ -48,12 +48,14 @@ used:
 | DELETE | `/api/v1/resorts/{id}`                                | Delete a resort (cascades to basic info and address) |
 | PUT    | `/api/v1/resorts/{resort-id}/basic-info`              | Update a resort's basic info                         |
 | GET    | `/api/v1/resorts/{resort-id}/basic-info/locales`      | List a resort basic info's locales                   |
+| GET    | `/api/v1/resorts/{resort-id}/basic-info/locales/count` | Count a resort basic info's used platform locales    |
 | POST   | `/api/v1/resorts/{resort-id}/basic-info/locales`      | Create a resort basic info locale                    |
 | PUT    | `/api/v1/resorts/{resort-id}/basic-info/locales/{id}` | Update a resort basic info locale                    |
 | DELETE | `/api/v1/resorts/{resort-id}/basic-info/locales/{id}` | Delete a resort basic info locale                    |
 | GET    | `/api/v1/resorts/{resort-id}/address`                 | Get a resort's address                               |
 | PUT    | `/api/v1/resorts/{resort-id}/address`                 | Update a resort's address                            |
 | GET    | `/api/v1/resorts/{resort-id}/address/locales`         | List a resort address's locales                      |
+| GET    | `/api/v1/resorts/{resort-id}/address/locales/count`   | Count a resort address's used platform locales        |
 | POST   | `/api/v1/resorts/{resort-id}/address/locales`         | Create a resort address locale                       |
 | PUT    | `/api/v1/resorts/{resort-id}/address/locales/{id}`    | Update a resort address locale                       |
 | DELETE | `/api/v1/resorts/{resort-id}/address/locales/{id}`    | Delete a resort address locale                       |
@@ -572,6 +574,35 @@ locales whose `code` contains a given substring.
 
 ---
 
+### Count Resort Basic Info Locales
+
+`GET /api/v1/resorts/{resort-id}/basic-info/locales/count`
+
+Returns how many active, non-deleted platform [Locale](locales-api.md) codes the resort's basic info already
+has an active translation for, together with each one's `code`. Matched via `locale_id`. `count` is always
+`codes.length`. Use this to gray out/disable locales already present in `codes` when building the picker for
+[Create Resort Basic Info Locale](#create-resort-basic-info-locale) — `locale_id` must not already have a
+translation for this resort's basic info, or the create call returns `409 CONFLICT`.
+
+#### Path Parameters
+
+| Parameter   | Type | Description             |
+|-------------|------|--------------------------|
+| `resort-id` | Long | ID of the owning resort |
+
+#### Response `200 OK`
+
+```json
+{
+  "count": 1,
+  "codes": [
+    "en"
+  ]
+}
+```
+
+---
+
 ### Create Resort Basic Info Locale
 
 `POST /api/v1/resorts/{resort-id}/basic-info/locales`
@@ -860,6 +891,35 @@ single Accept-Language-matched translation returned by [Get Resort Address](#get
   "has_previous": false,
   "sortable_fields": null,
   "searchable_fields": null
+}
+```
+
+---
+
+### Count Resort Address Locales
+
+`GET /api/v1/resorts/{resort-id}/address/locales/count`
+
+Returns how many active, non-deleted platform [Locale](locales-api.md) codes the resort's address already has
+an active translation for, together with each one's `code`. Matched via `locale_id`. `count` is always
+`codes.length`. Use this to gray out/disable locales already present in `codes` when building the picker for
+[Create Resort Address Locale](#create-resort-address-locale) — `locale_id` must not already have a
+translation for this resort's address, or the create call returns `409 CONFLICT`.
+
+#### Path Parameters
+
+| Parameter   | Type | Description             |
+|-------------|------|--------------------------|
+| `resort-id` | Long | ID of the owning resort |
+
+#### Response `200 OK`
+
+```json
+{
+  "count": 1,
+  "codes": [
+    "en"
+  ]
 }
 ```
 

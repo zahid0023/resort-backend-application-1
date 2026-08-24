@@ -60,6 +60,7 @@ used to shape the response:
 | PUT    | `/api/v1/resorts/{resort-id}/facilities/{id}`                              | Update a resort facility            |
 | DELETE | `/api/v1/resorts/{resort-id}/facilities/{id}`                              | Delete a resort facility            |
 | GET    | `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/locales`      | List a resort facility's locales    |
+| GET    | `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/locales/count` | Count a resort facility's used platform locales |
 | POST   | `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/locales`      | Create a resort facility locale     |
 | PUT    | `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/locales/{id}` | Update a resort facility locale     |
 | DELETE | `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/locales/{id}` | Delete a resort facility locale     |
@@ -655,6 +656,37 @@ see more than the single Accept-Language-matched translation returned by
   "has_previous": false,
   "sortable_fields": null,
   "searchable_fields": null
+}
+```
+
+---
+
+### Count Resort Facility Locales
+
+`GET /api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/locales/count`
+
+Returns how many active, non-deleted platform [Locale](locales-api.md) codes this resort facility already has
+an active translation for, together with each one's `code`. Matched via `locale_id`. `count` is always
+`codes.length`. Use this to gray out/disable locales already present in `codes` when building the picker for
+[Create Resort Facility Locale](#create-resort-facility-locale) — `locale_id` must not already have a
+translation for this resort facility, or the create call returns `409 CONFLICT`.
+
+#### Path Parameters
+
+| Parameter            | Type | Description                      |
+|-----------------------|------|-----------------------------------|
+| `resort-id`          | Long | ID of the owning resort          |
+| `resort-facility-id` | Long | ID of the parent resort facility |
+
+#### Response `200 OK`
+
+```json
+{
+  "count": 2,
+  "codes": [
+    "en",
+    "bn"
+  ]
 }
 ```
 

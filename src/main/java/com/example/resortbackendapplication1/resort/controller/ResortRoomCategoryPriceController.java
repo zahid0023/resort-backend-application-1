@@ -8,7 +8,9 @@ import com.example.resortbackendapplication1.price.model.entity.PriceTypeEntity;
 import com.example.resortbackendapplication1.price.model.entity.PriceUnitEntity;
 import com.example.resortbackendapplication1.price.service.PriceTypeService;
 import com.example.resortbackendapplication1.price.service.PriceUnitService;
-import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.CreateResortRoomCategoryPriceRequest;
+import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.CreateResortRoomCategoryHolidayPriceRequest;
+import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.CreateResortRoomCategoryPriceGroupRequest;
+import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.CreateResortRoomCategorySpecialPriceRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.UpdateResortRoomCategoryPriceRequest;
 import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryPriceEntity;
@@ -46,18 +48,51 @@ public class ResortRoomCategoryPriceController {
         this.dayOfWeekService = dayOfWeekService;
     }
 
-    @PostMapping
-    public ResponseEntity<?> create(
+    @PostMapping("/main")
+    public ResponseEntity<?> createMain(
             @PathVariable("resort-id") Long resortId,
             @PathVariable("room-category-id") Long roomCategoryId,
-            @Valid @RequestBody CreateResortRoomCategoryPriceRequest request) {
+            @Valid @RequestBody CreateResortRoomCategoryPriceGroupRequest request) {
         ResortRoomCategoryEntity resortRoomCategoryEntity = resortRoomCategoryService.getEntityById(resortId, roomCategoryId);
-        PriceTypeEntity priceTypeEntity = priceTypeService.getEntityById(request.getPriceTypeId());
+        PriceTypeEntity basePriceTypeEntity = priceTypeService.getEntityByCode("BAS");
+        PriceTypeEntity weekdayPriceTypeEntity = priceTypeService.getEntityByCode("WKD");
+        PriceTypeEntity weekendPriceTypeEntity = priceTypeService.getEntityByCode("WKE");
+        CurrencyEntity currencyEntity = currencyService.getEntityById(request.getCurrencyId());
+        PriceUnitEntity basePriceUnitEntity = priceUnitService.getEntityById(request.getBasePriceUnitId());
+        PriceUnitEntity weekdayPriceUnitEntity = priceUnitService.getEntityById(request.getWeekdayPriceUnitId());
+        PriceUnitEntity weekendPriceUnitEntity = priceUnitService.getEntityById(request.getWeekendPriceUnitId());
+        List<DayOfWeekEntity> weekdayDayOfWeekEntities = resolveDayOfWeekEntities(request.getWeekdayDayOfWeekIds());
+        List<DayOfWeekEntity> weekendDayOfWeekEntities = resolveDayOfWeekEntities(request.getWeekendDayOfWeekIds());
+        return ResponseEntity.status(HttpStatus.CREATED).body(resortRoomCategoryPriceService.createMain(
+                request, resortRoomCategoryEntity, basePriceTypeEntity, weekdayPriceTypeEntity, weekendPriceTypeEntity,
+                currencyEntity, basePriceUnitEntity, weekdayPriceUnitEntity, weekendPriceUnitEntity,
+                weekdayDayOfWeekEntities, weekendDayOfWeekEntities));
+    }
+
+    @PostMapping("/holidays")
+    public ResponseEntity<?> createHoliday(
+            @PathVariable("resort-id") Long resortId,
+            @PathVariable("room-category-id") Long roomCategoryId,
+            @Valid @RequestBody CreateResortRoomCategoryHolidayPriceRequest request) {
+        ResortRoomCategoryEntity resortRoomCategoryEntity = resortRoomCategoryService.getEntityById(resortId, roomCategoryId);
+        PriceTypeEntity holidayPriceTypeEntity = priceTypeService.getEntityByCode("HOL");
         PriceUnitEntity priceUnitEntity = priceUnitService.getEntityById(request.getPriceUnitId());
         CurrencyEntity currencyEntity = currencyService.getEntityById(request.getCurrencyId());
-        List<DayOfWeekEntity> dayOfWeekEntities = resolveDayOfWeekEntities(request.getDayOfWeekIds());
-        return ResponseEntity.status(HttpStatus.CREATED).body(resortRoomCategoryPriceService.create(
-                request, resortRoomCategoryEntity, priceTypeEntity, priceUnitEntity, currencyEntity, dayOfWeekEntities));
+        return ResponseEntity.status(HttpStatus.CREATED).body(resortRoomCategoryPriceService.createHoliday(
+                request, resortRoomCategoryEntity, holidayPriceTypeEntity, priceUnitEntity, currencyEntity));
+    }
+
+    @PostMapping("/specials")
+    public ResponseEntity<?> createSpecial(
+            @PathVariable("resort-id") Long resortId,
+            @PathVariable("room-category-id") Long roomCategoryId,
+            @Valid @RequestBody CreateResortRoomCategorySpecialPriceRequest request) {
+        ResortRoomCategoryEntity resortRoomCategoryEntity = resortRoomCategoryService.getEntityById(resortId, roomCategoryId);
+        PriceTypeEntity specialPriceTypeEntity = priceTypeService.getEntityByCode("SPECIAL");
+        PriceUnitEntity priceUnitEntity = priceUnitService.getEntityById(request.getPriceUnitId());
+        CurrencyEntity currencyEntity = currencyService.getEntityById(request.getCurrencyId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(resortRoomCategoryPriceService.createSpecial(
+                request, resortRoomCategoryEntity, specialPriceTypeEntity, priceUnitEntity, currencyEntity));
     }
 
     @GetMapping("/{id}")

@@ -16,6 +16,7 @@ import com.example.resortbackendapplication1.resort.dto.request.resortroomcatego
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategory.UpdateResortRoomCategoryRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategorybed.CreateResortRoomCategoryBedRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.CreateResortRoomCategoryPriceGroupRequest;
+import com.example.resortbackendapplication1.resort.dto.response.resortroomcategories.ResortRoomCategoryCountResponse;
 import com.example.resortbackendapplication1.resort.dto.response.resortroomcategories.ResortRoomCategoryResponse;
 import com.example.resortbackendapplication1.resort.model.dto.ResortRoomCategoryBedDto;
 import com.example.resortbackendapplication1.resort.model.dto.ResortRoomCategoryDto;
@@ -217,6 +218,13 @@ public class ResortRoomCategoryServiceImpl implements ResortRoomCategoryService 
                 .beds(mapBeds(entity))
                 .build();
         return new ResortRoomCategoryResponse(dto);
+    }
+
+    @Override
+    public ResortRoomCategoryCountResponse getActiveRoomCategoryCount(Long resortId) {
+        List<String> codes = resortRoomCategoryRepository
+                .findRoomCategoryCodeByResortEntity_IdAndIsActiveAndIsDeleted(resortId, true, false);
+        return new ResortRoomCategoryCountResponse((long) codes.size(), codes);
     }
 
     private List<ResortRoomCategoryBedDto> mapBeds(ResortRoomCategoryEntity entity) {

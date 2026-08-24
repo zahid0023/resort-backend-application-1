@@ -6,6 +6,7 @@ import com.example.resortbackendapplication1.commons.dto.response.SuccessRespons
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.resortpermissiontype.dto.request.resortpermissiontype.locale.CreateResortPermissionTypeLocaleRequest;
 import com.example.resortbackendapplication1.resortpermissiontype.dto.request.resortpermissiontype.locale.UpdateResortPermissionTypeLocaleRequest;
+import com.example.resortbackendapplication1.resortpermissiontype.dto.response.resortpermissiontypelocales.ResortPermissionTypeLocaleCountResponse;
 import com.example.resortbackendapplication1.resortpermissiontype.model.dto.ResortPermissionTypeLocaleDto;
 import com.example.resortbackendapplication1.resortpermissiontype.model.entity.ResortPermissionTypeEntity;
 import com.example.resortbackendapplication1.resortpermissiontype.model.entity.ResortPermissionTypeLocaleEntity;
@@ -18,6 +19,8 @@ public interface ResortPermissionTypeLocaleService {
     ResortPermissionTypeLocaleEntity getEntityById(Long resortPermissionTypeId, Long id);
 
     PaginatedResponse<ResortPermissionTypeLocaleDto> getAll(Long resortPermissionTypeId, String localeCode, PaginatedRequest paginatedRequest);
+
+    ResortPermissionTypeLocaleCountResponse getActiveCount(Long resortPermissionTypeId);
 
     SuccessResponse update(ResortPermissionTypeLocaleEntity entity,
                            UpdateResortPermissionTypeLocaleRequest request);

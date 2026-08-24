@@ -121,6 +121,12 @@ public class ResortRoomCategoryController {
         return ResponseEntity.ok(resortRoomCategoryService.getById(resortId, id));
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<?> getActiveCount(@PathVariable("resort-id") Long resortId) {
+        resortService.getEntityById(resortId);
+        return ResponseEntity.ok(resortRoomCategoryService.getActiveRoomCategoryCount(resortId));
+    }
+
     @GetMapping
     public ResponseEntity<?> getAll(
             @PathVariable("resort-id") Long resortId,

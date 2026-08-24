@@ -40,6 +40,12 @@ public class ResortRoleTypeLocaleController {
         return ResponseEntity.ok(resortRoleTypeLocaleService.getAll(resortRoleTypeId, localeCode, paginatedRequest));
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<?> getActiveCount(@PathVariable("resort-role-type-id") Long resortRoleTypeId) {
+        resortRoleTypeService.getEntityById(resortRoleTypeId);
+        return ResponseEntity.ok(resortRoleTypeLocaleService.getActiveCount(resortRoleTypeId));
+    }
+
     @PostMapping
     public ResponseEntity<?> create(
             @PathVariable("resort-role-type-id") Long resortRoleTypeId,

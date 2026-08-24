@@ -40,6 +40,12 @@ public class ResortBasicInfoLocaleController {
         return ResponseEntity.ok(resortBasicInfoLocaleService.getAll(resortBasicInfoEntity.getId(), localeCode, paginatedRequest));
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<?> getActiveCount(@PathVariable("resort-id") Long resortId) {
+        ResortBasicInfoEntity resortBasicInfoEntity = resortBasicInfoService.getEntityByResortId(resortId);
+        return ResponseEntity.ok(resortBasicInfoLocaleService.getActiveCount(resortBasicInfoEntity.getId()));
+    }
+
     @PostMapping
     public ResponseEntity<?> create(
             @PathVariable("resort-id") Long resortId,

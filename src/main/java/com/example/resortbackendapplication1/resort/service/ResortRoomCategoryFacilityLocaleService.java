@@ -6,6 +6,7 @@ import com.example.resortbackendapplication1.commons.dto.response.SuccessRespons
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryfacility.locale.CreateResortRoomCategoryFacilityLocaleRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryfacility.locale.UpdateResortRoomCategoryFacilityLocaleRequest;
+import com.example.resortbackendapplication1.resort.dto.response.resortroomcategoryfacilitylocales.ResortRoomCategoryFacilityLocaleCountResponse;
 import com.example.resortbackendapplication1.resort.model.dto.ResortRoomCategoryFacilityLocaleDto;
 import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryFacilityEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryFacilityLocaleEntity;
@@ -19,6 +20,8 @@ public interface ResortRoomCategoryFacilityLocaleService {
     ResortRoomCategoryFacilityLocaleEntity getEntityById(Long resortRoomCategoryFacilityId, Long id);
 
     PaginatedResponse<ResortRoomCategoryFacilityLocaleDto> getAll(Long resortRoomCategoryFacilityId, String localeCode, PaginatedRequest paginatedRequest);
+
+    ResortRoomCategoryFacilityLocaleCountResponse getActiveCount(Long resortRoomCategoryFacilityId);
 
     SuccessResponse update(ResortRoomCategoryFacilityLocaleEntity entity,
                            UpdateResortRoomCategoryFacilityLocaleRequest request);

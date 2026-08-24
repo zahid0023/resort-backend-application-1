@@ -11,6 +11,7 @@ import com.example.resortbackendapplication1.price.model.entity.PriceUnitEntity;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategory.CreateResortRoomCategoryRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategory.ResortRoomCategoryFilterRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategory.UpdateResortRoomCategoryRequest;
+import com.example.resortbackendapplication1.resort.dto.response.resortroomcategories.ResortRoomCategoryCountResponse;
 import com.example.resortbackendapplication1.resort.dto.response.resortroomcategories.ResortRoomCategoryResponse;
 import com.example.resortbackendapplication1.resort.model.dto.ResortRoomCategoryDto;
 import com.example.resortbackendapplication1.resort.model.entity.ResortEntity;
@@ -38,6 +39,14 @@ public interface ResortRoomCategoryService {
     ResortRoomCategoryEntity getEntityById(Long resortId, Long id);
 
     ResortRoomCategoryResponse getById(Long resortId, Long id);
+
+    /**
+     * The count and codes of platform {@code RoomCategory} entries this resort already has an active
+     * {@code ResortRoomCategory} for — matched via {@code room_category_id}, never via
+     * {@code resort_room_categories.code} (which a resort may set independently of the platform code).
+     * Lets the frontend decide whether a given platform room category can still be created for this resort.
+     */
+    ResortRoomCategoryCountResponse getActiveRoomCategoryCount(Long resortId);
 
     PaginatedResponse<ResortRoomCategoryDto> getAll(Long resortId, ResortRoomCategoryFilterRequest request);
 

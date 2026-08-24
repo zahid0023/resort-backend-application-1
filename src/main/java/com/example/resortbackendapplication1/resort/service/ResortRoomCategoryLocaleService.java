@@ -6,6 +6,7 @@ import com.example.resortbackendapplication1.commons.dto.response.SuccessRespons
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategory.locale.CreateResortRoomCategoryLocaleRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategory.locale.UpdateResortRoomCategoryLocaleRequest;
+import com.example.resortbackendapplication1.resort.dto.response.resortroomcategorylocales.ResortRoomCategoryLocaleCountResponse;
 import com.example.resortbackendapplication1.resort.model.dto.ResortRoomCategoryLocaleDto;
 import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryLocaleEntity;
@@ -19,6 +20,13 @@ public interface ResortRoomCategoryLocaleService {
     ResortRoomCategoryLocaleEntity getEntityById(Long resortRoomCategoryId, Long id);
 
     PaginatedResponse<ResortRoomCategoryLocaleDto> getAll(Long resortRoomCategoryId, String localeCode, PaginatedRequest paginatedRequest);
+
+    /**
+     * The count and codes of platform {@code Locale} entries this resort room category already has an active
+     * translation for — matched via {@code locale_id}, so the frontend can gray out locales already present
+     * before calling {@link #create}, which returns {@code 409 CONFLICT} for a duplicate.
+     */
+    ResortRoomCategoryLocaleCountResponse getActiveCount(Long resortRoomCategoryId);
 
     SuccessResponse update(ResortRoomCategoryLocaleEntity entity, UpdateResortRoomCategoryLocaleRequest request);
 

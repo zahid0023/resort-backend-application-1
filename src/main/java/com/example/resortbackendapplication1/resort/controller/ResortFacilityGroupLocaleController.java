@@ -41,6 +41,14 @@ public class ResortFacilityGroupLocaleController {
         return ResponseEntity.ok(resortFacilityGroupLocaleService.getAll(resortFacilityGroupEntity.getId(), localeCode, paginatedRequest));
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<?> getActiveCount(
+            @PathVariable("resort-id") Long resortId,
+            @PathVariable("facility-group-id") Long facilityGroupId) {
+        ResortFacilityGroupEntity resortFacilityGroupEntity = resortFacilityGroupService.getEntityById(resortId, facilityGroupId);
+        return ResponseEntity.ok(resortFacilityGroupLocaleService.getActiveCount(resortFacilityGroupEntity.getId()));
+    }
+
     @PostMapping
     public ResponseEntity<?> create(
             @PathVariable("resort-id") Long resortId,

@@ -33,6 +33,7 @@ actually used to shape the response:
 | PUT    | `/api/v1/resort-role-types/{id}`                               | Update a resort role type         |
 | DELETE | `/api/v1/resort-role-types/{id}`                               | Delete a resort role type         |
 | GET    | `/api/v1/resort-role-types/{resort-role-type-id}/locales`      | List a resort role type's locales |
+| GET    | `/api/v1/resort-role-types/{resort-role-type-id}/locales/count` | Count a resort role type's used platform locales |
 | POST   | `/api/v1/resort-role-types/{resort-role-type-id}/locales`      | Create a resort role type locale  |
 | PUT    | `/api/v1/resort-role-types/{resort-role-type-id}/locales/{id}` | Update a resort role type locale  |
 | DELETE | `/api/v1/resort-role-types/{resort-role-type-id}/locales/{id}` | Delete a resort role type locale  |
@@ -381,6 +382,36 @@ contains a given substring.
   "has_previous": false,
   "sortable_fields": null,
   "searchable_fields": null
+}
+```
+
+---
+
+### Count Resort Role Type Locales
+
+`GET /api/v1/resort-role-types/{resort-role-type-id}/locales/count`
+
+Returns how many active, non-deleted platform [Locale](locales-api.md) codes this resort role type already
+has an active translation for, together with each one's `code`. Matched via `locale_id`. `count` is always
+`codes.length`. Use this to gray out/disable locales already present in `codes` when building the picker for
+[Create Resort Role Type Locale](#create-resort-role-type-locale) — `locale_id` must not already have a
+translation for this resort role type, or the create call returns `409 CONFLICT`.
+
+#### Path Parameters
+
+| Parameter             | Type | Description                       |
+|------------------------|------|--------------------------------------|
+| `resort-role-type-id` | Long | ID of the parent resort role type |
+
+#### Response `200 OK`
+
+```json
+{
+  "count": 2,
+  "codes": [
+    "en",
+    "bn"
+  ]
 }
 ```
 

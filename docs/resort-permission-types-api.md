@@ -33,6 +33,7 @@ actually used to shape the response:
 | PUT    | `/api/v1/resort-permission-types/{id}`                                     | Update a resort permission type         |
 | DELETE | `/api/v1/resort-permission-types/{id}`                                     | Delete a resort permission type         |
 | GET    | `/api/v1/resort-permission-types/{resort-permission-type-id}/locales`      | List a resort permission type's locales |
+| GET    | `/api/v1/resort-permission-types/{resort-permission-type-id}/locales/count` | Count a resort permission type's used platform locales |
 | POST   | `/api/v1/resort-permission-types/{resort-permission-type-id}/locales`      | Create a resort permission type locale  |
 | PUT    | `/api/v1/resort-permission-types/{resort-permission-type-id}/locales/{id}` | Update a resort permission type locale  |
 | DELETE | `/api/v1/resort-permission-types/{resort-permission-type-id}/locales/{id}` | Delete a resort permission type locale  |
@@ -382,6 +383,36 @@ only way to see more than the single Accept-Language-matched translation returne
   "has_previous": false,
   "sortable_fields": null,
   "searchable_fields": null
+}
+```
+
+---
+
+### Count Resort Permission Type Locales
+
+`GET /api/v1/resort-permission-types/{resort-permission-type-id}/locales/count`
+
+Returns how many active, non-deleted platform [Locale](locales-api.md) codes this resort permission type
+already has an active translation for, together with each one's `code`. Matched via `locale_id`. `count` is
+always `codes.length`. Use this to gray out/disable locales already present in `codes` when building the
+picker for [Create Resort Permission Type Locale](#create-resort-permission-type-locale) — `locale_id` must
+not already have a translation for this resort permission type, or the create call returns `409 CONFLICT`.
+
+#### Path Parameters
+
+| Parameter                   | Type | Description                             |
+|-------------------------------|------|--------------------------------------------|
+| `resort-permission-type-id` | Long | ID of the parent resort permission type |
+
+#### Response `200 OK`
+
+```json
+{
+  "count": 2,
+  "codes": [
+    "en",
+    "bn"
+  ]
 }
 ```
 

@@ -62,6 +62,7 @@ used to shape the response:
 | PUT    | `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facilities/{id}`                                                   | Update a resort room category facility          |
 | DELETE | `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facilities/{id}`                                                   | Delete a resort room category facility          |
 | GET    | `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facilities/{resort-room-category-facility-id}/locales`            | List a resort room category facility's locales  |
+| GET    | `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facilities/{resort-room-category-facility-id}/locales/count`      | Count a resort room category facility's used platform locales |
 | POST   | `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facilities/{resort-room-category-facility-id}/locales`            | Create a resort room category facility locale   |
 | PUT    | `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facilities/{resort-room-category-facility-id}/locales/{id}`       | Update a resort room category facility locale   |
 | DELETE | `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facilities/{resort-room-category-facility-id}/locales/{id}`       | Delete a resort room category facility locale   |
@@ -533,6 +534,39 @@ filtered to locales whose `code` contains a given substring.
   "has_previous": false,
   "sortable_fields": null,
   "searchable_fields": null
+}
+```
+
+---
+
+### Count Resort Room Category Facility Locales
+
+`GET /api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facilities/{resort-room-category-facility-id}/locales/count`
+
+Returns how many active, non-deleted platform [Locale](locales-api.md) codes this resort room category facility
+already has an active translation for, together with each one's `code`. Matched via `locale_id`. `count` is
+always `codes.length`. Use this to gray out/disable locales already present in `codes` when building the
+picker for [Create Resort Room Category Facility Locale](#create-resort-room-category-facility-locale) —
+`locale_id` must not already have a translation for this resort room category facility, or the create call
+returns `409 CONFLICT`.
+
+#### Path Parameters
+
+| Parameter                             | Type | Description                                    |
+|------------------------------------------|------|----------------------------------------------------|
+| `resort-id`                           | Long | ID of the owning resort                              |
+| `room-category-id`                    | Long | ID of the owning resort room category                |
+| `resort-room-category-facility-id`    | Long | ID of the parent resort room category facility       |
+
+#### Response `200 OK`
+
+```json
+{
+  "count": 2,
+  "codes": [
+    "en",
+    "bn"
+  ]
 }
 ```
 

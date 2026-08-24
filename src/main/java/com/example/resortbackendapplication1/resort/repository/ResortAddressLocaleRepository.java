@@ -5,7 +5,9 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
 import java.util.Optional;
 
 @SuppressWarnings("unused")
@@ -22,5 +24,11 @@ public interface ResortAddressLocaleRepository extends JpaRepository<@NonNull Re
 
     Page<@NonNull ResortAddressLocaleEntity> findByResortAddressEntity_IdAndLocaleEntity_CodeContainingIgnoreCaseAndIsActiveAndIsDeleted(
             Long resortAddressId, String localeCode, Boolean isActive, Boolean isDeleted, Pageable pageable);
+
+    @Query("select ral.localeEntity.code from ResortAddressLocaleEntity ral "
+            + "where ral.resortAddressEntity.id = :resortAddressId "
+            + "and ral.isActive = :isActive and ral.isDeleted = :isDeleted")
+    List<String> findLocaleCodeByResortAddressEntity_IdAndIsActiveAndIsDeleted(
+            Long resortAddressId, Boolean isActive, Boolean isDeleted);
 
 }
