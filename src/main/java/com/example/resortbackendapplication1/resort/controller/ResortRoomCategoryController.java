@@ -16,7 +16,7 @@ import com.example.resortbackendapplication1.resort.dto.request.resortroomcatego
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategory.ResortRoomCategoryFilterRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategory.UpdateResortRoomCategoryRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategorybed.CreateResortRoomCategoryBedRequest;
-import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.CreateResortRoomCategoryPriceGroupRequest;
+import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.CreateResortRoomCategoryMainPriceRequest;
 import com.example.resortbackendapplication1.resort.model.entity.ResortEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryEntity;
 import com.example.resortbackendapplication1.resort.service.ResortRoomCategoryService;
@@ -92,19 +92,22 @@ public class ResortRoomCategoryController {
         PriceTypeEntity weekdayPriceTypeEntity = priceTypeService.getEntityByCode("WKD");
         PriceTypeEntity weekendPriceTypeEntity = priceTypeService.getEntityByCode("WKE");
         List<CurrencyEntity> currencyEntities = request.getPrices().stream()
-                .map(CreateResortRoomCategoryPriceGroupRequest::getCurrencyId)
+                .map(CreateResortRoomCategoryMainPriceRequest::getCurrencyId)
                 .distinct()
                 .map(currencyService::getEntityById)
                 .toList();
         List<PriceUnitEntity> priceUnitEntities = request.getPrices().stream()
                 .flatMap(priceGroup -> Stream.of(
-                        priceGroup.getBasePriceUnitId(), priceGroup.getWeekdayPriceUnitId(), priceGroup.getWeekendPriceUnitId()))
+                        priceGroup.getBasePriceRequest().getPriceUnitId(),
+                        priceGroup.getWeekdayPrice().getPriceUnitId(),
+                        priceGroup.getWeekendPrice().getPriceUnitId()))
                 .distinct()
                 .map(priceUnitService::getEntityById)
                 .toList();
         List<DayOfWeekEntity> dayOfWeekEntities = request.getPrices().stream()
                 .flatMap(priceGroup -> Stream.concat(
-                        priceGroup.getWeekdayDayOfWeekIds().stream(), priceGroup.getWeekendDayOfWeekIds().stream()))
+                        priceGroup.getWeekdayPrice().getDayOfWeekIds().stream(),
+                        priceGroup.getWeekendPrice().getDayOfWeekIds().stream()))
                 .distinct()
                 .map(dayOfWeekService::getEntityById)
                 .toList();

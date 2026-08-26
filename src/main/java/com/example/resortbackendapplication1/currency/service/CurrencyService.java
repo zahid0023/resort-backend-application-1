@@ -6,6 +6,7 @@ import com.example.resortbackendapplication1.commons.dto.response.SuccessRespons
 import com.example.resortbackendapplication1.currency.dto.request.currency.CreateCurrencyRequest;
 import com.example.resortbackendapplication1.currency.dto.request.currency.CurrencyFilterRequest;
 import com.example.resortbackendapplication1.currency.dto.request.currency.UpdateCurrencyRequest;
+import com.example.resortbackendapplication1.currency.dto.response.currencies.CurrencyCountResponse;
 import com.example.resortbackendapplication1.currency.dto.response.currencies.CurrencyResponse;
 import com.example.resortbackendapplication1.currency.model.dto.CurrencyDto;
 import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
@@ -20,6 +21,8 @@ public interface CurrencyService {
     CurrencyEntity getEntityById(Long id);
 
     CurrencyResponse getById(Long id);
+
+    CurrencyCountResponse getActiveCount();
 
     PaginatedResponse<CurrencyDto> getAll(CurrencyFilterRequest request);
 

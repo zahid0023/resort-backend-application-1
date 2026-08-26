@@ -147,15 +147,17 @@ via that same endpoint.
 **`prices` is required and must contain at least one entry, one per currency** — `currency_id` must be unique
 across the entries in a single request — a duplicate returns `409 CONFLICT`. Each entry creates exactly
 three [Resort Room
-Category Price](resort-room-category-prices-api.md) rows for that currency — `BAS` (named `"Base Price"`),
-`WKD` (`"Weekday Price"`), and `WKE` (`"Weekend Price"`) — there is no way to create only one or two of the
-three through this endpoint. `weekday_price`/`weekend_price` cannot exceed `base_price` for the same entry
-(`400 INVALID_ARGUMENT` otherwise, mirroring the same rule on the standalone [Create Resort Room Category
-Price](resort-room-category-prices-api.md#create-resort-room-category-price) endpoint). Every price unit id
-(`base_price_unit_id`/`weekday_price_unit_id`/`weekend_price_unit_id`) must reference an existing, active price
-unit — each of the three can be different. `weekday_day_of_week_ids`/`weekend_day_of_week_ids` must each be
-non-empty and every id must reference an existing, active [Day of Week](days-of-week-api.md). `HOL`/`SPECIAL`
-prices cannot be created here — add them afterward via `POST .../prices`.
+Category Price](resort-room-category-prices-api.md) rows for that currency, each carrying its own name/
+description/price/price-unit as a nested object — `base_price_request` (`BAS`, e.g. named `"Base Price"`),
+`weekday_price` (`WKD`, e.g. `"Weekday Price"`), and `weekend_price` (`WKE`, e.g. `"Weekend Price"`) — there is
+no way to create only one or two of the three through this endpoint. `weekday_price.price`/`weekend_price.price`
+cannot exceed `base_price_request.price` for the same entry (`400 INVALID_ARGUMENT` otherwise, mirroring the
+same rule on the standalone [Create Resort Room Category Main
+Price](resort-room-category-prices-api.md#create-resort-room-category-main-price) endpoint). Every nested
+object's `price_unit_id` must reference an existing, active price unit — each of the three can be different.
+`weekday_price.day_of_week_ids`/`weekend_price.day_of_week_ids` must each be non-empty and every id must
+reference an existing, active [Day of Week](days-of-week-api.md). `HOL`/`SPECIAL` prices cannot be created
+here — add them afterward via `POST .../prices/holidays`/`POST .../prices/specials`.
 
 ### Path Parameters
 
@@ -198,22 +200,34 @@ prices cannot be created here — add them afterward via `POST .../prices`.
   "prices": [
     {
       "currency_id": 1,
-      "base_price_unit_id": 1,
-      "base_price": 100.00,
-      "weekday_price_unit_id": 1,
-      "weekday_price": 90.00,
-      "weekday_day_of_week_ids": [
-        1,
-        2,
-        3,
-        4
-      ],
-      "weekend_price_unit_id": 1,
-      "weekend_price": 130.00,
-      "weekend_day_of_week_ids": [
-        5,
-        6
-      ]
+      "base_price_request": {
+        "price_unit_id": 1,
+        "name": "Base Price",
+        "description": null,
+        "price": 100.00
+      },
+      "weekday_price": {
+        "price_unit_id": 1,
+        "name": "Weekday Price",
+        "description": null,
+        "price": 90.00,
+        "day_of_week_ids": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "weekend_price": {
+        "price_unit_id": 1,
+        "name": "Weekend Price",
+        "description": null,
+        "price": 130.00,
+        "day_of_week_ids": [
+          5,
+          6
+        ]
+      }
     }
   ]
 }
@@ -269,19 +283,30 @@ prices cannot be created here — add them afterward via `POST .../prices`.
 | `is_extra_bed_allowed` | Boolean | Yes      | Not null                                                                                              |
 | `max_extra_beds`       | Integer | Yes      | Not null; >= 0                                                                                        |
 
-**Price group entry (each item in `prices`) — one currency's BASE/WEEKDAY/WEEKEND set:**
+**Price group entry (each item in `prices`) — one currency's BASE/WEEKDAY/WEEKEND set.** See [Request building
+blocks](resort-room-category-prices-api.md#request-building-blocks) on the Resort Room Category Prices API for
+the full shape of each nested object; summarized here:
 
-| Field                     | Type    | Required | Validation                                                                                                    |
-|---------------------------|---------|----------|---------------------------------------------------------------------------------------------------------------|
-| `currency_id`             | Long    | Yes      | Not null; must reference an existing, active currency; unique within the array (`409 CONFLICT` if duplicated) |
-| `base_price_unit_id`      | Long    | Yes      | Not null; must reference an existing, active price unit                                                       |
-| `base_price`              | Decimal | Yes      | Not null; >= 0                                                                                                |
-| `weekday_price_unit_id`   | Long    | Yes      | Not null; must reference an existing, active price unit                                                       |
-| `weekday_price`           | Decimal | Yes      | Not null; >= 0; cannot exceed `base_price`                                                                    |
-| `weekday_day_of_week_ids` | Long[]  | Yes      | Not empty; each id must reference an existing, active day of week                                             |
-| `weekend_price_unit_id`   | Long    | Yes      | Not null; must reference an existing, active price unit                                                       |
-| `weekend_price`           | Decimal | Yes      | Not null; >= 0; cannot exceed `base_price`                                                                    |
-| `weekend_day_of_week_ids` | Long[]  | Yes      | Not empty; each id must reference an existing, active day of week                                             |
+| Field                              | Type    | Required | Validation                                                                                                    |
+|------------------------------------|---------|----------|---------------------------------------------------------------------------------------------------------------|
+| `currency_id`                      | Long    | Yes      | Not null; must reference an existing, active currency; unique within the array (`409 CONFLICT` if duplicated) |
+| `base_price_request`               | Object  | Yes      | `@Valid`; not null                                                                                            |
+| `base_price_request.price_unit_id` | Long    | Yes      | Not null; must reference an existing, active price unit                                                       |
+| `base_price_request.name`          | String  | Yes      | Not blank, max 200 chars                                                                                      |
+| `base_price_request.description`   | String  | —        | Nullable                                                                                                      |
+| `base_price_request.price`         | Decimal | Yes      | Not null; >= 0                                                                                                |
+| `weekday_price`                    | Object  | Yes      | `@Valid`; not null                                                                                            |
+| `weekday_price.price_unit_id`      | Long    | Yes      | Not null; must reference an existing, active price unit                                                       |
+| `weekday_price.name`               | String  | Yes      | Not blank, max 200 chars                                                                                      |
+| `weekday_price.description`        | String  | —        | Nullable                                                                                                      |
+| `weekday_price.price`              | Decimal | Yes      | Not null; >= 0; cannot exceed `base_price_request.price`                                                      |
+| `weekday_price.day_of_week_ids`    | Long[]  | Yes      | Not empty; each id must reference an existing, active day of week                                             |
+| `weekend_price`                    | Object  | Yes      | `@Valid`; not null                                                                                            |
+| `weekend_price.price_unit_id`      | Long    | Yes      | Not null; must reference an existing, active price unit                                                       |
+| `weekend_price.name`               | String  | Yes      | Not blank, max 200 chars                                                                                      |
+| `weekend_price.description`        | String  | —        | Nullable                                                                                                      |
+| `weekend_price.price`              | Decimal | Yes      | Not null; >= 0; cannot exceed `base_price_request.price`                                                      |
+| `weekend_price.day_of_week_ids`    | Long[]  | Yes      | Not empty; each id must reference an existing, active day of week                                             |
 
 ### Response `201 Created`
 
@@ -966,7 +991,7 @@ All errors follow a common structure:
 
 | HTTP Status | Error Code                 | Cause                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 |-------------|----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields (including an empty `beds`/`prices` array); a `weekday_price`/`weekend_price` greater than `base_price` for the same `prices` entry; or an unsupported `sortBy` query value. **Note:** none of the `meta` numeric rules (`> 0` bounds, `max_occupancy` vs. adults/children/infants, `maximum_stay_nights` vs. `minimum_stay_nights`) are bean-validated — violating one of those does *not* produce this error; see the `409 DATA_INTEGRITY_VIOLATION` row below                                                                                                                                                                                                                                    |
+| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields (including an empty `beds`/`prices` array, or an empty `weekday_price.day_of_week_ids`/`weekend_price.day_of_week_ids`); a `weekday_price.price`/`weekend_price.price` greater than `base_price_request.price` for the same `prices` entry; or an unsupported `sortBy` query value. **Note:** none of the `meta` numeric rules (`> 0` bounds, `max_occupancy` vs. adults/children/infants, `maximum_stay_nights` vs. `minimum_stay_nights`) are bean-validated — violating one of those does *not* produce this error; see the `409 DATA_INTEGRITY_VIOLATION` row below                                                                                                                             |
 | 404         | `ENTITY_NOT_FOUND`         | Resort not found, room category not found (`room_category_id` at create), unit not found (`room_size_unit_id` if supplied), bed type not found (any `bed_type_id` in `beds` at create), currency/price unit/day of week not found (any id in `prices` at create), resort room category not found, resort room category meta not found, resort room category locale not found, or the locale referenced by `locale_id` not found (locale creation)                                                                                                                                                                                                                                                                                                                                                                                                 |
 | 409         | `CONFLICT`                 | `code` already in use by another active resort room category for this resort (`create`); the resort already has this room category linked (`create`); a duplicate `bed_type_id` within `beds` or a duplicate `currency_id` within `prices` at create (both pre-checked at the application level, not bean validation, so they surface as `CONFLICT` rather than `INVALID_ARGUMENT`); or the resort room category already has a translation for the given `locale_id` (`create` locale, pre-checked at the application level)                                                                                                                                                                                                                                                                                                                      |
 | 409         | `DATA_INTEGRITY_VIOLATION` | Last-resort DB-level unique constraints on `(resort_id, code)`, `(resort_id, room_category_id)`, `resort_room_category_id` (meta), `(resort_room_category_id, locale_id)`, or the `prices`/day-of-week backstops described in the [Resort Room Category Prices API](resort-room-category-prices-api.md#error-responses) — should not normally be reachable now that duplicates are pre-checked at the application level; **also the actual enforcement point** for every `meta` numeric CHECK constraint (`room_size > 0`, `bedroom_count > 0`, `bathroom_count > 0`, `minimum_stay_nights > 0`, `max_occupancy >= max_adults + max_children + max_infants`, `maximum_stay_nights >= minimum_stay_nights`) on both create and [Update Resort Room Category Meta](#update-resort-room-category-meta), since none of those rules are bean-validated |

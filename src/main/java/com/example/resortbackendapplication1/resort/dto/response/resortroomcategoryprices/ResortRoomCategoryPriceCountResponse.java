@@ -1,17 +1,19 @@
 package com.example.resortbackendapplication1.resort.dto.response.resortroomcategoryprices;
 
-import com.example.resortbackendapplication1.resort.model.dto.ResortRoomCategoryPriceDto;
 import lombok.Data;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
 
+import java.util.List;
+
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class ResortRoomCategoryPriceResponse {
+public class ResortRoomCategoryPriceCountResponse {
+    private final Long count;
+    private final List<String> codes;
 
-    private final ResortRoomCategoryPriceDto data;
-
-    public ResortRoomCategoryPriceResponse(ResortRoomCategoryPriceDto data) {
-        this.data = data;
+    public ResortRoomCategoryPriceCountResponse(final Long count, final List<String> codes) {
+        this.count = count;
+        this.codes = codes;
     }
 }

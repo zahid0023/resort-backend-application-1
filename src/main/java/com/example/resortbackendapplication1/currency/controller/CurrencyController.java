@@ -43,6 +43,11 @@ public class CurrencyController {
         return ResponseEntity.ok(currencyService.getById(id));
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<?> getActiveCount() {
+        return ResponseEntity.ok(currencyService.getActiveCount());
+    }
+
     @GetMapping
     public ResponseEntity<?> getAll(@Valid @ParameterObject CurrencyFilterRequest request) {
         return ResponseEntity.ok(currencyService.getAll(request));

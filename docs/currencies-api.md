@@ -33,6 +33,7 @@ actually used to shape the response:
 | POST   | `/api/v1/currencies`                             | Create a currency          |
 | GET    | `/api/v1/currencies`                             | List / search currencies   |
 | GET    | `/api/v1/currencies/{id}`                        | Get a currency             |
+| GET    | `/api/v1/currencies/count`                       | Count active currencies    |
 | PUT    | `/api/v1/currencies/{id}`                        | Update a currency          |
 | DELETE | `/api/v1/currencies/{id}`                        | Delete a currency          |
 | GET    | `/api/v1/currencies/{currency-id}/locales`       | List a currency's locales  |
@@ -201,6 +202,28 @@ a currency has, use [List Currency Locales](#list-currency-locales) below.
 > back to `en`, then `null`) that `GET /countries/{id}` itself would return — not every translation the
 > country has. To see every translation of the country itself, use the
 > [Countries API](countries-api.md)'s locale sub-resource.
+
+---
+
+## Count Currencies
+
+`GET /api/v1/currencies/count`
+
+Returns how many active, non-deleted currencies exist, together with each one's `code`. `count` is always
+`codes.length` — both come from the same query, so there's no separate tally to drift out of sync with the
+list.
+
+### Response `200 OK`
+
+```json
+{
+  "count": 2,
+  "codes": [
+    "BDT",
+    "USD"
+  ]
+}
+```
 
 ---
 

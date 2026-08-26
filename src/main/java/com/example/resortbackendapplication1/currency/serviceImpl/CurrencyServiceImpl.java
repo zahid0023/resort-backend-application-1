@@ -10,6 +10,7 @@ import com.example.resortbackendapplication1.commons.utils.Pagination;
 import com.example.resortbackendapplication1.currency.dto.request.currency.CreateCurrencyRequest;
 import com.example.resortbackendapplication1.currency.dto.request.currency.CurrencyFilterRequest;
 import com.example.resortbackendapplication1.currency.dto.request.currency.UpdateCurrencyRequest;
+import com.example.resortbackendapplication1.currency.dto.response.currencies.CurrencyCountResponse;
 import com.example.resortbackendapplication1.currency.dto.response.currencies.CurrencyResponse;
 import com.example.resortbackendapplication1.currency.model.dto.CurrencyDto;
 import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
@@ -31,6 +32,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -82,6 +84,12 @@ public class CurrencyServiceImpl implements CurrencyService {
                 .country(country)
                 .build();
         return new CurrencyResponse(dto);
+    }
+
+    @Override
+    public CurrencyCountResponse getActiveCount() {
+        List<String> codes = currencyRepository.findCodeByIsActiveAndIsDeleted(true, false);
+        return new CurrencyCountResponse((long) codes.size(), codes);
     }
 
     @Override

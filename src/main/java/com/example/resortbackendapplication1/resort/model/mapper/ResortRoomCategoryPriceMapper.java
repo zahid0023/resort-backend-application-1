@@ -3,9 +3,7 @@ package com.example.resortbackendapplication1.resort.model.mapper;
 import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
 import com.example.resortbackendapplication1.price.model.entity.PriceTypeEntity;
 import com.example.resortbackendapplication1.price.model.entity.PriceUnitEntity;
-import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.ResortRoomCategoryDateBoundPriceRequest;
-import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.ResortRoomCategoryPriceRequest;
-import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.UpdateResortRoomCategoryPriceRequest;
+import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.ResortRoomCategoryDateRangePriceRequest;
 import com.example.resortbackendapplication1.resort.model.dto.ResortRoomCategoryPriceDto;
 import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryPriceEntity;
 import lombok.experimental.UtilityClass;
@@ -38,7 +36,7 @@ public class ResortRoomCategoryPriceMapper {
      * Builds a single HOLIDAY/SPECIAL row — always {@code valid_from}/{@code valid_to} bound, never tied to
      * days of week, {@code priority} free-form (defaults to 0).
      */
-    public ResortRoomCategoryPriceEntity create(ResortRoomCategoryDateBoundPriceRequest request,
+    public ResortRoomCategoryPriceEntity create(ResortRoomCategoryDateRangePriceRequest request,
                                                 PriceTypeEntity priceTypeEntity,
                                                 PriceUnitEntity priceUnitEntity,
                                                 CurrencyEntity currencyEntity) {
@@ -55,14 +53,14 @@ public class ResortRoomCategoryPriceMapper {
         return entity;
     }
 
-    public void update(ResortRoomCategoryPriceEntity entity, UpdateResortRoomCategoryPriceRequest request) {
-        applyCommonFields(entity, request);
-    }
-
-    private void applyCommonFields(ResortRoomCategoryPriceEntity entity, ResortRoomCategoryPriceRequest request) {
+    /**
+     * Updates a single HOLIDAY/SPECIAL row — currency is immutable and not touched here.
+     */
+    public void updateDateRange(ResortRoomCategoryPriceEntity entity, ResortRoomCategoryDateRangePriceRequest request, PriceUnitEntity priceUnitEntity) {
         entity.setName(request.getName());
         entity.setDescription(request.getDescription());
         entity.setPrice(request.getPrice());
+        entity.setPriceUnitEntity(priceUnitEntity);
         entity.setValidFrom(request.getValidFrom());
         entity.setValidTo(request.getValidTo());
         entity.setPriority(request.getPriority() != null ? request.getPriority() : 0);

@@ -9,9 +9,13 @@ import com.example.resortbackendapplication1.price.model.entity.PriceUnitEntity;
 import com.example.resortbackendapplication1.price.service.PriceTypeService;
 import com.example.resortbackendapplication1.price.service.PriceUnitService;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.CreateResortRoomCategoryHolidayPriceRequest;
-import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.CreateResortRoomCategoryPriceGroupRequest;
+import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.CreateResortRoomCategoryMainPriceRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.CreateResortRoomCategorySpecialPriceRequest;
-import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.UpdateResortRoomCategoryPriceRequest;
+import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.ResortRoomCategoryMainPriceRequest;
+import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.ResortRoomCategoryPriceRequest;
+import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.UpdateResortRoomCategoryHolidayPriceRequest;
+import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.UpdateResortRoomCategoryMainPriceRequest;
+import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.UpdateResortRoomCategorySpecialPriceRequest;
 import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryPriceEntity;
 import com.example.resortbackendapplication1.resort.service.ResortRoomCategoryPriceService;
@@ -52,21 +56,17 @@ public class ResortRoomCategoryPriceController {
     public ResponseEntity<?> createMain(
             @PathVariable("resort-id") Long resortId,
             @PathVariable("room-category-id") Long roomCategoryId,
-            @Valid @RequestBody CreateResortRoomCategoryPriceGroupRequest request) {
-        ResortRoomCategoryEntity resortRoomCategoryEntity = resortRoomCategoryService.getEntityById(resortId, roomCategoryId);
+            @Valid @RequestBody CreateResortRoomCategoryMainPriceRequest request) {
+        ResortRoomCategoryEntity resortRoomCategoryEntity = resolveRoomCategory(resortId, roomCategoryId);
         PriceTypeEntity basePriceTypeEntity = priceTypeService.getEntityByCode("BAS");
         PriceTypeEntity weekdayPriceTypeEntity = priceTypeService.getEntityByCode("WKD");
         PriceTypeEntity weekendPriceTypeEntity = priceTypeService.getEntityByCode("WKE");
         CurrencyEntity currencyEntity = currencyService.getEntityById(request.getCurrencyId());
-        PriceUnitEntity basePriceUnitEntity = priceUnitService.getEntityById(request.getBasePriceUnitId());
-        PriceUnitEntity weekdayPriceUnitEntity = priceUnitService.getEntityById(request.getWeekdayPriceUnitId());
-        PriceUnitEntity weekendPriceUnitEntity = priceUnitService.getEntityById(request.getWeekendPriceUnitId());
-        List<DayOfWeekEntity> weekdayDayOfWeekEntities = resolveDayOfWeekEntities(request.getWeekdayDayOfWeekIds());
-        List<DayOfWeekEntity> weekendDayOfWeekEntities = resolveDayOfWeekEntities(request.getWeekendDayOfWeekIds());
+        MainPriceUnits units = resolveMainPriceUnits(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(resortRoomCategoryPriceService.createMain(
                 request, resortRoomCategoryEntity, basePriceTypeEntity, weekdayPriceTypeEntity, weekendPriceTypeEntity,
-                currencyEntity, basePriceUnitEntity, weekdayPriceUnitEntity, weekendPriceUnitEntity,
-                weekdayDayOfWeekEntities, weekendDayOfWeekEntities));
+                currencyEntity, units.basePriceUnitEntity(), units.weekdayPriceUnitEntity(), units.weekendPriceUnitEntity(),
+                units.weekdayDayOfWeekEntities(), units.weekendDayOfWeekEntities()));
     }
 
     @PostMapping("/holidays")
@@ -74,12 +74,10 @@ public class ResortRoomCategoryPriceController {
             @PathVariable("resort-id") Long resortId,
             @PathVariable("room-category-id") Long roomCategoryId,
             @Valid @RequestBody CreateResortRoomCategoryHolidayPriceRequest request) {
-        ResortRoomCategoryEntity resortRoomCategoryEntity = resortRoomCategoryService.getEntityById(resortId, roomCategoryId);
-        PriceTypeEntity holidayPriceTypeEntity = priceTypeService.getEntityByCode("HOL");
-        PriceUnitEntity priceUnitEntity = priceUnitService.getEntityById(request.getPriceUnitId());
-        CurrencyEntity currencyEntity = currencyService.getEntityById(request.getCurrencyId());
+        DateRangePriceContext context = resolveDateRangeContext(
+                resortId, roomCategoryId, "HOL", request.getPriceUnitId(), request.getCurrencyId());
         return ResponseEntity.status(HttpStatus.CREATED).body(resortRoomCategoryPriceService.createHoliday(
-                request, resortRoomCategoryEntity, holidayPriceTypeEntity, priceUnitEntity, currencyEntity));
+                request, context.resortRoomCategoryEntity(), context.priceTypeEntity(), context.priceUnitEntity(), context.currencyEntity()));
     }
 
     @PostMapping("/specials")
@@ -87,21 +85,10 @@ public class ResortRoomCategoryPriceController {
             @PathVariable("resort-id") Long resortId,
             @PathVariable("room-category-id") Long roomCategoryId,
             @Valid @RequestBody CreateResortRoomCategorySpecialPriceRequest request) {
-        ResortRoomCategoryEntity resortRoomCategoryEntity = resortRoomCategoryService.getEntityById(resortId, roomCategoryId);
-        PriceTypeEntity specialPriceTypeEntity = priceTypeService.getEntityByCode("SPECIAL");
-        PriceUnitEntity priceUnitEntity = priceUnitService.getEntityById(request.getPriceUnitId());
-        CurrencyEntity currencyEntity = currencyService.getEntityById(request.getCurrencyId());
+        DateRangePriceContext context = resolveDateRangeContext(
+                resortId, roomCategoryId, "SPECIAL", request.getPriceUnitId(), request.getCurrencyId());
         return ResponseEntity.status(HttpStatus.CREATED).body(resortRoomCategoryPriceService.createSpecial(
-                request, resortRoomCategoryEntity, specialPriceTypeEntity, priceUnitEntity, currencyEntity));
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getById(
-            @PathVariable("resort-id") Long resortId,
-            @PathVariable("room-category-id") Long roomCategoryId,
-            @PathVariable Long id) {
-        resortRoomCategoryService.getEntityById(resortId, roomCategoryId);
-        return ResponseEntity.ok(resortRoomCategoryPriceService.getById(roomCategoryId, id));
+                request, context.resortRoomCategoryEntity(), context.priceTypeEntity(), context.priceUnitEntity(), context.currencyEntity()));
     }
 
     @GetMapping
@@ -109,21 +96,56 @@ public class ResortRoomCategoryPriceController {
             @PathVariable("resort-id") Long resortId,
             @PathVariable("room-category-id") Long roomCategoryId,
             @RequestParam("currency-id") Long currencyId) {
-        resortRoomCategoryService.getEntityById(resortId, roomCategoryId);
+        resolveRoomCategory(resortId, roomCategoryId);
         CurrencyEntity currencyEntity = currencyService.getEntityById(currencyId);
         return ResponseEntity.ok(resortRoomCategoryPriceService.getAllGroupedByCurrency(roomCategoryId, currencyEntity));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> update(
+    @GetMapping("/count")
+    public ResponseEntity<?> getCount(
+            @PathVariable("resort-id") Long resortId,
+            @PathVariable("room-category-id") Long roomCategoryId) {
+        resolveRoomCategory(resortId, roomCategoryId);
+        return ResponseEntity.ok(resortRoomCategoryPriceService.getCount(roomCategoryId));
+    }
+
+    @PutMapping("/main")
+    public ResponseEntity<?> updateMain(
+            @PathVariable("resort-id") Long resortId,
+            @PathVariable("room-category-id") Long roomCategoryId,
+            @RequestParam("currency-id") Long currencyId,
+            @Valid @RequestBody UpdateResortRoomCategoryMainPriceRequest request) {
+        ResortRoomCategoryEntity resortRoomCategoryEntity = resolveRoomCategory(resortId, roomCategoryId);
+        CurrencyEntity currencyEntity = currencyService.getEntityById(currencyId);
+        PriceTypeEntity basePriceTypeEntity = priceTypeService.getEntityByCode("BAS");
+        PriceTypeEntity weekdayPriceTypeEntity = priceTypeService.getEntityByCode("WKD");
+        PriceTypeEntity weekendPriceTypeEntity = priceTypeService.getEntityByCode("WKE");
+        MainPriceUnits units = resolveMainPriceUnits(request);
+        return ResponseEntity.ok(resortRoomCategoryPriceService.updateMain(
+                resortRoomCategoryEntity, currencyEntity, request,
+                basePriceTypeEntity, weekdayPriceTypeEntity, weekendPriceTypeEntity,
+                units.basePriceUnitEntity(), units.weekdayPriceUnitEntity(), units.weekendPriceUnitEntity(),
+                units.weekdayDayOfWeekEntities(), units.weekendDayOfWeekEntities()));
+    }
+
+    @PutMapping("/holidays/{id}")
+    public ResponseEntity<?> updateHoliday(
             @PathVariable("resort-id") Long resortId,
             @PathVariable("room-category-id") Long roomCategoryId,
             @PathVariable Long id,
-            @Valid @RequestBody UpdateResortRoomCategoryPriceRequest request) {
-        resortRoomCategoryService.getEntityById(resortId, roomCategoryId);
-        ResortRoomCategoryPriceEntity entity = resortRoomCategoryPriceService.getEntityById(roomCategoryId, id);
-        List<DayOfWeekEntity> dayOfWeekEntities = resolveDayOfWeekEntities(request.getDayOfWeekIds());
-        return ResponseEntity.ok(resortRoomCategoryPriceService.update(entity, request, dayOfWeekEntities));
+            @Valid @RequestBody UpdateResortRoomCategoryHolidayPriceRequest request) {
+        ResortRoomCategoryPriceEntity entity = resolvePriceEntity(resortId, roomCategoryId, id);
+        return ResponseEntity.ok(resortRoomCategoryPriceService.updateHoliday(entity, request, resolvePriceUnit(request)));
+    }
+
+    @PutMapping("/specials/{id}")
+    public ResponseEntity<?> updateSpecial(
+            @PathVariable("resort-id") Long resortId,
+            @PathVariable("room-category-id") Long roomCategoryId,
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateResortRoomCategorySpecialPriceRequest request) {
+        ResortRoomCategoryPriceEntity entity = resolvePriceEntity(resortId, roomCategoryId, id);
+        return ResponseEntity.ok(resortRoomCategoryPriceService.updateSpecial(entity, request, resolvePriceUnit(request)));
     }
 
     @DeleteMapping("/{id}")
@@ -131,9 +153,39 @@ public class ResortRoomCategoryPriceController {
             @PathVariable("resort-id") Long resortId,
             @PathVariable("room-category-id") Long roomCategoryId,
             @PathVariable Long id) {
-        resortRoomCategoryService.getEntityById(resortId, roomCategoryId);
-        ResortRoomCategoryPriceEntity entity = resortRoomCategoryPriceService.getEntityById(roomCategoryId, id);
+        ResortRoomCategoryPriceEntity entity = resolvePriceEntity(resortId, roomCategoryId, id);
         return ResponseEntity.ok(resortRoomCategoryPriceService.delete(entity));
+    }
+
+    private ResortRoomCategoryEntity resolveRoomCategory(Long resortId, Long roomCategoryId) {
+        return resortRoomCategoryService.getEntityById(resortId, roomCategoryId);
+    }
+
+    private ResortRoomCategoryPriceEntity resolvePriceEntity(Long resortId, Long roomCategoryId, Long id) {
+        resolveRoomCategory(resortId, roomCategoryId);
+        return resortRoomCategoryPriceService.getEntityById(roomCategoryId, id);
+    }
+
+    private DateRangePriceContext resolveDateRangeContext(Long resortId, Long roomCategoryId, String priceTypeCode,
+                                                          Long priceUnitId, Long currencyId) {
+        return new DateRangePriceContext(
+                resolveRoomCategory(resortId, roomCategoryId),
+                priceTypeService.getEntityByCode(priceTypeCode),
+                priceUnitService.getEntityById(priceUnitId),
+                currencyService.getEntityById(currencyId));
+    }
+
+    private PriceUnitEntity resolvePriceUnit(ResortRoomCategoryPriceRequest request) {
+        return priceUnitService.getEntityById(request.getPriceUnitId());
+    }
+
+    private MainPriceUnits resolveMainPriceUnits(ResortRoomCategoryMainPriceRequest request) {
+        return new MainPriceUnits(
+                resolvePriceUnit(request.getBasePriceRequest()),
+                resolvePriceUnit(request.getWeekdayPrice()),
+                resolvePriceUnit(request.getWeekendPrice()),
+                resolveDayOfWeekEntities(request.getWeekdayPrice().getDayOfWeekIds()),
+                resolveDayOfWeekEntities(request.getWeekendPrice().getDayOfWeekIds()));
     }
 
     private List<DayOfWeekEntity> resolveDayOfWeekEntities(List<Long> dayOfWeekIds) {
@@ -143,5 +195,18 @@ public class ResortRoomCategoryPriceController {
         return dayOfWeekIds.stream()
                 .map(dayOfWeekService::getEntityById)
                 .toList();
+    }
+
+    private record DateRangePriceContext(ResortRoomCategoryEntity resortRoomCategoryEntity,
+                                         PriceTypeEntity priceTypeEntity,
+                                         PriceUnitEntity priceUnitEntity,
+                                         CurrencyEntity currencyEntity) {
+    }
+
+    private record MainPriceUnits(PriceUnitEntity basePriceUnitEntity,
+                                  PriceUnitEntity weekdayPriceUnitEntity,
+                                  PriceUnitEntity weekendPriceUnitEntity,
+                                  List<DayOfWeekEntity> weekdayDayOfWeekEntities,
+                                  List<DayOfWeekEntity> weekendDayOfWeekEntities) {
     }
 }

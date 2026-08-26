@@ -141,17 +141,6 @@ create index if not exists idx_resort_room_category_price_days_price
 create index if not exists idx_resort_room_category_price_days_day
     on resort_room_category_price_days (day_of_week_id);
 
-create unique index if not exists uq_resort_room_category_price
-    on resort_room_category_prices
-        (
-         resort_room_category_id,
-         price_type_id,
-         price_unit_id,
-         currency_id
-            )
-    where is_active = true
-        and is_deleted = false;
-
 -- Enforces that resort_room_category_prices only ever references a
 -- price_type_id / price_unit_id that is actually assigned to the
 -- ROOM_CATEGORY price scope (price_type_scope_assignments / V16,
@@ -206,12 +195,18 @@ execute function fn_validate_resort_room_category_price_scope();
 -- price that exceeds the room category's active BASE price in the same
 -- currency. This only runs at write time, so an existing WEEKDAY/WEEKEND row
 -- is not re-checked if the BASE price is lowered afterward.
+-- BASE/WEEKDAY/WEEKEND are also limited to a single active/non-deleted row per
+-- room category/currency here (an active-row uniqueness check, not a plain
+-- unique index, since it only applies to these three types — HOLIDAY/SPECIAL
+-- are date-ranged rules and a room category/currency may legitimately have
+-- many active HOLIDAY/SPECIAL rows at once).
 create or replace function fn_validate_resort_room_category_price_type_rules()
     returns trigger as
 $$
 declare
     v_price_type_code varchar(50);
     v_base_price      numeric(12, 2);
+    v_duplicate_id     bigint;
 begin
     select code
     into v_price_type_code
@@ -224,6 +219,24 @@ begin
         end if;
 
         new.priority := 0;
+
+        if new.is_active = true and new.is_deleted = false then
+            select p.id
+            into v_duplicate_id
+            from resort_room_category_prices p
+            where p.resort_room_category_id = new.resort_room_category_id
+              and p.price_type_id = new.price_type_id
+              and p.currency_id = new.currency_id
+              and p.is_active = true
+              and p.is_deleted = false
+              and p.id <> coalesce(new.id, -1)
+            limit 1;
+
+            if v_duplicate_id is not null then
+                raise exception 'This room category already has an active % price for currency id: %',
+                    v_price_type_code, new.currency_id;
+            end if;
+        end if;
     end if;
 
     if v_price_type_code in ('HOL', 'SPECIAL') then
@@ -306,7 +319,7 @@ begin
     from price_types
     where id = new.price_type_id;
 
-    if v_price_type_code in ('WKD', 'WKE') then
+    if v_price_type_code in ('WKD', 'WKE') and new.is_active = true and new.is_deleted = false then
         select count(*)
         into v_day_count
         from resort_room_category_price_days
