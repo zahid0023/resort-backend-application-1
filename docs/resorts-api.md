@@ -9,6 +9,14 @@ soft-deleted together with it when the resort is deleted. Each of them additiona
 sub-resource for translated fields (name/tagline/description for basic info, the street address text for
 address).
 
+**Every resort is also created together with its weekly schedule** — the [Resort Weekly Schedule
+API](resort-weekly-schedule-api.md)'s `weekday_day_of_week_ids`/`weekend_day_of_week_ids` lists, required on
+`POST /api/v1/resorts` via the `weekly_schedule` field, created in the same transaction as the resort. There is
+no way to create a resort without one and no separate "create" step for it afterward — once the resort exists,
+the schedule can only be *replaced as a whole* via
+[`PUT /api/v1/resorts/{resort-id}/weekly-schedule`](resort-weekly-schedule-api.md#update-weekly-schedule), never
+edited one day at a time.
+
 **Creating a resort automatically makes the authenticated user its owner.** `POST /api/v1/resorts` resolves
 the caller from the request's JWT, then — in the same transaction as the resort, its basic info, and its
 address — creates a `resort_users` row linking that user to the new resort with the `OWNER` resort role, and a
@@ -38,27 +46,27 @@ used:
 
 ## Endpoints
 
-| Method | Path                                                  | Description                                          |
-|--------|-------------------------------------------------------|------------------------------------------------------|
-| POST   | `/api/v1/resorts`                                     | Create a resort (with its basic info and address)    |
-| GET    | `/api/v1/resorts`                                     | List / search resorts                                |
-| GET    | `/api/v1/resorts/my-resorts`                          | List resorts the authenticated user has access to    |
-| GET    | `/api/v1/resorts/{id}`                                | Get a resort (with its basic info and address)       |
-| PUT    | `/api/v1/resorts/{id}`                                | Update a resort                                      |
-| DELETE | `/api/v1/resorts/{id}`                                | Delete a resort (cascades to basic info and address) |
-| PUT    | `/api/v1/resorts/{resort-id}/basic-info`              | Update a resort's basic info                         |
-| GET    | `/api/v1/resorts/{resort-id}/basic-info/locales`      | List a resort basic info's locales                   |
+| Method | Path                                                   | Description                                          |
+|--------|--------------------------------------------------------|------------------------------------------------------|
+| POST   | `/api/v1/resorts`                                      | Create a resort (with its basic info and address)    |
+| GET    | `/api/v1/resorts`                                      | List / search resorts                                |
+| GET    | `/api/v1/resorts/my-resorts`                           | List resorts the authenticated user has access to    |
+| GET    | `/api/v1/resorts/{id}`                                 | Get a resort (with its basic info and address)       |
+| PUT    | `/api/v1/resorts/{id}`                                 | Update a resort                                      |
+| DELETE | `/api/v1/resorts/{id}`                                 | Delete a resort (cascades to basic info and address) |
+| PUT    | `/api/v1/resorts/{resort-id}/basic-info`               | Update a resort's basic info                         |
+| GET    | `/api/v1/resorts/{resort-id}/basic-info/locales`       | List a resort basic info's locales                   |
 | GET    | `/api/v1/resorts/{resort-id}/basic-info/locales/count` | Count a resort basic info's used platform locales    |
-| POST   | `/api/v1/resorts/{resort-id}/basic-info/locales`      | Create a resort basic info locale                    |
-| PUT    | `/api/v1/resorts/{resort-id}/basic-info/locales/{id}` | Update a resort basic info locale                    |
-| DELETE | `/api/v1/resorts/{resort-id}/basic-info/locales/{id}` | Delete a resort basic info locale                    |
-| GET    | `/api/v1/resorts/{resort-id}/address`                 | Get a resort's address                               |
-| PUT    | `/api/v1/resorts/{resort-id}/address`                 | Update a resort's address                            |
-| GET    | `/api/v1/resorts/{resort-id}/address/locales`         | List a resort address's locales                      |
-| GET    | `/api/v1/resorts/{resort-id}/address/locales/count`   | Count a resort address's used platform locales        |
-| POST   | `/api/v1/resorts/{resort-id}/address/locales`         | Create a resort address locale                       |
-| PUT    | `/api/v1/resorts/{resort-id}/address/locales/{id}`    | Update a resort address locale                       |
-| DELETE | `/api/v1/resorts/{resort-id}/address/locales/{id}`    | Delete a resort address locale                       |
+| POST   | `/api/v1/resorts/{resort-id}/basic-info/locales`       | Create a resort basic info locale                    |
+| PUT    | `/api/v1/resorts/{resort-id}/basic-info/locales/{id}`  | Update a resort basic info locale                    |
+| DELETE | `/api/v1/resorts/{resort-id}/basic-info/locales/{id}`  | Delete a resort basic info locale                    |
+| GET    | `/api/v1/resorts/{resort-id}/address`                  | Get a resort's address                               |
+| PUT    | `/api/v1/resorts/{resort-id}/address`                  | Update a resort's address                            |
+| GET    | `/api/v1/resorts/{resort-id}/address/locales`          | List a resort address's locales                      |
+| GET    | `/api/v1/resorts/{resort-id}/address/locales/count`    | Count a resort address's used platform locales       |
+| POST   | `/api/v1/resorts/{resort-id}/address/locales`          | Create a resort address locale                       |
+| PUT    | `/api/v1/resorts/{resort-id}/address/locales/{id}`     | Update a resort address locale                       |
+| DELETE | `/api/v1/resorts/{resort-id}/address/locales/{id}`     | Delete a resort address locale                       |
 
 There is **no standalone create/get/delete** for basic info or address — they only exist tied to a resort's own
 lifecycle (see the intro above). `GET /api/v1/resorts/{resort-id}/basic-info` does not exist at all; basic info
@@ -124,9 +132,9 @@ is only ever read embedded in `GET /api/v1/resorts/{id}`.
 
 `POST /api/v1/resorts`
 
-Creates a new resort, its basic info, and its address in one transaction, and assigns the authenticated caller
-as the resort's `OWNER` with `ALL_PERMISSIONS` (see the intro above). `code` must be unique among active,
-non-deleted resorts — attempting to reuse an existing code returns `409 CONFLICT`.
+Creates a new resort, its basic info, its address, and its weekly schedule in one transaction, and assigns the
+authenticated caller as the resort's `OWNER` with `ALL_PERMISSIONS` (see the intro above). `code` must be
+unique among active, non-deleted resorts — attempting to reuse an existing code returns `409 CONFLICT`.
 
 **Each of `basic_info.locale` and `address.locale` is always attached to the `en` locale, resolved by the
 server — neither carries a `locale_id`.** There is no option to submit multiple locales at creation time.
@@ -157,17 +165,30 @@ Additional languages are added afterward via the respective locale sub-resource 
       "address": "Marine Drive, Cox's Bazar",
       "sort_order": 1
     }
+  },
+  "weekly_schedule": {
+    "weekday_day_of_week_ids": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "weekend_day_of_week_ids": [
+      5,
+      6
+    ]
   }
 }
 ```
 
 ### Request Fields
 
-| Field        | Type   | Required | Validation                                            |
-|--------------|--------|----------|-------------------------------------------------------|
-| `code`       | String | Yes      | Not blank, max 100 chars, unique among active records |
-| `basic_info` | Object | Yes      | Not null; validated (see below)                       |
-| `address`    | Object | Yes      | Not null; validated (see below)                       |
+| Field             | Type   | Required | Validation                                            |
+|-------------------|--------|----------|-------------------------------------------------------|
+| `code`            | String | Yes      | Not blank, max 100 chars, unique among active records |
+| `basic_info`      | Object | Yes      | Not null; validated (see below)                       |
+| `address`         | Object | Yes      | Not null; validated (see below)                       |
+| `weekly_schedule` | Object | Yes      | Not null; validated (see below)                       |
 
 **`basic_info`:**
 
@@ -193,6 +214,15 @@ Additional languages are added afterward via the respective locale sub-resource 
 | `locale`            | Object  | Yes      | Not null; no `locale_id` — always `en`       |
 | `locale.address`    | String  | Yes      | Not blank                                    |
 | `locale.sort_order` | Integer | Yes      | Not null                                     |
+
+**`weekly_schedule`:** same shape and validation as [Update Weekly
+Schedule](resort-weekly-schedule-api.md#update-weekly-schedule)'s request body — this initial schedule is
+created in the same transaction as the resort.
+
+| Field                     | Type   | Required | Validation                                                                                                                    |
+|---------------------------|--------|----------|-------------------------------------------------------------------------------------------------------------------------------|
+| `weekday_day_of_week_ids` | Long[] | Yes      | Not empty; no duplicates; no id shared with `weekend_day_of_week_ids`; each id must reference an existing, active day of week |
+| `weekend_day_of_week_ids` | Long[] | Yes      | Not empty; no duplicates; no id shared with `weekday_day_of_week_ids`; each id must reference an existing, active day of week |
 
 ### Response `201 Created`
 
@@ -587,7 +617,7 @@ translation for this resort's basic info, or the create call returns `409 CONFLI
 #### Path Parameters
 
 | Parameter   | Type | Description             |
-|-------------|------|--------------------------|
+|-------------|------|-------------------------|
 | `resort-id` | Long | ID of the owning resort |
 
 #### Response `200 OK`
@@ -909,7 +939,7 @@ translation for this resort's address, or the create call returns `409 CONFLICT`
 #### Path Parameters
 
 | Parameter   | Type | Description             |
-|-------------|------|--------------------------|
+|-------------|------|-------------------------|
 | `resort-id` | Long | ID of the owning resort |
 
 #### Response `200 OK`
@@ -1038,8 +1068,8 @@ All errors follow a common structure:
 }
 ```
 
-| HTTP Status | Error Code         | Cause                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-|-------------|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 400         | `INVALID_ARGUMENT` | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields; an unsupported `sortBy` query value                                                                                                                                                                                                                                                                   |
-| 404         | `ENTITY_NOT_FOUND` | Resort not found; resort basic info / address not found for the resort id; resort basic info locale / address locale not found; the country/city referenced by `country_id`/`city_id` not found; the locale referenced by `locale_id` not found; or, on `create` only, the `OWNER` resort role type or `ALL_PERMISSIONS` resort permission type is missing/inactive in the platform's seed data (should not occur in a correctly seeded environment) |
-| 409         | `CONFLICT`         | `code` already in use by another active resort (`create`); the basic info / address already has a translation for the given `locale_id` (create locale sub-resource)                                                                                                                                                                                                                                                                                 |
+| HTTP Status | Error Code         | Cause                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+|-------------|--------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 400         | `INVALID_ARGUMENT` | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing/invalid required fields, including an empty `weekly_schedule.weekday_day_of_week_ids`/`weekend_day_of_week_ids` on `create`; an unsupported `sortBy` query value                                                                                                                                                                                                                                                                            |
+| 404         | `ENTITY_NOT_FOUND` | Resort not found; resort basic info / address not found for the resort id; resort basic info locale / address locale not found; the country/city referenced by `country_id`/`city_id` not found; the locale referenced by `locale_id` not found; an unknown day of week id in `weekly_schedule.weekday_day_of_week_ids`/`weekend_day_of_week_ids` (`create`); or, on `create` only, the `OWNER` resort role type or `ALL_PERMISSIONS` resort permission type is missing/inactive in the platform's seed data (should not occur in a correctly seeded environment) |
+| 409         | `CONFLICT`         | `code` already in use by another active resort (`create`); a duplicate day of week id within one `weekly_schedule` list, or the same day of week id appearing in both `weekday_day_of_week_ids` and `weekend_day_of_week_ids` (`create`); the basic info / address already has a translation for the given `locale_id` (create locale sub-resource)                                                                                                                                                                                                               |

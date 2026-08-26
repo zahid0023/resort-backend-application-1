@@ -45,5 +45,5 @@ public class ResortRoomCategoryPriceDto {
 
     private Integer priority;
 
-    private List<ResortRoomCategoryPriceDayDto> days;
+    private List<ResortWeeklyScheduleDayDto> days;
 }

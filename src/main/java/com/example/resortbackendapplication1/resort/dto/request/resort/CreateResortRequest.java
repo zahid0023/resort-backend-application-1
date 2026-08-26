@@ -2,6 +2,7 @@ package com.example.resortbackendapplication1.resort.dto.request.resort;
 
 import com.example.resortbackendapplication1.resort.dto.request.resortaddress.CreateResortAddressRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortbasicinfo.CreateResortBasicInfoRequest;
+import com.example.resortbackendapplication1.resort.dto.request.resortweeklyschedule.ResortWeeklyScheduleRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -27,5 +28,9 @@ public class CreateResortRequest extends ResortRequest {
     @Valid
     @NotNull
     private CreateResortAddressRequest address;
+
+    @Valid
+    @NotNull
+    private ResortWeeklyScheduleRequest weeklySchedule;
 
 }

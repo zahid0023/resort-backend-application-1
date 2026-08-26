@@ -7,8 +7,12 @@ import com.example.resortbackendapplication1.address.service.CountryService;
 import com.example.resortbackendapplication1.auth.model.entity.UserEntity;
 import com.example.resortbackendapplication1.auth.service.UserService;
 import com.example.resortbackendapplication1.commons.dto.request.PaginatedRequest;
+import com.example.resortbackendapplication1.dayofweek.model.entity.DayOfWeekEntity;
+import com.example.resortbackendapplication1.dayofweek.service.DayOfWeekService;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.locale.service.LocaleService;
+import com.example.resortbackendapplication1.price.model.entity.PriceTypeEntity;
+import com.example.resortbackendapplication1.price.service.PriceTypeService;
 import com.example.resortbackendapplication1.resort.dto.request.resort.CreateResortRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resort.ResortFilterRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resort.UpdateResortRequest;
@@ -24,6 +28,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/resorts")
 public class ResortController {
@@ -38,6 +44,8 @@ public class ResortController {
     private final LocaleService localeService;
     private final ResortRoleTypeService resortRoleTypeService;
     private final ResortPermissionTypeService resortPermissionTypeService;
+    private final PriceTypeService priceTypeService;
+    private final DayOfWeekService dayOfWeekService;
 
     public ResortController(ResortService resortService,
                             UserService userService,
@@ -45,7 +53,9 @@ public class ResortController {
                             CityService cityService,
                             LocaleService localeService,
                             ResortRoleTypeService resortRoleTypeService,
-                            ResortPermissionTypeService resortPermissionTypeService) {
+                            ResortPermissionTypeService resortPermissionTypeService,
+                            PriceTypeService priceTypeService,
+                            DayOfWeekService dayOfWeekService) {
         this.resortService = resortService;
         this.userService = userService;
         this.countryService = countryService;
@@ -53,6 +63,8 @@ public class ResortController {
         this.localeService = localeService;
         this.resortRoleTypeService = resortRoleTypeService;
         this.resortPermissionTypeService = resortPermissionTypeService;
+        this.priceTypeService = priceTypeService;
+        this.dayOfWeekService = dayOfWeekService;
     }
 
     @PostMapping
@@ -65,9 +77,22 @@ public class ResortController {
         CountryEntity countryEntity = countryService.getEntityById(request.getAddress().getCountryId());
         CityEntity cityEntity = cityService.getEntityById(request.getAddress().getCityId());
         LocaleEntity localeEntity = localeService.getEntityByCode("en");
+        PriceTypeEntity weekdayPriceTypeEntity = priceTypeService.getEntityByCode("WKD");
+        PriceTypeEntity weekendPriceTypeEntity = priceTypeService.getEntityByCode("WKE");
+        List<DayOfWeekEntity> weekdayDayOfWeekEntities =
+                resolveDayOfWeekEntities(request.getWeeklySchedule().getWeekdayDayOfWeekIds());
+        List<DayOfWeekEntity> weekendDayOfWeekEntities =
+                resolveDayOfWeekEntities(request.getWeeklySchedule().getWeekendDayOfWeekIds());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(resortService.create(request, userEntity, resortRoleTypeEntity, resortPermissionTypeEntity,
-                        countryEntity, cityEntity, localeEntity));
+                        countryEntity, cityEntity, localeEntity, weekdayPriceTypeEntity, weekendPriceTypeEntity,
+                        weekdayDayOfWeekEntities, weekendDayOfWeekEntities));
+    }
+
+    private List<DayOfWeekEntity> resolveDayOfWeekEntities(List<Long> dayOfWeekIds) {
+        return dayOfWeekIds.stream()
+                .map(dayOfWeekService::getEntityById)
+                .toList();
     }
 
     @GetMapping("/my-resorts")

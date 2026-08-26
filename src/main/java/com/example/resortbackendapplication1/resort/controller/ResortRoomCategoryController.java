@@ -4,8 +4,6 @@ import com.example.resortbackendapplication1.bedtype.model.entity.BedTypeEntity;
 import com.example.resortbackendapplication1.bedtype.service.BedTypeService;
 import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
 import com.example.resortbackendapplication1.currency.service.CurrencyService;
-import com.example.resortbackendapplication1.dayofweek.model.entity.DayOfWeekEntity;
-import com.example.resortbackendapplication1.dayofweek.service.DayOfWeekService;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
 import com.example.resortbackendapplication1.locale.service.LocaleService;
 import com.example.resortbackendapplication1.price.model.entity.PriceTypeEntity;
@@ -49,7 +47,6 @@ public class ResortRoomCategoryController {
     private final PriceTypeService priceTypeService;
     private final PriceUnitService priceUnitService;
     private final CurrencyService currencyService;
-    private final DayOfWeekService dayOfWeekService;
 
     public ResortRoomCategoryController(ResortRoomCategoryService resortRoomCategoryService,
                                         ResortService resortService,
@@ -59,8 +56,7 @@ public class ResortRoomCategoryController {
                                         BedTypeService bedTypeService,
                                         PriceTypeService priceTypeService,
                                         PriceUnitService priceUnitService,
-                                        CurrencyService currencyService,
-                                        DayOfWeekService dayOfWeekService) {
+                                        CurrencyService currencyService) {
         this.resortRoomCategoryService = resortRoomCategoryService;
         this.resortService = resortService;
         this.roomCategoryService = roomCategoryService;
@@ -70,7 +66,6 @@ public class ResortRoomCategoryController {
         this.priceTypeService = priceTypeService;
         this.priceUnitService = priceUnitService;
         this.currencyService = currencyService;
-        this.dayOfWeekService = dayOfWeekService;
     }
 
     @PostMapping
@@ -104,17 +99,9 @@ public class ResortRoomCategoryController {
                 .distinct()
                 .map(priceUnitService::getEntityById)
                 .toList();
-        List<DayOfWeekEntity> dayOfWeekEntities = request.getPrices().stream()
-                .flatMap(priceGroup -> Stream.concat(
-                        priceGroup.getWeekdayPrice().getDayOfWeekIds().stream(),
-                        priceGroup.getWeekendPrice().getDayOfWeekIds().stream()))
-                .distinct()
-                .map(dayOfWeekService::getEntityById)
-                .toList();
-
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(resortRoomCategoryService.create(request, resortEntity, roomCategoryEntity, localeEntity, roomSizeUnitEntity, bedTypeEntities,
-                        basePriceTypeEntity, weekdayPriceTypeEntity, weekendPriceTypeEntity, currencyEntities, priceUnitEntities, dayOfWeekEntities));
+                        basePriceTypeEntity, weekdayPriceTypeEntity, weekendPriceTypeEntity, currencyEntities, priceUnitEntities));
     }
 
     @GetMapping("/{id}")

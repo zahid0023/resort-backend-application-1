@@ -4,13 +4,11 @@ import com.example.resortbackendapplication1.commons.model.entity.AuditableEntit
 import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
 import com.example.resortbackendapplication1.price.model.entity.PriceTypeEntity;
 import com.example.resortbackendapplication1.price.model.entity.PriceUnitEntity;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -22,10 +20,6 @@ import org.hibernate.annotations.ColumnDefault;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.LinkedHashSet;
-import java.util.Set;
-
-import static com.example.resortbackendapplication1.commons.model.entity.EntityRelationshipHelper.*;
 
 @Getter
 @Setter
@@ -92,19 +86,4 @@ public class ResortRoomCategoryPriceEntity extends AuditableEntity {
     @ColumnDefault("0")
     @Column(name = "priority", nullable = false)
     private Integer priority = 0;
-
-    @OneToMany(mappedBy = "resortRoomCategoryPriceEntity", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<ResortRoomCategoryPriceDayEntity> resortRoomCategoryPriceDayEntities = new LinkedHashSet<>();
-
-    // -------------------------------------------------------------------------
-    // ResortRoomCategoryPriceDay relationship helpers
-    // -------------------------------------------------------------------------
-
-    public void addResortRoomCategoryPriceDayEntity(ResortRoomCategoryPriceDayEntity entity) {
-        addChild(resortRoomCategoryPriceDayEntities, entity, ResortRoomCategoryPriceDayEntity::assignResortRoomCategoryPrice, this);
-    }
-
-    public void removeResortRoomCategoryPriceDayEntity(ResortRoomCategoryPriceDayEntity entity) {
-        removeChild(resortRoomCategoryPriceDayEntities, entity, (child, ignored) -> child.unassignResortRoomCategoryPrice());
-    }
 }

@@ -4,10 +4,21 @@ Base URL: `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/prices
 
 A resort room category price row describes what a [Resort Room Category](resort-room-categories-api.md) costs
 under one pricing rule — a `price_type` (`BAS`/`WKD`/`WKE`/`HOL`/`SPECIAL`, i.e. Base / Weekday / Weekend /
-Holiday / Special), a billing `price_unit` (e.g. `PER_NIGHT`/`PER_DAY`/`PER_PERSON`), a `currency`, an `amount`,
-and — for Weekday/Weekend rules only — the set of `days` (of week) the rule applies to. A room category
-typically has several rows: one `BAS` row per currency as the default rate, `WKD`/`WKE` overrides created
-together with it, and any number of `HOL`/`SPECIAL` rows for date-bound promotions/surcharges.
+Holiday / Special), a billing `price_unit` (e.g. `PER_NIGHT`/`PER_DAY`/`PER_PERSON`), a `currency`, and an
+`amount`. A room category typically has several rows: one `BAS` row per currency as the default rate, `WKD`/
+`WKE` overrides created together with it, and any number of `HOL`/`SPECIAL` rows for date-bound
+promotions/surcharges.
+
+**Which days of week count as WEEKDAY vs. WEEKEND is not part of this API at all — it's a property of the
+*resort*, shared by every room category and every currency at that resort, and lives on the separate [Resort
+Weekly Schedule API](resort-weekly-schedule-api.md).** Earlier versions of this API let each currency's `WKD`/
+`WKE` price row carry its own days, which made it possible (and a real bug) for the same resort to disagree
+with itself about its own weekend depending on which currency a guest was viewing — e.g. USD's `WKE` row saying
+Saturday/Sunday while BDT's said Friday/Saturday, for the same physical rooms in the same physical country. A
+resort's weekly schedule must be set via `PUT /resorts/{resort-id}/weekly-schedule` **before** any of its room
+categories can be given an active `WKD`/`WKE` price — see [Error Responses](#error-responses). Each `WKD`/`WKE`
+row in responses below still embeds `days`, but it's always the resort's one shared schedule, not anything set
+per price row.
 
 Resort room category prices are always reached nested under their owning resort room category; there is no
 top-level `/api/v1/resort-room-category-prices` route. Every endpoint below also validates the
@@ -38,10 +49,17 @@ take a `price_type_id` in the request body.** Each endpoint resolves its own pri
 **`BAS`/`WKD`/`WKE` rows can only ever be created via [Create Resort Room
 Category](resort-room-categories-api.md#create-resort-room-category) (the room category's first currency) or
 [Create Resort Room Category Main Price](#create-resort-room-category-main-price) (every currency after
-that) — they can never be deleted afterward, only replaced via [Update Resort Room Category Main
-Price](#update-resort-room-category-main-price), and [Delete](#delete-resort-room-category-price) below rejects
-them with `400 INVALID_ARGUMENT` (see [Error Responses](#error-responses)).** `HOL`/`SPECIAL` rows can be
-created any number of times (one per date range/promotion), edited in place, and deleted.
+that), and [Delete Resort Room Category Price](#delete-resort-room-category-price) (the single-row, `{id}`
+endpoint) always rejects them with `400 INVALID_ARGUMENT` (see [Error Responses](#error-responses)) — they can
+only be replaced in place via [Update Resort Room Category Main
+Price](#update-resort-room-category-main-price), or removed entirely, together with that currency's
+`HOL`/`SPECIAL` rows, via [Delete Resort Room Category Prices By
+Currency](#delete-resort-room-category-prices-by-currency) below. There is no way to delete just a currency's
+`BAS`/`WKD`/`WKE` set while leaving its `HOL`/`SPECIAL` rows behind — those rows require an active `BAS` price
+to exist (see [Create Resort Room Category Holiday Price](#create-resort-room-category-holiday-price)), so the
+currency-wide delete removes all five at once instead of orphaning them.** `HOL`/`SPECIAL` rows can also be
+created any number of times (one per date range/promotion), edited in place, and deleted individually via the
+single-row `{id}` endpoint.
 
 `price_unit_id` and `currency_id` are supplied only at creation and are never fields on a response object —
 responses always embed the resolved `price_unit`/`currency` instead (see [Data Model](#data-model)).
@@ -72,7 +90,8 @@ shapes the response: it selects the locale-matched translation embedded on `reso
 | PUT    | `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/prices/main`          | Replace a resort room category's BASE/WEEKDAY/WEEKEND price set for a currency |
 | PUT    | `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/prices/holidays/{id}` | Update a resort room category holiday price                                    |
 | PUT    | `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/prices/specials/{id}` | Update a resort room category special price                                    |
-| DELETE | `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/prices/{id}`          | Delete a resort room category price                                            |
+| DELETE | `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/prices/{id}`          | Delete a resort room category holiday/special price                            |
+| DELETE | `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/prices`               | Delete every price (main + holiday + special) for one currency                 |
 
 There is no `GET /{id}` — a single row is only ever seen embedded inside [List Resort Room Category
 Prices](#list-resort-room-category-prices)' grouped response, since every row is always looked at in the
@@ -93,11 +112,11 @@ context of its currency's full BASE/WEEKDAY/WEEKEND/HOLIDAY/SPECIAL set.
 | `currency`             | Object  | —             | read-only; see [Currency](currencies-api.md); resolved from `currency_id`                        | Currency of `price`. Immutable after creation                                                              |
 | `name`                 | String  | Yes           | not blank, max 200 chars                                                                         | Display name, e.g. `Base Price`, `Weekend Price`, `Eid-ul-Fitr`                                            |
 | `description`          | String  | —             | nullable                                                                                         | Optional description                                                                                       |
-| `price`                | Decimal | Yes           | not null; numeric(12,2); >= 0; `WKD`/`WKE` additionally capped at the active `BAS` price         | Price amount                                                                                               |
+| `price`                | Decimal | Yes           | not null; >= 0; at most 10 integer digits and 2 fraction digits (`numeric(12,2)`); `WKD`/`WKE` additionally capped at the active `BAS` price | Price amount                                                                                               |
 | `valid_from`           | Date    | conditionally | required for `HOL`/`SPECIAL`, forbidden for `BAS`/`WKD`/`WKE`; must be <= `valid_to` if both set | Start of the date range the price applies to                                                               |
 | `valid_to`             | Date    | conditionally | required for `HOL`/`SPECIAL`, forbidden for `BAS`/`WKD`/`WKE`                                    | End of the date range the price applies to                                                                 |
 | `priority`             | Integer | —             | forced to `0` for `BAS`/`WKD`/`WKE`; free-form (default `0`) for `HOL`/`SPECIAL`                 | Tie-breaker when multiple rules could apply to the same date — higher wins (e.g. `HOL`=100, `SPECIAL`=200) |
-| `days`                 | Array   | —             | see ResortRoomCategoryPriceDay below                                                             | The days of week this rule applies to — required (non-empty) for `WKD`/`WKE`, forbidden for other types    |
+| `days`                 | Array   | —             | read-only; see [ResortWeeklyScheduleDay](resort-weekly-schedule-api.md#data-model)               | The resort's shared weekly-schedule days for this row's price type — always empty for `BAS`/`HOL`/`SPECIAL`, always the resort's one shared set for `WKD`/`WKE` (never anything set on this row itself) |
 
 > **Note:** `price_unit_id` and `currency_id` (used to resolve `price_unit` and `currency`) are write-only
 > inputs and never appear on this data model, because the response always returns the resolved objects instead.
@@ -105,14 +124,8 @@ context of its currency's full BASE/WEEKDAY/WEEKEND/HOLIDAY/SPECIAL set.
 > `WKE` for Main, `HOL` for Holiday, `SPECIAL` for Special). Each embeds only `id`, `code`, `sort_order`, and the
 > Accept-Language-matched `locale` (plus, for `currency`, `numeric_code`/`symbol`/`decimal_places`/`is_default`)
 > — nested collections such as a price type's/unit's own `price_scopes`, or a currency's `country`, are never
-> embedded here.
-
-### ResortRoomCategoryPriceDay
-
-| Field         | Type   | Required | Constraints                                                                               | Description                          |
-|---------------|--------|----------|-------------------------------------------------------------------------------------------|--------------------------------------|
-| `id`          | Long   | —        | read-only                                                                                 | Auto-generated identifier            |
-| `day_of_week` | Object | —        | read-only; see [DayOfWeek](days-of-week-api.md); resolved from an id in `day_of_week_ids` | The day of week this rule applies to |
+> embedded here. `days` is likewise read-only here — see the [Resort Weekly Schedule
+> API](resort-weekly-schedule-api.md) to change it.
 
 ### Request building blocks
 
@@ -125,11 +138,13 @@ Every create/update request is built from a small set of shared shapes, nested r
 | `price_unit_id` | Long    | Yes      | Not null; must reference an existing, active price unit | Billing unit for this row |
 | `name`          | String  | Yes      | Not blank, max 200 chars                                | Display name for this row |
 | `description`   | String  | —        | Nullable                                                | Optional description      |
-| `price`         | Decimal | Yes      | Not null; numeric(12,2); >= 0                           | Price amount              |
+| `price`         | Decimal | Yes      | Not null; >= 0; at most 10 integer digits and 2 fraction digits (matches `numeric(12,2)`) | Price amount              |
 
 - **BasePriceRequest** — exactly the fields above, no more.
-- **WeekdayPriceRequest** / **WeekendPriceRequest** — the fields above, plus `day_of_week_ids` (`Long[]`,
-  `@NotEmpty`, each id must reference an existing, active day of week).
+- **WeekdayPriceRequest** / **WeekendPriceRequest** — currently also exactly the fields above, no more; kept as
+  distinct (empty) types rather than collapsed into `PriceRequest` purely so `MainPriceRequest`'s JSON keeps its
+  named `weekday_price`/`weekend_price` fields. Days of week are **not** part of these — see [Resort Weekly
+  Schedule API](resort-weekly-schedule-api.md).
 - **DateRangePriceRequest** (the shared shape behind Holiday/Special) — the fields above, plus `valid_from`
   (Date, `@NotNull`), `valid_to` (Date, `@NotNull`), and `priority` (Integer, nullable, defaults to `0`).
 
@@ -139,8 +154,8 @@ Every create/update request is built from a small set of shared shapes, nested r
 | Field                | Type   | Required | Validation                        | Description                                    |
 |----------------------|--------|----------|-----------------------------------|------------------------------------------------|
 | `base_price_request` | Object | Yes      | `@Valid`; see BasePriceRequest    | The `BAS` row's own fields                     |
-| `weekday_price`      | Object | Yes      | `@Valid`; see WeekdayPriceRequest | The `WKD` row's own fields, including its days |
-| `weekend_price`      | Object | Yes      | `@Valid`; see WeekendPriceRequest | The `WKE` row's own fields, including its days |
+| `weekday_price`      | Object | Yes      | `@Valid`; see WeekdayPriceRequest | The `WKD` row's own fields                     |
+| `weekend_price`      | Object | Yes      | `@Valid`; see WeekendPriceRequest | The `WKE` row's own fields                     |
 
 [Create](#create-resort-room-category-main-price) additionally requires `currency_id` (Long, `@NotNull`) at the
 top level, alongside the three objects above. [Update](#update-resort-room-category-main-price) does **not**
@@ -159,23 +174,30 @@ fetching the allowed sets first via `GET /api/v1/price-types?priceScopeCodes=ROO
 `GET /api/v1/price-units?priceScopeCodes=ROOM_CATEGORY` and only offering those ids.
 
 Each `price_type` code additionally has its own shape requirements, ultimately enforced by database triggers —
-**and, since Update now uses the same typed request shapes as Create (`WeekdayPriceRequest`/
-`WeekendPriceRequest`'s `@NotEmpty day_of_week_ids`, `DateRangePriceRequest`'s `@NotNull valid_from`/
-`valid_to`), every one of the "required"/"forbidden" rules below is bean-validated up front on both Create
-*and* Update, not just Create.** The one shape rule no endpoint pre-validates is that `price_type_id`/
+**and, since Update now uses the same typed request shapes as Create (`DateRangePriceRequest`'s `@NotNull
+valid_from`/`valid_to`), every one of the "required"/"forbidden" rules below is bean-validated up front on both
+Create *and* Update, not just Create.** The one shape rule no endpoint pre-validates is that `price_type_id`/
 `price_unit_id` must be assigned to the `ROOM_CATEGORY` [price scope](price-scopes-api.md) — see the note under
 [Error Responses](#error-responses).
 
-| `price_type` code | `valid_from` / `valid_to`       | `days`                          | `priority`              | `price` cap                                                              |
-|-------------------|---------------------------------|---------------------------------|-------------------------|--------------------------------------------------------------------------|
-| `BAS` (Base)      | Forbidden (must be null)        | Forbidden (must be empty)       | Forced to `0`           | None                                                                     |
-| `WKD` (Weekday)   | Forbidden (must be null)        | **Required** (at least one day) | Forced to `0`           | Cannot exceed the active `BAS` price for the same room category/currency |
-| `WKE` (Weekend)   | Forbidden (must be null)        | **Required** (at least one day) | Forced to `0`           | Cannot exceed the active `BAS` price for the same room category/currency |
-| `HOL` (Holiday)   | **Required** (both must be set) | Forbidden (must be empty)       | Free-form (default `0`) | None                                                                     |
-| `SPECIAL`         | **Required** (both must be set) | Forbidden (must be empty)       | Free-form (default `0`) | None                                                                     |
+| `price_type` code | `valid_from` / `valid_to`       | `priority`              | `price` cap                                                              |
+|-------------------|----------------------------------|-------------------------|--------------------------------------------------------------------------|
+| `BAS` (Base)      | Forbidden (must be null)        | Forced to `0`           | None                                                                     |
+| `WKD` (Weekday)   | Forbidden (must be null)        | Forced to `0`           | Cannot exceed the active `BAS` price for the same room category/currency |
+| `WKE` (Weekend)   | Forbidden (must be null)        | Forced to `0`           | Cannot exceed the active `BAS` price for the same room category/currency |
+| `HOL` (Holiday)   | **Required** (both must be set) | Free-form (default `0`) | None                                                                     |
+| `SPECIAL`         | **Required** (both must be set) | Free-form (default `0`) | None                                                                     |
+
+`WKD`/`WKE`'s day-of-week membership is not part of this table at all anymore — see [Resort Weekly Schedule
+API](resort-weekly-schedule-api.md) for that requirement (a resort must have a schedule before either type can
+have an active price).
 
 A room category may have at most one **active** price per exact `(price_type, price_unit, currency)`
-combination — creating a second one returns `409 CONFLICT`.
+combination — creating a second one returns `409 CONFLICT`. For `BAS`/`WKD`/`WKE` specifically, "at most one
+active row per `(price_type, currency)`" is additionally enforced by a database-level partial unique index
+(`uq_resort_room_category_price_active_main`), not just the application-layer check — so even two concurrent
+[Create Main](#create-resort-room-category-main-price) requests for the same room category/currency cannot both
+succeed (see [Error Responses](#error-responses)).
 
 ---
 
@@ -192,9 +214,13 @@ has a price group for returns `409 CONFLICT`. `weekday_price.price`/`weekend_pri
 `base_price_request.price` (`400 INVALID_ARGUMENT` otherwise, mirroring the same rule on [Create Resort Room
 Category](resort-room-categories-api.md#create-resort-room-category)). Every price unit id (one per nested
 object) must reference an existing, active [Price Unit](price-units-api.md) — each of the three can be
-different. Each nested object's `day_of_week_ids` (`weekday_price`/`weekend_price` only) must be non-empty and
-every id must reference an existing, active [Day of Week](days-of-week-api.md). `currency_id` must reference an
-existing, active [Currency](currencies-api.md).
+different. `currency_id` must reference an existing, active [Currency](currencies-api.md).
+
+**The resort must already have an active weekly schedule** (see [Resort Weekly Schedule
+API](resort-weekly-schedule-api.md)) before this call can succeed — `WKD`/`WKE` no longer take their own days,
+so the DB rejects an active `WKD`/`WKE` row for a resort with no schedule for that price type (`500
+INTERNAL_SERVER_ERROR` currently — see [Error Responses](#error-responses)). Set the resort's schedule via
+`PUT /resorts/{resort-id}/weekly-schedule` first if this is the resort's first room category price.
 
 ### Path Parameters
 
@@ -218,23 +244,13 @@ existing, active [Currency](currencies-api.md).
     "price_unit_id": 1,
     "name": "Weekday Price",
     "description": null,
-    "price": 200.00,
-    "day_of_week_ids": [
-      1,
-      2,
-      3,
-      4
-    ]
+    "price": 200.00
   },
   "weekend_price": {
     "price_unit_id": 1,
     "name": "Weekend Price",
     "description": null,
-    "price": 260.00,
-    "day_of_week_ids": [
-      5,
-      6
-    ]
+    "price": 260.00
   }
 }
 ```
@@ -248,19 +264,17 @@ existing, active [Currency](currencies-api.md).
 | `base_price_request.price_unit_id` | Long    | Yes      | Not null; must reference an existing, active price unit                                                                   |
 | `base_price_request.name`          | String  | Yes      | Not blank, max 200 chars                                                                                                  |
 | `base_price_request.description`   | String  | —        | Nullable                                                                                                                  |
-| `base_price_request.price`         | Decimal | Yes      | Not null; numeric(12,2); >= 0                                                                                             |
+| `base_price_request.price`         | Decimal | Yes      | Not null; >= 0; at most 10 integer/2 fraction digits                                                                      |
 | `weekday_price`                    | Object  | Yes      | `@Valid`; see [WeekdayPriceRequest](#request-building-blocks)                                                             |
 | `weekday_price.price_unit_id`      | Long    | Yes      | Not null; must reference an existing, active price unit                                                                   |
 | `weekday_price.name`               | String  | Yes      | Not blank, max 200 chars                                                                                                  |
 | `weekday_price.description`        | String  | —        | Nullable                                                                                                                  |
-| `weekday_price.price`              | Decimal | Yes      | Not null; numeric(12,2); >= 0; cannot exceed `base_price_request.price`                                                   |
-| `weekday_price.day_of_week_ids`    | Long[]  | Yes      | Not empty; each id must reference an existing, active day of week                                                         |
+| `weekday_price.price`              | Decimal | Yes      | Not null; >= 0; at most 10 integer/2 fraction digits; cannot exceed `base_price_request.price`                            |
 | `weekend_price`                    | Object  | Yes      | `@Valid`; see [WeekendPriceRequest](#request-building-blocks)                                                             |
 | `weekend_price.price_unit_id`      | Long    | Yes      | Not null; must reference an existing, active price unit                                                                   |
 | `weekend_price.name`               | String  | Yes      | Not blank, max 200 chars                                                                                                  |
 | `weekend_price.description`        | String  | —        | Nullable                                                                                                                  |
-| `weekend_price.price`              | Decimal | Yes      | Not null; numeric(12,2); >= 0; cannot exceed `base_price_request.price`                                                   |
-| `weekend_price.day_of_week_ids`    | Long[]  | Yes      | Not empty; each id must reference an existing, active day of week                                                         |
+| `weekend_price.price`              | Decimal | Yes      | Not null; >= 0; at most 10 integer/2 fraction digits; cannot exceed `base_price_request.price`                            |
 
 ### Response `201 Created`
 
@@ -320,7 +334,7 @@ row first, to change a holiday's price.
 | `price_unit_id` | Long    | Yes      | Not null; must reference an existing, active price unit                                                              |
 | `name`          | String  | Yes      | Not blank, max 200 chars                                                                                             |
 | `description`   | String  | —        | Nullable                                                                                                             |
-| `price`         | Decimal | Yes      | Not null; numeric(12,2); >= 0                                                                                        |
+| `price`         | Decimal | Yes      | Not null; >= 0; at most 10 integer/2 fraction digits                                                                 |
 | `valid_from`    | Date    | Yes      | Not null; must be <= `valid_to` if both set (database-trigger-enforced)                                              |
 | `valid_to`      | Date    | Yes      | Not null                                                                                                             |
 | `priority`      | Integer | —        | Nullable (defaults to `0`); free-form — higher wins when multiple `HOL`/`SPECIAL` rules could apply to the same date |
@@ -394,8 +408,10 @@ has none active in that currency — normally only possible for `weekday`/`weeke
 currency), while `holidays`/`specials` are arrays, since a room category can have any number of active
 `HOL`/`SPECIAL` rows per currency (e.g. one per holiday, one per promotion). There is no pagination. **Every
 entry includes its `days`**, unlike list endpoints on other entities in this codebase — useful here since
-`weekday`/`weekend` are defined by which days they apply to. This is also the only way to read a single row's
-full detail, since there is no `GET /{id}`.
+`weekday`/`weekend` are defined by which days they apply to. `days` always reflects the *resort's* current
+weekly schedule (see [Resort Weekly Schedule API](resort-weekly-schedule-api.md)) — identical on every
+currency's `weekday`/`weekend` row, since it's shared, not per-currency. This is also the only way to read a
+single row's full detail, since there is no `GET /{id}`.
 
 ### Path Parameters
 
@@ -593,12 +609,13 @@ three is missing, the call fails with `404 ENTITY_NOT_FOUND` rather than partial
 has never been priced. `weekday_price.price`/`weekend_price.price` cannot exceed `base_price_request.price`,
 the same rule as Create.
 
-**Every row id churns on every call, including for the day-of-week rows on `weekday_price`/`weekend_price`** —
-because the old rows are soft-deleted and new ones created, a previously-fetched price `id` should not be
-cached or relied on after this endpoint is called; re-fetch via [List Resort Room Category
-Prices](#list-resort-room-category-prices) afterward. Unlike [Set Weekly
+**Every row id churns on every call** — because the old rows are soft-deleted and new ones created, a
+previously-fetched price `id` should not be cached or relied on after this endpoint is called; re-fetch via
+[List Resort Room Category Prices](#list-resort-room-category-prices) afterward. Unlike [Set Weekly
 Schedule](resort-facility-operating-hours-api.md#set-weekly-schedule), the response here only returns the new
-`BAS` row's id — fetch the list endpoint to see the new `WKD`/`WKE` ids too.
+`BAS` row's id — fetch the list endpoint to see the new `WKD`/`WKE` ids too. `days` on those rows is unaffected
+by this call — it comes from the resort's shared weekly schedule (see [Resort Weekly Schedule
+API](resort-weekly-schedule-api.md)), not from anything replaced here.
 
 `currency_id` is **not** a body field on this endpoint — the currency being replaced is identified by the
 `currency-id` query parameter, since the whole point of this call is to replace that currency's set (there is
@@ -631,23 +648,13 @@ nothing to "change the currency to").
     "price_unit_id": 1,
     "name": "Weekday Price",
     "description": null,
-    "price": 210.00,
-    "day_of_week_ids": [
-      1,
-      2,
-      3,
-      4
-    ]
+    "price": 210.00
   },
   "weekend_price": {
     "price_unit_id": 1,
     "name": "Weekend Price",
     "description": null,
-    "price": 270.00,
-    "day_of_week_ids": [
-      5,
-      6
-    ]
+    "price": 270.00
   }
 }
 ```
@@ -767,12 +774,12 @@ the Request Fields table there.
 
 `DELETE /api/v1/resorts/{resort-id}/room-categories/{room-category-id}/prices/{id}`
 
-Soft-deletes the resort room category price (and, via cascade, its day rows). The record is not removed from
-the database but will no longer appear in any response. **Only `HOL`/`SPECIAL` rows can be deleted** — a
+Soft-deletes the resort room category price. The record is not removed from the database but will no longer
+appear in any response. **Only `HOL`/`SPECIAL` rows can be deleted** — a
 `BAS`/`WKD`/`WKE` row (identified by the target `id`'s own `price_type`) is rejected with `400
-INVALID_ARGUMENT`, since a room category must always keep exactly one active BASE/WEEKDAY/WEEKEND set per
-currency (replace it instead via [Update Resort Room Category Main
-Price](#update-resort-room-category-main-price)).
+INVALID_ARGUMENT`; remove a currency's `BAS`/`WKD`/`WKE` set instead via [Delete Resort Room Category Prices By
+Currency](#delete-resort-room-category-prices-by-currency) below (or replace it in place via [Update Resort
+Room Category Main Price](#update-resort-room-category-main-price)).
 
 ### Path Parameters
 
@@ -793,6 +800,51 @@ Price](#update-resort-room-category-main-price)).
 
 ---
 
+## Delete Resort Room Category Prices By Currency
+
+`DELETE /api/v1/resorts/{resort-id}/room-categories/{room-category-id}/prices?currency-id={currency-id}`
+
+Soft-deletes **every** active price for one currency in a single call — `BAS`, `WKD`, `WKE`, and any `HOL`/
+`SPECIAL` rows — atomically, in one transaction. This is the only way to remove a currency's `BAS`/`WKD`/`WKE`
+set; [Delete Resort Room Category
+Price](#delete-resort-room-category-price) (the single-row endpoint above) always refuses them individually,
+because deleting just the main set would leave that currency's `HOL`/`SPECIAL` rows pointing at a currency with
+no base rate — this endpoint takes all five price types for the currency together instead, so that situation
+can never occur.
+
+**Every resort room category must keep at least one currency's prices.** If `currency-id` is the room
+category's only currency with an active `BAS` price, the call is rejected with `409 CONFLICT` — to remove
+pricing entirely, delete the room category itself instead (see [Delete Resort Room
+Category](resort-room-categories-api.md#delete-resort-room-category)). If `currency-id` has no active prices
+for this room category at all (already deleted, or never priced in that currency), the call fails with `404
+ENTITY_NOT_FOUND`.
+
+### Path Parameters
+
+| Parameter          | Type | Description                    |
+|---------------------|------|--------------------------------|
+| `resort-id`        | Long | ID of the owning resort        |
+| `room-category-id` | Long | ID of the resort room category |
+
+### Query Parameters
+
+| Parameter     | Type | Required | Description                                        |
+|---------------|------|----------|-----------------------------------------------------|
+| `currency-id` | Long | Yes      | ID of the currency whose prices are being deleted  |
+
+### Response `200 OK`
+
+```json
+{
+  "success": true,
+  "id": 1
+}
+```
+
+`id` is `currency-id` — there is no single row id to return, since this deletes a whole set of rows at once.
+
+---
+
 ## Error Responses
 
 All errors follow a common structure:
@@ -808,8 +860,8 @@ All errors follow a common structure:
 
 | HTTP Status | Error Code                 | Cause                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 |-------------|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing `currency-id` query parameter on [List](#list-resort-room-category-prices)/[Update Main](#update-resort-room-category-main-price); missing/invalid required fields on any create/update endpoint (`currency_id`/`price_unit_id`/`name`/`price` null, `day_of_week_ids` empty on `weekday_price`/`weekend_price`, or — for Holiday/Special — `valid_from`/`valid_to` null); `weekday_price.price`/`weekend_price.price` greater than `base_price_request.price` on [Create](#create-resort-room-category-main-price)/[Update](#update-resort-room-category-main-price) Main (checked at the application layer before the write); the target row's `price_type` being `BAS`/`WKD`/`WKE` on [Delete](#delete-resort-room-category-price) (checked at the application layer before the write)                                                                                                                              |
-| 404         | `ENTITY_NOT_FOUND`         | Resort not found; resort room category not found for the given `resort-id`/`room-category-id` pair (including a `room-category-id` that belongs to a different resort); price not found for the given `room-category-id`/`id` pair (including an `id` that belongs to a different room category) on [Update Holiday](#update-resort-room-category-holiday-price)/[Update Special](#update-resort-room-category-special-price)/[Delete](#delete-resort-room-category-price); the currency's `BAS`/`WKD`/`WKE` set not found (any of the three missing) on [Update Main](#update-resort-room-category-main-price); `currency_id` has no active main (`BAS`) price yet on [Create Holiday](#create-resort-room-category-holiday-price)/[Create Special](#create-resort-room-category-special-price) (checked at the application layer before the write); the price unit, currency, or any day-of-week id not found; `currency-id` not found on [List](#list-resort-room-category-prices)/[Update Main](#update-resort-room-category-main-price) |
-| 409         | `CONFLICT`                 | On [Create Main](#create-resort-room-category-main-price): the room category already has an active `BAS` price for the given `currency_id`. On [Create Holiday](#create-resort-room-category-holiday-price)/[Create Special](#create-resort-room-category-special-price): the room category already has an active price with the same price type/`price_unit_id`/`currency_id` combination. Both checked at the application layer before the write                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| 409         | `DATA_INTEGRITY_VIOLATION` | A foreign key (`price_type_id`, `price_unit_id`, `currency_id`, `resort_room_category_id`, `day_of_week_id`) or the underlying unique constraints somehow reference/duplicate a row unexpectedly — should not normally be reachable, since each is resolved and validated before the write                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| 500         | `INTERNAL_SERVER_ERROR`    | The `price_type_id`/`price_unit_id` pair used by the write isn't assigned to the `ROOM_CATEGORY` price scope — this shape rule is never pre-validated on any endpoint, see [Price type rules](#price-type-rules). In this case the database trigger's raised exception isn't a recognized constraint-violation type, so it falls through to the generic error handler as a `500` rather than a `400`/`409`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| 400         | `INVALID_ARGUMENT`         | Missing or blank `Accept-Language` header (checked globally, before any endpoint runs — see the intro above); missing `currency-id` query parameter on [List](#list-resort-room-category-prices)/[Update Main](#update-resort-room-category-main-price)/[Delete By Currency](#delete-resort-room-category-prices-by-currency); missing/invalid required fields on any create/update endpoint (`currency_id`/`price_unit_id`/`name`/`price` null, `price` with more than 10 integer or 2 fraction digits, or — for Holiday/Special — `valid_from`/`valid_to` null or `valid_from` after `valid_to`); `weekday_price.price`/`weekend_price.price` greater than `base_price_request.price` on [Create](#create-resort-room-category-main-price)/[Update](#update-resort-room-category-main-price) Main (checked at the application layer before the write); the target row's `price_type` being `BAS`/`WKD`/`WKE` on [Delete](#delete-resort-room-category-price) (checked at the application layer before the write); the target row's actual `price_type` not matching the endpoint used — e.g. an `id` that is a `HOL` row passed to [Update Special](#update-resort-room-category-special-price), or vice versa (checked at the application layer before the write) |
+| 404         | `ENTITY_NOT_FOUND`         | Resort not found; resort room category not found for the given `resort-id`/`room-category-id` pair (including a `room-category-id` that belongs to a different resort); price not found for the given `room-category-id`/`id` pair (including an `id` that belongs to a different room category) on [Update Holiday](#update-resort-room-category-holiday-price)/[Update Special](#update-resort-room-category-special-price)/[Delete](#delete-resort-room-category-price); the currency's `BAS`/`WKD`/`WKE` set not found (any of the three missing) on [Update Main](#update-resort-room-category-main-price); `currency_id` has no active main (`BAS`) price yet on [Create Holiday](#create-resort-room-category-holiday-price)/[Create Special](#create-resort-room-category-special-price) (checked at the application layer before the write); `currency-id` has no active prices at all for this room category on [Delete By Currency](#delete-resort-room-category-prices-by-currency); the price unit or currency not found; `currency-id` not found on [List](#list-resort-room-category-prices)/[Update Main](#update-resort-room-category-main-price)/[Delete By Currency](#delete-resort-room-category-prices-by-currency) |
+| 409         | `CONFLICT`                 | On [Create Main](#create-resort-room-category-main-price): the room category already has an active `BAS` price for the given `currency_id` — this can also surface as a `409 DATA_INTEGRITY_VIOLATION` (see below) instead, if two concurrent requests for the same room category/currency both pass the initial check and race to insert. On [Create Holiday](#create-resort-room-category-holiday-price)/[Create Special](#create-resort-room-category-special-price): the room category already has an active price with the same price type/`price_unit_id`/`currency_id` combination. On [Delete By Currency](#delete-resort-room-category-prices-by-currency): `currency-id` is the room category's only remaining currency with an active `BAS` price. All checked at the application layer before the write except the concurrent-insert case                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| 409         | `DATA_INTEGRITY_VIOLATION` | A foreign key (`price_type_id`, `price_unit_id`, `currency_id`, `resort_room_category_id`) or the underlying unique constraints somehow reference/duplicate a row unexpectedly — should not normally be reachable, since each is resolved and validated before the write. One case *is* reachable in practice: two concurrent [Create Main](#create-resort-room-category-main-price) calls for the same room category/currency can both pass the initial `409 CONFLICT` check before either commits — the database's `uq_resort_room_category_price_active_main` partial unique index is the actual backstop here, and returns `"This room category already has an active price for this currency and price type."` |
+| 500         | `INTERNAL_SERVER_ERROR`    | The `price_type_id`/`price_unit_id` pair used by the write isn't assigned to the `ROOM_CATEGORY` price scope, see [Price type rules](#price-type-rules); or — on [Create](#create-resort-room-category-main-price)/[Update](#update-resort-room-category-main-price) Main — the resort has no active weekly schedule for `WKD`/`WKE` yet, see [Resort Weekly Schedule API](resort-weekly-schedule-api.md). Neither shape rule is pre-validated on any endpoint here; in both cases the database trigger's raised exception isn't a recognized constraint-violation type, so it falls through to the generic error handler as a `500` rather than a `400`/`404`                                                                                                                                                                                                                                                                                                                                                                                                                                   |

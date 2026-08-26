@@ -1,21 +1,19 @@
 package com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice;
 
-import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
 
-import java.util.List;
-
+/**
+ * Days of week are no longer submitted per currency here — WEEKEND's day-of-week set is shared by every
+ * currency (and every room category) at the resort, set via
+ * {@code PUT /resorts/{resort-id}/weekly-schedule}. This class stays a distinct (currently empty) type, not
+ * collapsed into {@link ResortRoomCategoryPriceRequest}, purely so {@code MainPriceRequest}'s JSON keeps its
+ * named {@code weekend_price} field.
+ */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class ResortRoomCategoryWeekendPriceRequest extends ResortRoomCategoryPriceRequest {
-
-    /**
-     * Days of week the WEEKEND price applies to. At least one required.
-     */
-    @NotEmpty
-    private List<Long> dayOfWeekIds;
 }

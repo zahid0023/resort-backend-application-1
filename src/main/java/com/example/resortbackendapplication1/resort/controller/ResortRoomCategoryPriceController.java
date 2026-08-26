@@ -2,8 +2,6 @@ package com.example.resortbackendapplication1.resort.controller;
 
 import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
 import com.example.resortbackendapplication1.currency.service.CurrencyService;
-import com.example.resortbackendapplication1.dayofweek.model.entity.DayOfWeekEntity;
-import com.example.resortbackendapplication1.dayofweek.service.DayOfWeekService;
 import com.example.resortbackendapplication1.price.model.entity.PriceTypeEntity;
 import com.example.resortbackendapplication1.price.model.entity.PriceUnitEntity;
 import com.example.resortbackendapplication1.price.service.PriceTypeService;
@@ -18,8 +16,10 @@ import com.example.resortbackendapplication1.resort.dto.request.resortroomcatego
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.UpdateResortRoomCategorySpecialPriceRequest;
 import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryPriceEntity;
+import com.example.resortbackendapplication1.resort.model.entity.ResortWeeklyScheduleDayEntity;
 import com.example.resortbackendapplication1.resort.service.ResortRoomCategoryPriceService;
 import com.example.resortbackendapplication1.resort.service.ResortRoomCategoryService;
+import com.example.resortbackendapplication1.resort.service.ResortWeeklyScheduleService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,23 +33,23 @@ public class ResortRoomCategoryPriceController {
 
     private final ResortRoomCategoryPriceService resortRoomCategoryPriceService;
     private final ResortRoomCategoryService resortRoomCategoryService;
+    private final ResortWeeklyScheduleService resortWeeklyScheduleService;
     private final PriceTypeService priceTypeService;
     private final PriceUnitService priceUnitService;
     private final CurrencyService currencyService;
-    private final DayOfWeekService dayOfWeekService;
 
     public ResortRoomCategoryPriceController(ResortRoomCategoryPriceService resortRoomCategoryPriceService,
                                              ResortRoomCategoryService resortRoomCategoryService,
+                                             ResortWeeklyScheduleService resortWeeklyScheduleService,
                                              PriceTypeService priceTypeService,
                                              PriceUnitService priceUnitService,
-                                             CurrencyService currencyService,
-                                             DayOfWeekService dayOfWeekService) {
+                                             CurrencyService currencyService) {
         this.resortRoomCategoryPriceService = resortRoomCategoryPriceService;
         this.resortRoomCategoryService = resortRoomCategoryService;
+        this.resortWeeklyScheduleService = resortWeeklyScheduleService;
         this.priceTypeService = priceTypeService;
         this.priceUnitService = priceUnitService;
         this.currencyService = currencyService;
-        this.dayOfWeekService = dayOfWeekService;
     }
 
     @PostMapping("/main")
@@ -65,8 +65,7 @@ public class ResortRoomCategoryPriceController {
         MainPriceUnits units = resolveMainPriceUnits(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(resortRoomCategoryPriceService.createMain(
                 request, resortRoomCategoryEntity, basePriceTypeEntity, weekdayPriceTypeEntity, weekendPriceTypeEntity,
-                currencyEntity, units.basePriceUnitEntity(), units.weekdayPriceUnitEntity(), units.weekendPriceUnitEntity(),
-                units.weekdayDayOfWeekEntities(), units.weekendDayOfWeekEntities()));
+                currencyEntity, units.basePriceUnitEntity(), units.weekdayPriceUnitEntity(), units.weekendPriceUnitEntity()));
     }
 
     @PostMapping("/holidays")
@@ -96,9 +95,14 @@ public class ResortRoomCategoryPriceController {
             @PathVariable("resort-id") Long resortId,
             @PathVariable("room-category-id") Long roomCategoryId,
             @RequestParam("currency-id") Long currencyId) {
-        resolveRoomCategory(resortId, roomCategoryId);
+        ResortRoomCategoryEntity resortRoomCategoryEntity = resolveRoomCategory(resortId, roomCategoryId);
         CurrencyEntity currencyEntity = currencyService.getEntityById(currencyId);
-        return ResponseEntity.ok(resortRoomCategoryPriceService.getAllGroupedByCurrency(roomCategoryId, currencyEntity));
+        List<ResortWeeklyScheduleDayEntity> weekdayScheduleDays = resortWeeklyScheduleService
+                .getEntitiesByPriceType(resortRoomCategoryEntity.getResortEntity(), "WKD");
+        List<ResortWeeklyScheduleDayEntity> weekendScheduleDays = resortWeeklyScheduleService
+                .getEntitiesByPriceType(resortRoomCategoryEntity.getResortEntity(), "WKE");
+        return ResponseEntity.ok(resortRoomCategoryPriceService.getAllGroupedByCurrency(
+                roomCategoryId, currencyEntity, weekdayScheduleDays, weekendScheduleDays));
     }
 
     @GetMapping("/count")
@@ -124,8 +128,7 @@ public class ResortRoomCategoryPriceController {
         return ResponseEntity.ok(resortRoomCategoryPriceService.updateMain(
                 resortRoomCategoryEntity, currencyEntity, request,
                 basePriceTypeEntity, weekdayPriceTypeEntity, weekendPriceTypeEntity,
-                units.basePriceUnitEntity(), units.weekdayPriceUnitEntity(), units.weekendPriceUnitEntity(),
-                units.weekdayDayOfWeekEntities(), units.weekendDayOfWeekEntities()));
+                units.basePriceUnitEntity(), units.weekdayPriceUnitEntity(), units.weekendPriceUnitEntity()));
     }
 
     @PutMapping("/holidays/{id}")
@@ -157,6 +160,21 @@ public class ResortRoomCategoryPriceController {
         return ResponseEntity.ok(resortRoomCategoryPriceService.delete(entity));
     }
 
+    /**
+     * Deletes every price (BASE/WEEKDAY/WEEKEND/HOLIDAY/SPECIAL) for one currency at once — the only way to
+     * remove a currency's main price set, since {@code DELETE /{id}} refuses BAS/WKD/WKE individually. Mirrors
+     * {@link #getAll} — same path, currency scoped by query param.
+     */
+    @DeleteMapping
+    public ResponseEntity<?> deleteByCurrency(
+            @PathVariable("resort-id") Long resortId,
+            @PathVariable("room-category-id") Long roomCategoryId,
+            @RequestParam("currency-id") Long currencyId) {
+        ResortRoomCategoryEntity resortRoomCategoryEntity = resolveRoomCategory(resortId, roomCategoryId);
+        CurrencyEntity currencyEntity = currencyService.getEntityById(currencyId);
+        return ResponseEntity.ok(resortRoomCategoryPriceService.deleteByCurrency(resortRoomCategoryEntity, currencyEntity));
+    }
+
     private ResortRoomCategoryEntity resolveRoomCategory(Long resortId, Long roomCategoryId) {
         return resortRoomCategoryService.getEntityById(resortId, roomCategoryId);
     }
@@ -183,18 +201,7 @@ public class ResortRoomCategoryPriceController {
         return new MainPriceUnits(
                 resolvePriceUnit(request.getBasePriceRequest()),
                 resolvePriceUnit(request.getWeekdayPrice()),
-                resolvePriceUnit(request.getWeekendPrice()),
-                resolveDayOfWeekEntities(request.getWeekdayPrice().getDayOfWeekIds()),
-                resolveDayOfWeekEntities(request.getWeekendPrice().getDayOfWeekIds()));
-    }
-
-    private List<DayOfWeekEntity> resolveDayOfWeekEntities(List<Long> dayOfWeekIds) {
-        if (dayOfWeekIds == null || dayOfWeekIds.isEmpty()) {
-            return List.of();
-        }
-        return dayOfWeekIds.stream()
-                .map(dayOfWeekService::getEntityById)
-                .toList();
+                resolvePriceUnit(request.getWeekendPrice()));
     }
 
     private record DateRangePriceContext(ResortRoomCategoryEntity resortRoomCategoryEntity,
@@ -205,8 +212,6 @@ public class ResortRoomCategoryPriceController {
 
     private record MainPriceUnits(PriceUnitEntity basePriceUnitEntity,
                                   PriceUnitEntity weekdayPriceUnitEntity,
-                                  PriceUnitEntity weekendPriceUnitEntity,
-                                  List<DayOfWeekEntity> weekdayDayOfWeekEntities,
-                                  List<DayOfWeekEntity> weekendDayOfWeekEntities) {
+                                  PriceUnitEntity weekendPriceUnitEntity) {
     }
 }

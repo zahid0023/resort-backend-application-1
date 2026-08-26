@@ -3,7 +3,6 @@ package com.example.resortbackendapplication1.resort.serviceImpl;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
 import com.example.resortbackendapplication1.currency.model.mapper.CurrencyMapper;
-import com.example.resortbackendapplication1.dayofweek.model.entity.DayOfWeekEntity;
 import com.example.resortbackendapplication1.dayofweek.model.mapper.DayOfWeekMapper;
 import com.example.resortbackendapplication1.price.model.entity.PriceTypeEntity;
 import com.example.resortbackendapplication1.price.model.entity.PriceUnitEntity;
@@ -13,7 +12,6 @@ import com.example.resortbackendapplication1.resort.dto.request.resortroomcatego
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.CreateResortRoomCategoryMainPriceRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.CreateResortRoomCategorySpecialPriceRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.ResortRoomCategoryDateRangePriceRequest;
-import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.ResortRoomCategoryMainPriceRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.UpdateResortRoomCategoryHolidayPriceRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.UpdateResortRoomCategoryMainPriceRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resortroomcategoryprice.UpdateResortRoomCategorySpecialPriceRequest;
@@ -21,15 +19,15 @@ import com.example.resortbackendapplication1.resort.dto.response.resortroomcateg
 import com.example.resortbackendapplication1.resort.dto.response.resortroomcategoryprices.ResortRoomCategoryPriceCountResponse;
 import com.example.resortbackendapplication1.resort.dto.response.resortroomcategoryprices.ResortRoomCategoryPriceGroupResponse;
 import com.example.resortbackendapplication1.resort.model.dto.ResortRoomCategoryMainPriceDto;
-import com.example.resortbackendapplication1.resort.model.dto.ResortRoomCategoryPriceDayDto;
 import com.example.resortbackendapplication1.resort.model.dto.ResortRoomCategoryPriceDto;
 import com.example.resortbackendapplication1.resort.model.dto.ResortRoomCategoryPriceGroupDto;
+import com.example.resortbackendapplication1.resort.model.dto.ResortWeeklyScheduleDayDto;
 import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryEntity;
-import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryPriceDayEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryPriceEntity;
+import com.example.resortbackendapplication1.resort.model.entity.ResortWeeklyScheduleDayEntity;
 import com.example.resortbackendapplication1.resort.model.mapper.ResortRoomCategoryMapper;
-import com.example.resortbackendapplication1.resort.model.mapper.ResortRoomCategoryPriceDayMapper;
 import com.example.resortbackendapplication1.resort.model.mapper.ResortRoomCategoryPriceMapper;
+import com.example.resortbackendapplication1.resort.model.mapper.ResortWeeklyScheduleDayMapper;
 import com.example.resortbackendapplication1.resort.repository.ResortRoomCategoryPriceRepository;
 import com.example.resortbackendapplication1.resort.service.ResortRoomCategoryPriceService;
 import jakarta.persistence.EntityNotFoundException;
@@ -37,7 +35,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -69,9 +66,7 @@ public class ResortRoomCategoryPriceServiceImpl implements ResortRoomCategoryPri
                                                                    CurrencyEntity currencyEntity,
                                                                    PriceUnitEntity basePriceUnitEntity,
                                                                    PriceUnitEntity weekdayPriceUnitEntity,
-                                                                   PriceUnitEntity weekendPriceUnitEntity,
-                                                                   List<DayOfWeekEntity> weekdayDayOfWeekEntities,
-                                                                   List<DayOfWeekEntity> weekendDayOfWeekEntities) {
+                                                                   PriceUnitEntity weekendPriceUnitEntity) {
         if (resortRoomCategoryPriceRepository
                 .findByResortRoomCategoryEntity_IdAndPriceTypeEntity_CodeAndCurrencyEntity_IdAndIsActiveAndIsDeleted(
                         resortRoomCategoryEntity.getId(), "BAS", currencyEntity.getId(), true, false)
@@ -79,10 +74,9 @@ public class ResortRoomCategoryPriceServiceImpl implements ResortRoomCategoryPri
             throw new IllegalStateException(
                     "This room category already has a price group for currency id: " + currencyEntity.getId());
         }
-        List<ResortRoomCategoryPriceEntity> entities = buildMainEntities(
+        List<ResortRoomCategoryPriceEntity> entities = ResortRoomCategoryPriceMapper.buildMainSet(
                 request, resortRoomCategoryEntity, basePriceTypeEntity, weekdayPriceTypeEntity, weekendPriceTypeEntity,
-                currencyEntity, basePriceUnitEntity, weekdayPriceUnitEntity, weekendPriceUnitEntity,
-                weekdayDayOfWeekEntities, weekendDayOfWeekEntities);
+                currencyEntity, basePriceUnitEntity, weekdayPriceUnitEntity, weekendPriceUnitEntity);
         resortRoomCategoryPriceRepository.saveAll(entities);
 
         ResortRoomCategoryPriceEntity baseEntity = entities.get(0);
@@ -95,64 +89,6 @@ public class ResortRoomCategoryPriceServiceImpl implements ResortRoomCategoryPri
                 baseEntity.getId(), weekdayEntity.getId(), weekendEntity.getId());
         return new CreateResortRoomCategoryPriceGroupResponse(
                 true, baseEntity.getId(), weekdayEntity.getId(), weekendEntity.getId());
-    }
-
-    /**
-     * Validates the WKD/WKE-cannot-exceed-BASE rule and builds (but does not persist) the BASE/WEEKDAY/WEEKEND
-     * entities shared by {@link #createMain} and {@link #updateMain}. Returns them as [base, weekday, weekend].
-     */
-    private List<ResortRoomCategoryPriceEntity> buildMainEntities(ResortRoomCategoryMainPriceRequest request,
-                                                                    ResortRoomCategoryEntity resortRoomCategoryEntity,
-                                                                    PriceTypeEntity basePriceTypeEntity,
-                                                                    PriceTypeEntity weekdayPriceTypeEntity,
-                                                                    PriceTypeEntity weekendPriceTypeEntity,
-                                                                    CurrencyEntity currencyEntity,
-                                                                    PriceUnitEntity basePriceUnitEntity,
-                                                                    PriceUnitEntity weekdayPriceUnitEntity,
-                                                                    PriceUnitEntity weekendPriceUnitEntity,
-                                                                    List<DayOfWeekEntity> weekdayDayOfWeekEntities,
-                                                                    List<DayOfWeekEntity> weekendDayOfWeekEntities) {
-        BigDecimal basePrice = request.getBasePriceRequest().getPrice();
-        validateNotExceedingBase(basePrice, request.getWeekdayPrice().getPrice(), "WKD", currencyEntity);
-        validateNotExceedingBase(basePrice, request.getWeekendPrice().getPrice(), "WKE", currencyEntity);
-
-        ResortRoomCategoryPriceEntity baseEntity = createMainPriceEntity(resortRoomCategoryEntity,
-                request.getBasePriceRequest().getName(), basePrice, basePriceTypeEntity, basePriceUnitEntity,
-                currencyEntity, null);
-
-        ResortRoomCategoryPriceEntity weekdayEntity = createMainPriceEntity(resortRoomCategoryEntity,
-                request.getWeekdayPrice().getName(), request.getWeekdayPrice().getPrice(), weekdayPriceTypeEntity,
-                weekdayPriceUnitEntity, currencyEntity, weekdayDayOfWeekEntities);
-
-        ResortRoomCategoryPriceEntity weekendEntity = createMainPriceEntity(resortRoomCategoryEntity,
-                request.getWeekendPrice().getName(), request.getWeekendPrice().getPrice(), weekendPriceTypeEntity,
-                weekendPriceUnitEntity, currencyEntity, weekendDayOfWeekEntities);
-
-        return List.of(baseEntity, weekdayEntity, weekendEntity);
-    }
-
-    private void validateNotExceedingBase(BigDecimal basePrice, BigDecimal price, String priceTypeCode,
-                                           CurrencyEntity currencyEntity) {
-        if (price.compareTo(basePrice) > 0) {
-            throw new IllegalArgumentException(
-                    priceTypeCode + " price cannot exceed the BASE price (" + basePrice
-                            + ") for currency id: " + currencyEntity.getId());
-        }
-    }
-
-    private ResortRoomCategoryPriceEntity createMainPriceEntity(ResortRoomCategoryEntity resortRoomCategoryEntity,
-                                                                  String name, BigDecimal price,
-                                                                  PriceTypeEntity priceTypeEntity,
-                                                                  PriceUnitEntity priceUnitEntity,
-                                                                  CurrencyEntity currencyEntity,
-                                                                  List<DayOfWeekEntity> dayOfWeekEntities) {
-        ResortRoomCategoryPriceEntity entity = ResortRoomCategoryPriceMapper.create(
-                name, price, priceTypeEntity, priceUnitEntity, currencyEntity);
-        resortRoomCategoryEntity.addResortRoomCategoryPriceEntity(entity);
-        if (dayOfWeekEntities != null) {
-            attachDays(entity, dayOfWeekEntities);
-        }
-        return entity;
     }
 
     @Transactional
@@ -180,9 +116,12 @@ public class ResortRoomCategoryPriceServiceImpl implements ResortRoomCategoryPri
                                                   PriceTypeEntity priceTypeEntity,
                                                   PriceUnitEntity priceUnitEntity,
                                                   CurrencyEntity currencyEntity) {
+        // Locked (not the plain findByResortRoomCategoryEntity_Id...CurrencyEntity_Id... lookup) so this
+        // contends on the same physical row deleteByCurrency locks via findActiveBasePricesForUpdate — closes
+        // the write-skew race where this check and a concurrent deleteByCurrency call for the same currency
+        // could each read a stale, independent snapshot and both proceed, orphaning a freshly created row.
         if (resortRoomCategoryPriceRepository
-                .findByResortRoomCategoryEntity_IdAndPriceTypeEntity_CodeAndCurrencyEntity_IdAndIsActiveAndIsDeleted(
-                        resortRoomCategoryEntity.getId(), "BAS", currencyEntity.getId(), true, false)
+                .findMainBasePriceForUpdate(resortRoomCategoryEntity.getId(), currencyEntity.getId())
                 .isEmpty()) {
             throw new EntityNotFoundException(
                     "This room category has no active main price for currency id: " + currencyEntity.getId()
@@ -207,7 +146,9 @@ public class ResortRoomCategoryPriceServiceImpl implements ResortRoomCategoryPri
     }
 
     @Override
-    public ResortRoomCategoryPriceGroupResponse getAllGroupedByCurrency(Long resortRoomCategoryId, CurrencyEntity currencyEntity) {
+    public ResortRoomCategoryPriceGroupResponse getAllGroupedByCurrency(Long resortRoomCategoryId, CurrencyEntity currencyEntity,
+                                                                        List<ResortWeeklyScheduleDayEntity> weekdayScheduleDays,
+                                                                        List<ResortWeeklyScheduleDayEntity> weekendScheduleDays) {
         List<ResortRoomCategoryPriceEntity> entities = resortRoomCategoryPriceRepository
                 .findByResortRoomCategoryEntity_IdAndCurrencyEntity_IdAndIsActiveAndIsDeleted(
                         resortRoomCategoryId, currencyEntity.getId(), true, false);
@@ -219,7 +160,9 @@ public class ResortRoomCategoryPriceServiceImpl implements ResortRoomCategoryPri
         List<ResortRoomCategoryPriceDto> specials = new ArrayList<>();
 
         for (ResortRoomCategoryPriceEntity entity : entities) {
-            ResortRoomCategoryPriceDto dto = buildDto(entity).days(mapDays(entity)).build();
+            ResortRoomCategoryPriceDto dto = buildDto(entity)
+                    .days(mapDays(entity, weekdayScheduleDays, weekendScheduleDays))
+                    .build();
             switch (entity.getPriceTypeEntity().getCode()) {
                 case "BAS" -> base = dto;
                 case "WKD" -> weekday = dto;
@@ -264,9 +207,7 @@ public class ResortRoomCategoryPriceServiceImpl implements ResortRoomCategoryPri
                                       PriceTypeEntity weekendPriceTypeEntity,
                                       PriceUnitEntity basePriceUnitEntity,
                                       PriceUnitEntity weekdayPriceUnitEntity,
-                                      PriceUnitEntity weekendPriceUnitEntity,
-                                      List<DayOfWeekEntity> weekdayDayOfWeekEntities,
-                                      List<DayOfWeekEntity> weekendDayOfWeekEntities) {
+                                      PriceUnitEntity weekendPriceUnitEntity) {
         List<ResortRoomCategoryPriceEntity> existing = List.of(
                 findMainRow(resortRoomCategoryEntity, currencyEntity, "BAS"),
                 findMainRow(resortRoomCategoryEntity, currencyEntity, "WKD"),
@@ -275,11 +216,6 @@ public class ResortRoomCategoryPriceServiceImpl implements ResortRoomCategoryPri
         existing.forEach(row -> {
             row.setIsDeleted(true);
             row.setIsActive(false);
-
-            row.getResortRoomCategoryPriceDayEntities().forEach(dayEntity -> {
-                dayEntity.setIsDeleted(true);
-                dayEntity.setIsActive(false);
-            });
         });
         // Flushed before the new rows are built/inserted: the partial unique index
         // uq_resort_room_category_price only excludes is_active=false/is_deleted=true rows,
@@ -288,10 +224,9 @@ public class ResortRoomCategoryPriceServiceImpl implements ResortRoomCategoryPri
         // tripping the constraint against the still-active old rows.
         resortRoomCategoryPriceRepository.saveAllAndFlush(existing);
 
-        List<ResortRoomCategoryPriceEntity> created = buildMainEntities(
+        List<ResortRoomCategoryPriceEntity> created = ResortRoomCategoryPriceMapper.buildMainSet(
                 request, resortRoomCategoryEntity, basePriceTypeEntity, weekdayPriceTypeEntity, weekendPriceTypeEntity,
-                currencyEntity, basePriceUnitEntity, weekdayPriceUnitEntity, weekendPriceUnitEntity,
-                weekdayDayOfWeekEntities, weekendDayOfWeekEntities);
+                currencyEntity, basePriceUnitEntity, weekdayPriceUnitEntity, weekendPriceUnitEntity);
         resortRoomCategoryPriceRepository.saveAll(created);
         log.info("ResortRoomCategoryPrice main price set for resort room category id: {}, currency id: {} "
                         + "({} rows, replacing {} old rows)",
@@ -314,6 +249,7 @@ public class ResortRoomCategoryPriceServiceImpl implements ResortRoomCategoryPri
     public SuccessResponse updateHoliday(ResortRoomCategoryPriceEntity entity,
                                          UpdateResortRoomCategoryHolidayPriceRequest request,
                                          PriceUnitEntity priceUnitEntity) {
+        validatePriceTypeCode(entity, "HOL");
         return updateDateRangePrice(entity, request, priceUnitEntity);
     }
 
@@ -322,7 +258,23 @@ public class ResortRoomCategoryPriceServiceImpl implements ResortRoomCategoryPri
     public SuccessResponse updateSpecial(ResortRoomCategoryPriceEntity entity,
                                          UpdateResortRoomCategorySpecialPriceRequest request,
                                          PriceUnitEntity priceUnitEntity) {
+        validatePriceTypeCode(entity, "SPECIAL");
         return updateDateRangePrice(entity, request, priceUnitEntity);
+    }
+
+    /**
+     * Blocks e.g. {@code PUT .../specials/{id}} from being called with an id that actually belongs to a
+     * HOLIDAY row (or any other type) — {@code ResortRoomCategoryPriceController.resolvePriceEntity} only
+     * scopes by room category, not price type, so without this a client hitting the wrong endpoint would
+     * silently update the row while its stored {@code price_type_id} stayed unchanged.
+     */
+    private void validatePriceTypeCode(ResortRoomCategoryPriceEntity entity, String expectedPriceTypeCode) {
+        String actualPriceTypeCode = entity.getPriceTypeEntity().getCode();
+        if (!expectedPriceTypeCode.equals(actualPriceTypeCode)) {
+            throw new IllegalArgumentException(
+                    "Price id: " + entity.getId() + " is a " + actualPriceTypeCode
+                            + " price, not a " + expectedPriceTypeCode + " price");
+        }
     }
 
     private SuccessResponse updateDateRangePrice(ResortRoomCategoryPriceEntity entity,
@@ -349,12 +301,49 @@ public class ResortRoomCategoryPriceServiceImpl implements ResortRoomCategoryPri
         return new SuccessResponse(true, entity.getId());
     }
 
-    private void attachDays(ResortRoomCategoryPriceEntity entity, List<DayOfWeekEntity> dayOfWeekEntities) {
-        for (DayOfWeekEntity dayOfWeekEntity : dayOfWeekEntities) {
-            ResortRoomCategoryPriceDayEntity dayEntity = ResortRoomCategoryPriceDayMapper.create();
-            entity.addResortRoomCategoryPriceDayEntity(dayEntity);
-            dayOfWeekEntity.addResortRoomCategoryPriceDayEntity(dayEntity);
+    @Transactional
+    @Override
+    public SuccessResponse deleteByCurrency(ResortRoomCategoryEntity resortRoomCategoryEntity, CurrencyEntity currencyEntity) {
+        // Locked, and deliberately acquired BEFORE fetching this currency's own row set below — a concurrent
+        // createHoliday/createSpecial call for this same currency locks the same physical BAS row (see
+        // findMainBasePriceForUpdate), so this either blocks until that call commits (and then the fetch below
+        // picks up its freshly created row too) or forces that call to block until this delete commits (and
+        // then it correctly finds no active BAS left). BAS is created/replaced only as part of the same
+        // main-set bundle as WKD/WKE (see buildMainSet), so counting distinct currencies with an active BAS
+        // row is the same reliable "how many currencies does this room category have" signal getCount() uses.
+        List<ResortRoomCategoryPriceEntity> activeBaseRows = resortRoomCategoryPriceRepository
+                .findActiveBasePricesForUpdate(resortRoomCategoryEntity.getId());
+
+        // Fetched after the lock above is acquired (not before), so a currency whose main price was created
+        // by a concurrent call that just committed while this call was blocked is correctly seen here — and
+        // the 404 check below runs before the last-currency 409 check, so deleting a currency that was never
+        // priced at all (in a room category that otherwise has exactly one other priced currency) still 404s
+        // rather than being misreported as "cannot delete the last currency."
+        List<ResortRoomCategoryPriceEntity> entities = resortRoomCategoryPriceRepository
+                .findByResortRoomCategoryEntity_IdAndCurrencyEntity_IdAndIsActiveAndIsDeleted(
+                        resortRoomCategoryEntity.getId(), currencyEntity.getId(), true, false);
+        if (entities.isEmpty()) {
+            throw new EntityNotFoundException(
+                    "No active prices found for currency id: " + currencyEntity.getId());
         }
+
+        long currencyCountWithMain = activeBaseRows.stream()
+                .map(row -> row.getCurrencyEntity().getId())
+                .distinct()
+                .count();
+        if (currencyCountWithMain <= 1) {
+            throw new IllegalStateException(
+                    "At least one currency's prices must remain for this room category — cannot delete the last currency.");
+        }
+
+        entities.forEach(entity -> {
+            entity.setIsDeleted(true);
+            entity.setIsActive(false);
+        });
+        resortRoomCategoryPriceRepository.saveAll(entities);
+        log.info("ResortRoomCategoryPrice soft-deleted all {} rows for resort room category id: {}, currency id: {}",
+                entities.size(), resortRoomCategoryEntity.getId(), currencyEntity.getId());
+        return new SuccessResponse(true, currencyEntity.getId());
     }
 
     private ResortRoomCategoryPriceDto.ResortRoomCategoryPriceDtoBuilder buildDto(ResortRoomCategoryPriceEntity entity) {
@@ -365,11 +354,16 @@ public class ResortRoomCategoryPriceServiceImpl implements ResortRoomCategoryPri
                 .currency(CurrencyMapper.toDto(entity.getCurrencyEntity()).build());
     }
 
-    private List<ResortRoomCategoryPriceDayDto> mapDays(ResortRoomCategoryPriceEntity entity) {
-        return entity.getResortRoomCategoryPriceDayEntities().stream()
-                .filter(dayEntity -> Boolean.TRUE.equals(dayEntity.getIsActive())
-                        && Boolean.FALSE.equals(dayEntity.getIsDeleted()))
-                .map(dayEntity -> ResortRoomCategoryPriceDayMapper.toDto(dayEntity)
+    private List<ResortWeeklyScheduleDayDto> mapDays(ResortRoomCategoryPriceEntity entity,
+                                                       List<ResortWeeklyScheduleDayEntity> weekdayScheduleDays,
+                                                       List<ResortWeeklyScheduleDayEntity> weekendScheduleDays) {
+        List<ResortWeeklyScheduleDayEntity> scheduleDays = switch (entity.getPriceTypeEntity().getCode()) {
+            case "WKD" -> weekdayScheduleDays;
+            case "WKE" -> weekendScheduleDays;
+            default -> List.of();
+        };
+        return scheduleDays.stream()
+                .map(dayEntity -> ResortWeeklyScheduleDayMapper.toDto(dayEntity)
                         .dayOfWeek(DayOfWeekMapper.toDto(dayEntity.getDayOfWeekEntity()).build())
                         .build())
                 .toList();

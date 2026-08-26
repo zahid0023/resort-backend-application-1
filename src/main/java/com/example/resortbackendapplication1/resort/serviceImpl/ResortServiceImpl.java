@@ -8,7 +8,9 @@ import com.example.resortbackendapplication1.commons.dto.request.PaginatedReques
 import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.commons.utils.Pagination;
+import com.example.resortbackendapplication1.dayofweek.model.entity.DayOfWeekEntity;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
+import com.example.resortbackendapplication1.price.model.entity.PriceTypeEntity;
 import com.example.resortbackendapplication1.resort.dto.request.resort.CreateResortRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resort.ResortFilterRequest;
 import com.example.resortbackendapplication1.resort.dto.request.resort.UpdateResortRequest;
@@ -23,6 +25,7 @@ import com.example.resortbackendapplication1.resort.model.entity.ResortBasicInfo
 import com.example.resortbackendapplication1.resort.model.entity.ResortEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortUserEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortUserPermissionEntity;
+import com.example.resortbackendapplication1.resort.model.entity.ResortWeeklyScheduleDayEntity;
 import com.example.resortbackendapplication1.resort.model.enums.ResortSearchField;
 import com.example.resortbackendapplication1.resort.model.enums.ResortSortField;
 import com.example.resortbackendapplication1.resort.model.mapper.ResortAddressLocaleMapper;
@@ -30,11 +33,13 @@ import com.example.resortbackendapplication1.resort.model.mapper.ResortAddressMa
 import com.example.resortbackendapplication1.resort.model.mapper.ResortBasicInfoLocaleMapper;
 import com.example.resortbackendapplication1.resort.model.mapper.ResortBasicInfoMapper;
 import com.example.resortbackendapplication1.resort.model.mapper.ResortMapper;
+import com.example.resortbackendapplication1.resort.model.mapper.ResortWeeklyScheduleDayMapper;
 import com.example.resortbackendapplication1.resort.repository.ResortRepository;
 import com.example.resortbackendapplication1.resort.service.ResortAddressService;
 import com.example.resortbackendapplication1.resort.service.ResortBasicInfoService;
 import com.example.resortbackendapplication1.resort.service.ResortService;
 import com.example.resortbackendapplication1.resort.specification.ResortSpecification;
+import com.example.resortbackendapplication1.resort.validation.ResortWeeklyScheduleValidator;
 import com.example.resortbackendapplication1.resortpermissiontype.model.entity.ResortPermissionTypeEntity;
 import com.example.resortbackendapplication1.resortroletype.model.entity.ResortRoleTypeEntity;
 import com.example.resortbackendapplication1.address.model.mapper.CityMapper;
@@ -49,6 +54,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -78,10 +84,18 @@ public class ResortServiceImpl implements ResortService {
                                   ResortPermissionTypeEntity resortPermissionTypeEntity,
                                   CountryEntity countryEntity,
                                   CityEntity cityEntity,
-                                  LocaleEntity localeEntity) {
+                                  LocaleEntity localeEntity,
+                                  PriceTypeEntity weekdayPriceTypeEntity,
+                                  PriceTypeEntity weekendPriceTypeEntity,
+                                  List<DayOfWeekEntity> weekdayDayOfWeekEntities,
+                                  List<DayOfWeekEntity> weekendDayOfWeekEntities) {
         if (resortRepository.existsByCodeAndIsActiveAndIsDeleted(request.getCode(), true, false)) {
             throw new IllegalStateException("Resort with code '" + request.getCode() + "' already exists");
         }
+
+        ResortWeeklyScheduleValidator.validateNoDuplicateDays(weekdayDayOfWeekEntities, "weekly_schedule.weekday_day_of_week_ids");
+        ResortWeeklyScheduleValidator.validateNoDuplicateDays(weekendDayOfWeekEntities, "weekly_schedule.weekend_day_of_week_ids");
+        ResortWeeklyScheduleValidator.validateNoOverlappingDays(weekdayDayOfWeekEntities, weekendDayOfWeekEntities);
 
         ResortEntity entity = ResortMapper.create(request);
 
@@ -113,10 +127,22 @@ public class ResortServiceImpl implements ResortService {
         resortAddressEntity.addResortAddressLocaleEntity(resortAddressLocaleEntity);
         localeEntity.addResortAddressLocaleEntity(resortAddressLocaleEntity);
 
+        weekdayDayOfWeekEntities.forEach(dayOfWeekEntity ->
+                buildWeeklyScheduleDayRow(entity, weekdayPriceTypeEntity, dayOfWeekEntity));
+        weekendDayOfWeekEntities.forEach(dayOfWeekEntity ->
+                buildWeeklyScheduleDayRow(entity, weekendPriceTypeEntity, dayOfWeekEntity));
+
         resortRepository.save(entity);
 
         log.info("Resort created with id: {}, owner user id: {}", entity.getId(), userEntity.getId());
         return new SuccessResponse(true, entity.getId());
+    }
+
+    private void buildWeeklyScheduleDayRow(ResortEntity resortEntity, PriceTypeEntity priceTypeEntity,
+                                            DayOfWeekEntity dayOfWeekEntity) {
+        ResortWeeklyScheduleDayEntity weeklyScheduleDayEntity = ResortWeeklyScheduleDayMapper.create(priceTypeEntity);
+        resortEntity.addResortWeeklyScheduleDayEntity(weeklyScheduleDayEntity);
+        dayOfWeekEntity.addResortWeeklyScheduleDayEntity(weeklyScheduleDayEntity);
     }
 
     @Override

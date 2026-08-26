@@ -83,6 +83,27 @@ create unique index if not exists uq_resort_room_category_price_rule
          is_deleted
             );
 
+-- uq_resort_room_category_price_rule above does not actually protect BASE/WEEKDAY/WEEKEND
+-- rows: their valid_from/valid_to are always NULL, and Postgres treats NULL as distinct from
+-- NULL in unique indexes, so two active rows with identical
+-- (resort_room_category_id, price_type_id, currency_id, NULL, NULL, false) do not collide there.
+-- fn_validate_resort_room_category_price_type_rules' duplicate check below is a plain SELECT
+-- with no locking, so two concurrent inserts for the same room category/currency can both pass
+-- it before either commits. This index has no NULL columns in its key, so Postgres enforces it
+-- atomically at insert time regardless of concurrency.
+create unique index if not exists uq_resort_room_category_price_active_main
+    on resort_room_category_prices
+        (
+         resort_room_category_id,
+         price_type_id,
+         currency_id
+            )
+    where
+        valid_from is null
+            and valid_to is null
+            and is_active = true
+            and is_deleted = false;
+
 create index if not exists idx_resort_room_category_prices_lookup
     on resort_room_category_prices
         (
@@ -100,46 +121,6 @@ create index if not exists idx_resort_room_category_prices_dates
 
 create index if not exists idx_resort_room_category_prices_currency
     on resort_room_category_prices (currency_id);
-
-create table if not exists resort_room_category_price_days
-(
-    id                            bigserial primary key,
-
-    -- Pricing rule.
-    resort_room_category_price_id bigint references resort_room_category_prices (id) on delete cascade not null,
-
-    -- MONDAY
-    -- TUESDAY
-    -- WEDNESDAY
-    -- THURSDAY
-    -- FRIDAY
-    -- SATURDAY
-    -- SUNDAY
-    day_of_week_id                bigint references days_of_week (id)                                  not null,
-
-    created_by                    bigint references users (id)                                         not null,
-    created_at                    timestamp with time zone                                             not null default current_timestamp,
-    updated_by                    bigint references users (id)                                         not null,
-    updated_at                    timestamp with time zone                                             not null default current_timestamp,
-    version                       bigint                                                               not null default 0,
-    is_active                     boolean                                                              not null default true,
-    is_deleted                    boolean                                                              not null default false,
-    deleted_by                    bigint references users (id),
-    deleted_at                    timestamp with time zone,
-
-    constraint uq_resort_room_category_price_day
-        unique
-            (
-             resort_room_category_price_id,
-             day_of_week_id
-                )
-);
-
-create index if not exists idx_resort_room_category_price_days_price
-    on resort_room_category_price_days (resort_room_category_price_id);
-
-create index if not exists idx_resort_room_category_price_days_day
-    on resort_room_category_price_days (day_of_week_id);
 
 -- Enforces that resort_room_category_prices only ever references a
 -- price_type_id / price_unit_id that is actually assigned to the
@@ -274,45 +255,19 @@ create trigger trg_validate_resort_room_category_price_type_rules
     for each row
 execute function fn_validate_resort_room_category_price_type_rules();
 
--- Day records (resort_room_category_price_days) are only allowed to attach to
--- a WEEKDAY or WEEKEND price.
-create or replace function fn_validate_resort_room_category_price_day_type()
-    returns trigger as
-$$
-declare
-    v_price_type_code varchar(50);
-begin
-    select pt.code
-    into v_price_type_code
-    from resort_room_category_prices p
-             join price_types pt on pt.id = p.price_type_id
-    where p.id = new.resort_room_category_price_id;
-
-    if v_price_type_code not in ('WKD', 'WKE') then
-        raise exception 'day records are only allowed for WEEKDAY/WEEKEND prices, not %', v_price_type_code;
-    end if;
-
-    return new;
-end;
-$$ language plpgsql;
-
-create trigger trg_validate_resort_room_category_price_day_type
-    before insert or update
-    on resort_room_category_price_days
-    for each row
-execute function fn_validate_resort_room_category_price_day_type();
-
--- Deferred so it runs at transaction commit: a WEEKDAY/WEEKEND price row is
--- inserted before its day rows, so checking "at least one day record" cannot
--- happen synchronously on the parent row's own insert. Requires the price row
--- and its day rows to be written in the same transaction (matches the
--- cascade-create convention used elsewhere in this codebase).
+-- Deferred so it runs at transaction commit: a resort's weekly schedule is expected to already exist
+-- (set once via PUT /resorts/{resort-id}/weekly-schedule) before any of its room categories get an
+-- active WEEKDAY/WEEKEND price, but deferring still allows a fresh resort's schedule and its first room
+-- category's prices to be written in the same transaction if a caller chooses to. Joins through
+-- resort_room_categories to resorts since resort_room_category_prices only carries
+-- resort_room_category_id, not resort_id directly.
 create or replace function fn_validate_resort_room_category_price_days_required()
     returns trigger as
 $$
 declare
     v_price_type_code varchar(50);
-    v_day_count       integer;
+    v_resort_id        bigint;
+    v_day_count        integer;
 begin
     select code
     into v_price_type_code
@@ -320,15 +275,22 @@ begin
     where id = new.price_type_id;
 
     if v_price_type_code in ('WKD', 'WKE') and new.is_active = true and new.is_deleted = false then
+        select rc.resort_id
+        into v_resort_id
+        from resort_room_categories rc
+        where rc.id = new.resort_room_category_id;
+
         select count(*)
         into v_day_count
-        from resort_room_category_price_days
-        where resort_room_category_price_id = new.id
+        from resort_weekly_schedule_days
+        where resort_id = v_resort_id
+          and price_type_id = new.price_type_id
           and is_active = true
           and is_deleted = false;
 
         if v_day_count = 0 then
-            raise exception '% price % requires at least one day record', v_price_type_code, new.id;
+            raise exception '% price % requires the resort to have at least one weekly schedule day for that price type — set one via PUT /resorts/%/weekly-schedule',
+                v_price_type_code, new.id, v_resort_id;
         end if;
     end if;
 

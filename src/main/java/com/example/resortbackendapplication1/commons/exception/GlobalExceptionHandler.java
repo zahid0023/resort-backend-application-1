@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AccountExpiredException;
@@ -66,6 +67,29 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
+    /**
+     * Thrown by Hibernate's {@code @Version} check when two requests write the same row concurrently (e.g. one
+     * updates a resort room category price row while another deletes/replaces it at the same time) — without
+     * this handler it fell through to {@link #handleUnexpected}, surfacing as a raw {@code 500
+     * INTERNAL_SERVER_ERROR} instead of a client-actionable {@code 409}.
+     */
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<@NonNull ApiErrorResponse> handleOptimisticLockingFailure(
+            OptimisticLockingFailureException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("Optimistic locking failure: {}", ex.getMessage());
+
+        ApiErrorResponse response = new ApiErrorResponse(
+                request.getHeader("X-Request-Id"),
+                HttpStatus.CONFLICT.value(),
+                "CONCURRENT_MODIFICATION",
+                "This record was modified or deleted by another request — please refresh and try again."
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
     private String resolveConstraintMessage(String rootMessage) {
         if (rootMessage == null) return "A data integrity constraint was violated.";
         if (rootMessage.contains("uq_resort_facility_group_platform")) {
@@ -91,6 +115,9 @@ public class GlobalExceptionHandler {
         }
         if (rootMessage.contains("uq_resort_room_category_facility_code")) {
             return "A facility with this code already exists for this resort room category.";
+        }
+        if (rootMessage.contains("uq_resort_room_category_price_active_main")) {
+            return "This room category already has an active price for this currency and price type.";
         }
         return rootMessage;
     }

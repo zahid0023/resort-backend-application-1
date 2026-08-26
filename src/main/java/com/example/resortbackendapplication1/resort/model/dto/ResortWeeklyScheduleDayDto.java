@@ -15,7 +15,7 @@ import tools.jackson.databind.annotation.JsonNaming;
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class ResortRoomCategoryPriceDayDto {
+public class ResortWeeklyScheduleDayDto {
 
     private Long id;
 

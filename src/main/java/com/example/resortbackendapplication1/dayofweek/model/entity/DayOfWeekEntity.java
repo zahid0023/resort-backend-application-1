@@ -2,7 +2,7 @@ package com.example.resortbackendapplication1.dayofweek.model.entity;
 
 import com.example.resortbackendapplication1.commons.model.entity.AuditableEntity;
 import com.example.resortbackendapplication1.resort.model.entity.ResortFacilityOperatingHoursEntity;
-import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryPriceDayEntity;
+import com.example.resortbackendapplication1.resort.model.entity.ResortWeeklyScheduleDayEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -63,17 +63,17 @@ public class DayOfWeekEntity extends AuditableEntity {
     }
 
     @OneToMany(mappedBy = "dayOfWeekEntity", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<ResortRoomCategoryPriceDayEntity> resortRoomCategoryPriceDayEntities = new LinkedHashSet<>();
+    private Set<ResortWeeklyScheduleDayEntity> resortWeeklyScheduleDayEntities = new LinkedHashSet<>();
 
     // -------------------------------------------------------------------------
-    // ResortRoomCategoryPriceDay relationship helpers
+    // ResortWeeklyScheduleDay relationship helpers
     // -------------------------------------------------------------------------
 
-    public void addResortRoomCategoryPriceDayEntity(ResortRoomCategoryPriceDayEntity entity) {
-        addChild(resortRoomCategoryPriceDayEntities, entity, ResortRoomCategoryPriceDayEntity::assignDayOfWeek, this);
+    public void addResortWeeklyScheduleDayEntity(ResortWeeklyScheduleDayEntity entity) {
+        addChild(resortWeeklyScheduleDayEntities, entity, ResortWeeklyScheduleDayEntity::assignDayOfWeek, this);
     }
 
-    public void removeResortRoomCategoryPriceDayEntity(ResortRoomCategoryPriceDayEntity entity) {
-        removeChild(resortRoomCategoryPriceDayEntities, entity, (child, ignored) -> child.unassignDayOfWeek());
+    public void removeResortWeeklyScheduleDayEntity(ResortWeeklyScheduleDayEntity entity) {
+        removeChild(resortWeeklyScheduleDayEntities, entity, (child, ignored) -> child.unassignDayOfWeek());
     }
 }
