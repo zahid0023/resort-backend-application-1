@@ -5,13 +5,13 @@ create table if not exists resort_facility_prices
     -- Resort facility being priced.
     resort_facility_id bigint references resort_facilities (id) not null,
 
-    -- Generic pricing classification.
+    -- Pricing classification.
     -- Examples:
     -- FREE
     -- INCLUDED
     -- FIXED
     -- VARIABLE
-    price_type_id      bigint references price_types (id)       not null,
+    facility_price_type_id bigint references facility_price_types (id) not null,
 
     -- Generic pricing unit.
     -- Examples:

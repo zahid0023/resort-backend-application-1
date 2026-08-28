@@ -67,8 +67,8 @@ still shapes the response: it selects the locale-matched translation embedded on
 | `day_of_week` | Object | —        | read-only; see [DayOfWeek](days-of-week-api.md); resolved from an id in the request | The day of week this entry applies to (`id`, `code`, `sort_order`, `locale`) |
 
 Every `ResortWeeklyScheduleDay` implicitly belongs to either the `weekday` or `weekend` list of the response
-that returned it — the price type (`WKD`/`WKE`) itself is never a field on the row, since which list it's in
-already says which one it is.
+that returned it — the WEEKDAY/WEEKEND classification itself is never a field on the row, since which list
+it's in already says which one it is.
 
 > **Note:** `weekday_day_of_week_ids`/`weekend_day_of_week_ids` (used to resolve each `day_of_week`) are
 > write-only inputs on [Update Weekly Schedule](#update-weekly-schedule) and never appear on this data model,

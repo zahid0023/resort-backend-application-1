@@ -1,8 +1,8 @@
 package com.example.resortbackendapplication1.dayofweek.model.entity;
 
 import com.example.resortbackendapplication1.commons.model.entity.AuditableEntity;
-import com.example.resortbackendapplication1.resort.model.entity.ResortFacilityOperatingHoursEntity;
-import com.example.resortbackendapplication1.resort.model.entity.ResortWeeklyScheduleDayEntity;
+import com.example.resortbackendapplication1.resort.facility.model.entity.ResortFacilityOperatingHoursEntity;
+import com.example.resortbackendapplication1.resort.core.model.entity.ResortWeeklyScheduleDayEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

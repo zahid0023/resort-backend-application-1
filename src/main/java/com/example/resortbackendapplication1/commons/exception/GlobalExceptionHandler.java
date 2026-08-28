@@ -9,11 +9,13 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.authentication.AccountExpiredException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.transaction.TransactionSystemException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -68,6 +70,35 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Postgres trigger-raised business-rule violations (e.g. {@code fn_validate_resort_room_category_price_unit
+     * _scope} rejecting a price unit outside the ROOM_CATEGORY scope, or {@code fn_validate_resort_room_category
+     * _price_days_required} rejecting a price row for a resort with no weekly schedule days yet) come back as
+     * {@link JpaSystemException} when the trigger fires synchronously on insert/update, or wrapped in a
+     * {@link TransactionSystemException} when it's a deferred constraint trigger firing at commit time — neither
+     * is a {@link DataIntegrityViolationException}, so without this handler both fell through to
+     * {@link #handleUnexpected}, surfacing as a raw {@code 500 INTERNAL_SERVER_ERROR} for what is really a
+     * client-fixable {@code 409}.
+     */
+    @ExceptionHandler({JpaSystemException.class, TransactionSystemException.class})
+    public ResponseEntity<@NonNull ApiErrorResponse> handleDatabaseRuleViolation(
+            Exception ex,
+            HttpServletRequest request
+    ) {
+        String rootMessage = extractRootCauseMessage(ex);
+
+        log.warn("Database rule violation: {}", rootMessage);
+
+        ApiErrorResponse response = new ApiErrorResponse(
+                request.getHeader("X-Request-Id"),
+                HttpStatus.CONFLICT.value(),
+                "DATABASE_RULE_VIOLATION",
+                rootMessage
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    /**
      * Thrown by Hibernate's {@code @Version} check when two requests write the same row concurrently (e.g. one
      * updates a resort room category price row while another deletes/replaces it at the same time) — without
      * this handler it fell through to {@link #handleUnexpected}, surfacing as a raw {@code 500
@@ -116,8 +147,11 @@ public class GlobalExceptionHandler {
         if (rootMessage.contains("uq_resort_room_category_facility_code")) {
             return "A facility with this code already exists for this resort room category.";
         }
-        if (rootMessage.contains("uq_resort_room_category_price_active_main")) {
-            return "This room category already has an active price for this currency and price type.";
+        if (rootMessage.contains("uq_resort_room_category_main_price_active")) {
+            return "This room category already has an active main price for this currency.";
+        }
+        if (rootMessage.contains("uq_resort_room_main_price_active")) {
+            return "This room already has an active main price override for this currency.";
         }
         return rootMessage;
     }

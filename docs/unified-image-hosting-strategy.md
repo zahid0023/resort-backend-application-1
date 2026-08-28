@@ -26,13 +26,13 @@ controller calls into directly.
 
 ## 2. Package layout
 
-| Location                                                     | Contents                                                                                     |
-|----------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
-| `commons/imagehosting/ImageHostingConfigSource.java`          | The abstraction the engine depends on — see §3                                                |
-| `image/upload/strategy/`                                      | `ImageHostingStrategy`, `ImageHostingStrategyRegistry`, `CloudinaryHostingStrategy`, `S3HostingStrategy` |
-| `image/upload/service/`, `image/upload/serviceImpl/`          | `ImageUploadService` / `ImageUploadServiceImpl` — the entry point entity controllers call     |
-| `image/upload/dto/response/`                                  | `ImageUploadResponse`, `ImageBatchUploadResponse`                                              |
-| `image/hosting/`                                               | Separate module: admin-managed `ImageHostingProvider` / `ImageHostingProviderConfig` CRUD — where credentials actually live. See `docs/image-hosting-providers-api.md` |
+| Location                                             | Contents                                                                                                                                                               |
+|------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `commons/imagehosting/ImageHostingConfigSource.java` | The abstraction the engine depends on — see §3                                                                                                                         |
+| `image/upload/strategy/`                             | `ImageHostingStrategy`, `ImageHostingStrategyRegistry`, `CloudinaryHostingStrategy`, `S3HostingStrategy`                                                               |
+| `image/upload/service/`, `image/upload/serviceImpl/` | `ImageUploadService` / `ImageUploadServiceImpl` — the entry point entity controllers call                                                                              |
+| `image/upload/dto/response/`                         | `ImageUploadResponse`, `ImageBatchUploadResponse`                                                                                                                      |
+| `image/hosting/`                                     | Separate module: admin-managed `ImageHostingProvider` / `ImageHostingProviderConfig` CRUD — where credentials actually live. See `docs/image-hosting-providers-api.md` |
 
 `image/upload` and `image/hosting` are deliberately separate modules: `image/hosting` is a CRUD resource
 (providers, their config-field schema, and configured credential instances); `image/upload` is a stateless
@@ -45,6 +45,7 @@ engine that *consumes* a config, never persists anything itself, and has no REST
 ```java
 public interface ImageHostingConfigSource {
     String getProviderCode();
+
     Map<String, Object> getConfig();
 }
 ```
@@ -65,7 +66,9 @@ The engine only ever sees "a provider code + a credentials map," never which tab
 ```java
 public interface ImageHostingStrategy {
     String providerCode();
+
     ImageUploadResponse upload(MultipartFile file, Map<String, Object> config);
+
     void delete(String publicId, Map<String, Object> config);
 }
 ```
@@ -89,10 +92,10 @@ provider is purely additive (§9).
 
 ## 5. Current provider implementations
 
-| Strategy                     | `providerCode()` | Required config keys                         | Optional keys |
-|-------------------------------|-------------------|-----------------------------------------------|---------------|
-| `CloudinaryHostingStrategy`   | `CLOUDINARY`       | `cloudName`, `apiKey`, `apiSecret`             | `folder`      |
-| `S3HostingStrategy`           | `AWS_S3`           | `bucket`, `region`, `accessKey`, `secretKey`   | —             |
+| Strategy                    | `providerCode()` | Required config keys                         | Optional keys |
+|-----------------------------|------------------|----------------------------------------------|---------------|
+| `CloudinaryHostingStrategy` | `CLOUDINARY`     | `cloudName`, `apiKey`, `apiSecret`           | `folder`      |
+| `S3HostingStrategy`         | `AWS_S3`         | `bucket`, `region`, `accessKey`, `secretKey` | —             |
 
 These keys match what's seeded per-provider in `V3__create_image_hosting_providers_table.sql`, but each
 strategy validates them itself at upload time (`requireNonBlank(config, ...)`) — the `config` jsonb column on
@@ -109,7 +112,9 @@ and configs are looked up dynamically.
 ```java
 public interface ImageUploadService {
     ImageUploadResponse upload(MultipartFile file, ImageHostingConfigSource configSource);
+
     List<ImageUploadResponse> uploadAll(List<MultipartFile> files, ImageHostingConfigSource configSource);
+
     void delete(String publicId, ImageHostingConfigSource configSource);
 }
 ```
@@ -121,14 +126,21 @@ delegates. `delete()` is the same shape, using the same config's provider.
 any later file fails:
 
 ```java
-try {
-    for (MultipartFile file : files) {
-        uploaded.add(upload(file, configSource));
-    }
-    return uploaded;
-} catch (Exception ex) {
-    uploaded.forEach(response -> delete(response.getPublicId(), configSource)); // best-effort
-    throw ex;
+try{
+        for(MultipartFile file :files){
+        uploaded.
+
+add(upload(file, configSource));
+        }
+        return uploaded;
+}catch(
+Exception ex){
+        uploaded.
+
+forEach(response ->
+
+delete(response.getPublicId(),configSource)); // best-effort
+        throw ex;
 }
 ```
 
@@ -144,6 +156,7 @@ leaves nothing behind remotely.
 engine:
 
 ```java
+
 @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 public ResponseEntity<SuccessResponse> upload(
         @PathVariable("country-id") Long countryId,

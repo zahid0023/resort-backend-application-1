@@ -27,7 +27,7 @@ unknown `id`, since a resort facility group has no meaning outside its owning re
 
 A resort facility group's display name/description are locale-specific and managed through a companion
 sub-resource — Resort Facility Group Locales — reached via
-`/api/v1/resorts/{resort-id}/facility-groups/{facility-group-id}/locales`. All records support soft-delete —
+`/api/v1/resorts/{resort-id}/facility-groups/{resort-facility-group-id}/locales`. All records support soft-delete —
 deleted records are hidden from all responses.
 
 **`Accept-Language` is required on every endpoint below, with no exceptions** — a request missing (or with a
@@ -54,11 +54,11 @@ used to shape the response:
 | GET    | `/api/v1/resorts/{resort-id}/facility-groups/{id}`                             | Get a resort facility group              |
 | PUT    | `/api/v1/resorts/{resort-id}/facility-groups/{id}`                             | Update a resort facility group           |
 | DELETE | `/api/v1/resorts/{resort-id}/facility-groups/{id}`                             | Delete a resort facility group           |
-| GET    | `/api/v1/resorts/{resort-id}/facility-groups/{facility-group-id}/locales`      | List a resort facility group's locales   |
-| GET    | `/api/v1/resorts/{resort-id}/facility-groups/{facility-group-id}/locales/count` | Count a resort facility group's used platform locales |
-| POST   | `/api/v1/resorts/{resort-id}/facility-groups/{facility-group-id}/locales`      | Create a resort facility group locale    |
-| PUT    | `/api/v1/resorts/{resort-id}/facility-groups/{facility-group-id}/locales/{id}` | Update a resort facility group locale    |
-| DELETE | `/api/v1/resorts/{resort-id}/facility-groups/{facility-group-id}/locales/{id}` | Delete a resort facility group locale    |
+| GET    | `/api/v1/resorts/{resort-id}/facility-groups/{resort-facility-group-id}/locales`      | List a resort facility group's locales   |
+| GET    | `/api/v1/resorts/{resort-id}/facility-groups/{resort-facility-group-id}/locales/count` | Count a resort facility group's used platform locales |
+| POST   | `/api/v1/resorts/{resort-id}/facility-groups/{resort-facility-group-id}/locales`      | Create a resort facility group locale    |
+| PUT    | `/api/v1/resorts/{resort-id}/facility-groups/{resort-facility-group-id}/locales/{id}` | Update a resort facility group locale    |
+| DELETE | `/api/v1/resorts/{resort-id}/facility-groups/{resort-facility-group-id}/locales/{id}` | Delete a resort facility group locale    |
 
 ---
 
@@ -413,7 +413,7 @@ in any response.
 ## Resort Facility Group Locales
 
 Resort Facility Group Locale endpoints manage locale-specific name/description translations for a resort
-facility group. The `{resort-id}`/`{facility-group-id}` path parameters must reference an existing, active
+facility group. The `{resort-id}`/`{resort-facility-group-id}` path parameters must reference an existing, active
 resort and resort facility group respectively (a `facility-group-id` belonging to a different resort behaves
 the same as an unknown one — `404 ENTITY_NOT_FOUND`).
 
@@ -421,7 +421,7 @@ the same as an unknown one — `404 ENTITY_NOT_FOUND`).
 
 ### List Resort Facility Group Locales
 
-`GET /api/v1/resorts/{resort-id}/facility-groups/{facility-group-id}/locales`
+`GET /api/v1/resorts/{resort-id}/facility-groups/{resort-facility-group-id}/locales`
 
 Returns a paginated list of every locale translation belonging to a resort facility group — this is the only
 way to see more than the single Accept-Language-matched translation returned by
@@ -494,7 +494,7 @@ whose `code` contains a given substring.
 
 ### Count Resort Facility Group Locales
 
-`GET /api/v1/resorts/{resort-id}/facility-groups/{facility-group-id}/locales/count`
+`GET /api/v1/resorts/{resort-id}/facility-groups/{resort-facility-group-id}/locales/count`
 
 Returns how many active, non-deleted platform [Locale](locales-api.md) codes this resort facility group already
 has an active translation for, together with each one's `code`. Matched via `locale_id`. `count` is always
@@ -525,7 +525,7 @@ a translation for this resort facility group, or the create call returns `409 CO
 
 ### Create Resort Facility Group Locale
 
-`POST /api/v1/resorts/{resort-id}/facility-groups/{facility-group-id}/locales`
+`POST /api/v1/resorts/{resort-id}/facility-groups/{resort-facility-group-id}/locales`
 
 Adds a new locale translation to an existing resort facility group. `locale_id` must reference an existing,
 active locale — an unknown `locale_id` returns `404 ENTITY_NOT_FOUND`. The combination of resort facility
@@ -573,7 +573,7 @@ on `(resort_facility_group_id, locale_id)` as a last-resort guard).
 
 ### Update Resort Facility Group Locale
 
-`PUT /api/v1/resorts/{resort-id}/facility-groups/{facility-group-id}/locales/{id}`
+`PUT /api/v1/resorts/{resort-id}/facility-groups/{resort-facility-group-id}/locales/{id}`
 
 Updates `name`, `description`, and `sort_order` for an existing resort facility group locale translation. The
 associated resort facility group and locale cannot be changed after creation.
@@ -617,7 +617,7 @@ associated resort facility group and locale cannot be changed after creation.
 
 ### Delete Resort Facility Group Locale
 
-`DELETE /api/v1/resorts/{resort-id}/facility-groups/{facility-group-id}/locales/{id}`
+`DELETE /api/v1/resorts/{resort-id}/facility-groups/{resort-facility-group-id}/locales/{id}`
 
 Soft-deletes a resort facility group locale. The record is not removed from the database but will no longer
 appear in any response.

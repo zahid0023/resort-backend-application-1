@@ -1,6 +1,6 @@
 # Resort Facility Prices API
 
-Base URL: `/api/v1/resorts/{resort-id}/facilities/{facility-id}/prices`
+Base URL: `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/prices`
 
 A resort facility price row describes what a [Resort Facility](resort-facilities-api.md) costs — a generic
 pricing *classification* (`price_type`, e.g. `FREE`/`INCLUDED`/`FIXED`/`VARIABLE`) plus an optional billing
@@ -14,10 +14,10 @@ sub-resource. There is no database-level constraint limiting a facility to one a
 holds prices in a plain collection), but in practice a facility is expected to have at most one.
 
 Resort facility prices are always reached nested under their owning resort facility; there is no top-level
-`/api/v1/resort-facility-prices` route. Every endpoint below also validates the `{resort-id}`/`{facility-id}`
+`/api/v1/resort-facility-prices` route. Every endpoint below also validates the `{resort-id}`/`{resort-facility-id}`
 pair first — an unknown resort, an unknown facility, or a facility that exists but belongs to a different
 resort all return `404 ENTITY_NOT_FOUND`. `{id}` on the single-row endpoints is additionally scoped to
-`{facility-id}` — a price `id` that exists but belongs to a different facility behaves the same as an unknown
+`{resort-facility-id}` — a price `id` that exists but belongs to a different facility behaves the same as an unknown
 `id`.
 
 `price_type_id`, `price_unit_id`, and `currency_id` are all **immutable after creation** — [Update Resort
@@ -38,11 +38,11 @@ each of those resources directly.
 
 | Method | Path                                                               | Description                     |
 |--------|--------------------------------------------------------------------|---------------------------------|
-| POST   | `/api/v1/resorts/{resort-id}/facilities/{facility-id}/prices`      | Create a resort facility price  |
-| GET    | `/api/v1/resorts/{resort-id}/facilities/{facility-id}/prices`      | List a resort facility's prices |
-| GET    | `/api/v1/resorts/{resort-id}/facilities/{facility-id}/prices/{id}` | Get a resort facility price     |
-| PUT    | `/api/v1/resorts/{resort-id}/facilities/{facility-id}/prices/{id}` | Update a resort facility price  |
-| DELETE | `/api/v1/resorts/{resort-id}/facilities/{facility-id}/prices/{id}` | Delete a resort facility price  |
+| POST   | `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/prices`      | Create a resort facility price  |
+| GET    | `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/prices`      | List a resort facility's prices |
+| GET    | `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/prices/{id}` | Get a resort facility price     |
+| PUT    | `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/prices/{id}` | Update a resort facility price  |
+| DELETE | `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/prices/{id}` | Delete a resort facility price  |
 
 ---
 
@@ -54,7 +54,7 @@ each of those resources directly.
 |-------------------|---------|---------------|-----------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
 | `id`              | Long    | —             | read-only                                                                               | Auto-generated identifier                                                                                             |
 | `resort_facility` | Object  | —             | read-only; see [ResortFacility](resort-facilities-api.md)                               | The facility this price belongs to. Resolved from the URL path, never a request body field                            |
-| `price_type`      | Object  | —             | read-only; see [PriceType](price-types-api.md); resolved from `price_type_id`           | Pricing classification (`FREE`/`INCLUDED`/`FIXED`/`VARIABLE`, ...). Immutable after creation                          |
+| `price_type`      | Object  | —             | read-only; see [FacilityPriceType](facility-price-types-api.md); resolved from `price_type_id` | Pricing classification (`FREE`/`INCLUDED`/`FIXED`/`VARIABLE`). Immutable after creation                          |
 | `price_unit`      | Object  | —             | nullable; read-only; see [PriceUnit](price-units-api.md); resolved from `price_unit_id` | Billing unit (`PER_PERSON`/`PER_ROOM`/`PER_NIGHT`, ...). Null for `FREE`/`INCLUDED` pricing. Immutable after creation |
 | `currency`        | Object  | —             | read-only; see [Currency](currencies-api.md); resolved from `currency_id`               | Currency of `amount`. Immutable after creation                                                                        |
 | `amount`          | Decimal | conditionally | nullable; numeric(19,4)                                                                 | Monetary amount. Null for `FREE`/`INCLUDED` pricing types                                                             |
@@ -64,7 +64,7 @@ each of those resources directly.
 > `currency`) are write-only inputs, supplied only at creation — see [Create Resort Facility
 > Price](#create-resort-facility-price) — and do not appear on this data model because the response always
 > returns the resolved objects instead. `price_type`/`price_unit`/`currency` each embed only `id`, `code`,
-> `sort_order`, and the Accept-Language-matched `locale` — nested collections such as a price type's/unit's own
+> `sort_order`, and the Accept-Language-matched `locale` — nested collections such as a price unit's own
 > `price_scopes`, or a currency's `country`, are never embedded here.
 
 **Consistency between `price_type`, `amount`, and `price_unit` is not enforced by this API at any level** —
@@ -77,21 +77,22 @@ convention.
 
 ## Create Resort Facility Price
 
-`POST /api/v1/resorts/{resort-id}/facilities/{facility-id}/prices`
+`POST /api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/prices`
 
-Creates a new price row for the facility. `price_type_id` must reference an existing, active [Price
-Type](price-types-api.md) — an unknown id returns `404 ENTITY_NOT_FOUND`. `price_unit_id` is optional; when
-supplied, it must reference an existing, active [Price Unit](price-units-api.md). `currency_id` must reference
-an existing, active [Currency](currencies-api.md). `price_type_id`, `price_unit_id`, and `currency_id` are all
-immutable after creation — see [Update Resort Facility Price](#update-resort-facility-price).
+Creates a new price row for the facility. `price_type_id` must reference an existing, active [Resort Facility
+Price Type](facility-price-types-api.md) (`FREE`/`INCLUDED`/`FIXED`/`VARIABLE`) — an unknown id returns
+`404 ENTITY_NOT_FOUND`. Unlike `price_unit_id`, `price_type_id` is not scope-filtered — resort facility price
+types are a dedicated, single-purpose classification with nothing else to disambiguate. `price_unit_id` is
+optional; when supplied, it must reference an existing, active [Price Unit](price-units-api.md). `currency_id`
+must reference an existing, active [Currency](currencies-api.md). `price_type_id`, `price_unit_id`, and
+`currency_id` are all immutable after creation — see [Update Resort Facility
+Price](#update-resort-facility-price).
 
-**Not every price type/price unit is valid here** — a price type or price unit is only usable for a resort
-facility if it's assigned to the `RESORT_FACILITY` [price scope](price-scopes-api.md). This isn't enforced by
-`POST` itself (no application-level or database check ties `price_type_id`/`price_unit_id` to a scope), so
-building the picker correctly is up to the caller: fetch the allowed sets first via [List / Search Price
-Types](price-types-api.md#list--search-price-types) and [List / Search Price
+**Not every price unit is valid here** — a price unit is only usable for a resort facility if it's assigned
+to the `RESORT_FACILITY` [price scope](price-scopes-api.md). This isn't enforced by `POST` itself (no
+application-level or database check ties `price_unit_id` to a scope), so building the picker correctly is up
+to the caller: fetch the allowed set first via [List / Search Price
 Units](price-units-api.md#list--search-price-units) filtered to that scope —
-`GET /api/v1/price-types?priceScopeCodes=RESORT_FACILITY` and
 `GET /api/v1/price-units?priceScopeCodes=RESORT_FACILITY` — and only offer those ids.
 
 ### Path Parameters
@@ -136,7 +137,7 @@ Units](price-units-api.md#list--search-price-units) filtered to that scope —
 
 ## Get Resort Facility Price
 
-`GET /api/v1/resorts/{resort-id}/facilities/{facility-id}/prices/{id}`
+`GET /api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/prices/{id}`
 
 Returns a single active resort facility price, scoped to its owning facility — an `id` that exists but belongs
 to a different facility (or a facility that belongs to a different resort) returns `404 ENTITY_NOT_FOUND`, the
@@ -244,7 +245,7 @@ same as an unknown `id`.
 
 ## List Resort Facility Prices
 
-`GET /api/v1/resorts/{resort-id}/facilities/{facility-id}/prices`
+`GET /api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/prices`
 
 Returns a paginated list of every active price belonging to the facility. There is no filtering and no
 sortable field other than the default (`id` ascending).
@@ -353,7 +354,7 @@ sortable field other than the default (`id` ascending).
 
 ## Update Resort Facility Price
 
-`PUT /api/v1/resorts/{resort-id}/facilities/{facility-id}/prices/{id}`
+`PUT /api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/prices/{id}`
 
 Updates `amount` and `note` only. `price_type_id`, `price_unit_id`, and `currency_id` are set at creation and
 cannot be changed — to reclassify a price, change its unit, or change its currency, delete it and create a new
@@ -396,7 +397,7 @@ one instead.
 
 ## Delete Resort Facility Price
 
-`DELETE /api/v1/resorts/{resort-id}/facilities/{facility-id}/prices/{id}`
+`DELETE /api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/prices/{id}`
 
 Soft-deletes the resort facility price. The record is not removed from the database but will no longer appear
 in any response.

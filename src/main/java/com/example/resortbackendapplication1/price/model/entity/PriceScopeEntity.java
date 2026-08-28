@@ -34,9 +34,6 @@ public class PriceScopeEntity extends AuditableEntity {
     private Set<PriceScopeLocaleEntity> priceScopeLocaleEntities = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "priceScopeEntity", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<PriceTypeScopeAssignmentEntity> priceTypeScopeAssignmentEntities = new LinkedHashSet<>();
-
-    @OneToMany(mappedBy = "priceScopeEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<PriceUnitScopeAssignmentEntity> priceUnitScopeAssignmentEntities = new LinkedHashSet<>();
 
     // -------------------------------------------------------------------------
@@ -49,18 +46,6 @@ public class PriceScopeEntity extends AuditableEntity {
 
     public void removePriceScopeLocaleEntity(PriceScopeLocaleEntity entity) {
         removeChild(priceScopeLocaleEntities, entity, (child, ignored) -> child.unassignPriceScope());
-    }
-
-    // -------------------------------------------------------------------------
-    // PriceTypeScopeAssignment relationship helpers
-    // -------------------------------------------------------------------------
-
-    public void addPriceTypeScopeAssignmentEntity(PriceTypeScopeAssignmentEntity entity) {
-        addChild(priceTypeScopeAssignmentEntities, entity, PriceTypeScopeAssignmentEntity::assignPriceScope, this);
-    }
-
-    public void removePriceTypeScopeAssignmentEntity(PriceTypeScopeAssignmentEntity entity) {
-        removeChild(priceTypeScopeAssignmentEntities, entity, (child, ignored) -> child.unassignPriceScope());
     }
 
     // -------------------------------------------------------------------------

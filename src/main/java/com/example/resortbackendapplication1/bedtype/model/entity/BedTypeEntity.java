@@ -1,7 +1,8 @@
 package com.example.resortbackendapplication1.bedtype.model.entity;
 
 import com.example.resortbackendapplication1.commons.model.entity.AuditableEntity;
-import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryBedEntity;
+import com.example.resortbackendapplication1.resort.room.model.entity.ResortRoomBedEntity;
+import com.example.resortbackendapplication1.resort.roomcategory.model.entity.ResortRoomCategoryBedEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -59,5 +60,20 @@ public class BedTypeEntity extends AuditableEntity {
 
     public void removeResortRoomCategoryBedEntity(ResortRoomCategoryBedEntity entity) {
         removeChild(resortRoomCategoryBedEntities, entity, (child, ignored) -> child.unassignBedType());
+    }
+
+    @OneToMany(mappedBy = "bedTypeEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ResortRoomBedEntity> resortRoomBedEntities = new LinkedHashSet<>();
+
+    // -------------------------------------------------------------------------
+    // ResortRoomBed relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addResortRoomBedEntity(ResortRoomBedEntity entity) {
+        addChild(resortRoomBedEntities, entity, ResortRoomBedEntity::assignBedType, this);
+    }
+
+    public void removeResortRoomBedEntity(ResortRoomBedEntity entity) {
+        removeChild(resortRoomBedEntities, entity, (child, ignored) -> child.unassignBedType());
     }
 }

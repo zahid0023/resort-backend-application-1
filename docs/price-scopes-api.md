@@ -3,11 +3,10 @@
 Base URL: `/api/v1/price-scopes`
 
 Price scopes define where pricing can apply (e.g. `ROOM_CATEGORY`, `ROOM`, `RESORT_FACILITY`) — for
-example, a per-day price type applies at the room category or room scope, while a per-hour price unit
-applies at the resort facility scope. This is a shared resource: both
-[Price Type Scope Assignments](price-type-scope-assignments-api.md) and
-[Price Unit Scope Assignments](price-unit-scope-assignments-api.md) reference the same price scope records.
-Each scope is identified by a unique `code`. A price scope's display name and description are
+example, a per-day price unit applies at the room category or room scope, while a per-hour price unit
+applies at the resort facility scope. [Price Unit Scope Assignments](price-unit-scope-assignments-api.md)
+reference these price scope records. Each scope is identified by a unique `code`. A price scope's display
+name and description are
 locale-specific and are managed through a companion sub-resource — Price Scope Locales — reached via
 `/api/v1/price-scopes/{price-scope-id}/locales`. All records support soft-delete — deleted records are
 hidden from all responses.

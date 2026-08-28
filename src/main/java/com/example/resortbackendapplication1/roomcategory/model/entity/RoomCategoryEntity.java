@@ -1,7 +1,7 @@
 package com.example.resortbackendapplication1.roomcategory.model.entity;
 
 import com.example.resortbackendapplication1.commons.model.entity.AuditableEntity;
-import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryEntity;
+import com.example.resortbackendapplication1.resort.roomcategory.model.entity.ResortRoomCategoryEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

@@ -1,6 +1,6 @@
 # Resort Room Category Facility Groups API
 
-Base URL: `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facility-groups`
+Base URL: `/api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/facility-groups`
 
 A resort room category facility group is a resort-room-category-scoped grouping of amenities (dining,
 wellness, recreation, ...) — the same concept as a [Resort Facility Group](resort-facility-groups-api.md), one
@@ -24,13 +24,13 @@ apply to custom groups.
 
 Resort room category facility groups are always reached nested under their owning resort and resort room
 category; there is no top-level `/api/v1/resort-room-category-facility-groups` route. `GET`/`PUT`/`DELETE` by
-`id` are scoped to the `{room-category-id}` in the path — an `id` that exists but belongs to a different resort
+`id` are scoped to the `{resort-room-category-id}` in the path — an `id` that exists but belongs to a different resort
 room category returns `404 ENTITY_NOT_FOUND`, the same as an unknown `id`, since a resort room category
 facility group has no meaning outside its owning resort room category.
 
 A resort room category facility group's display name/description are locale-specific and managed through a
 companion sub-resource — Resort Room Category Facility Group Locales — reached via
-`/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facility-groups/{facility-group-id}/locales`.
+`/api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/facility-groups/{resort-facility-group-id}/locales`.
 All records support soft-delete — deleted records are hidden from all responses.
 
 **`Accept-Language` is required on every endpoint below, with no exceptions** — a request missing (or with a
@@ -52,16 +52,16 @@ used to shape the response:
 
 | Method | Path                                                                                                              | Description                                          |
 |--------|-------------------------------------------------------------------------------------------------------------------|------------------------------------------------------|
-| POST   | `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facility-groups`                                  | Create a resort room category facility group         |
-| GET    | `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facility-groups`                                  | List / search a room category's facility groups      |
-| GET    | `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facility-groups/{id}`                             | Get a resort room category facility group            |
-| PUT    | `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facility-groups/{id}`                             | Update a resort room category facility group         |
-| DELETE | `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facility-groups/{id}`                             | Delete a resort room category facility group         |
-| GET    | `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facility-groups/{facility-group-id}/locales`      | List a resort room category facility group's locales |
-| GET    | `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facility-groups/{facility-group-id}/locales/count` | Count a resort room category facility group's used platform locales |
-| POST   | `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facility-groups/{facility-group-id}/locales`      | Create a resort room category facility group locale  |
-| PUT    | `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facility-groups/{facility-group-id}/locales/{id}` | Update a resort room category facility group locale  |
-| DELETE | `/api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facility-groups/{facility-group-id}/locales/{id}` | Delete a resort room category facility group locale  |
+| POST   | `/api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/facility-groups`                                  | Create a resort room category facility group         |
+| GET    | `/api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/facility-groups`                                  | List / search a room category's facility groups      |
+| GET    | `/api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/facility-groups/{id}`                             | Get a resort room category facility group            |
+| PUT    | `/api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/facility-groups/{id}`                             | Update a resort room category facility group         |
+| DELETE | `/api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/facility-groups/{id}`                             | Delete a resort room category facility group         |
+| GET    | `/api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/facility-groups/{resort-facility-group-id}/locales`      | List a resort room category facility group's locales |
+| GET    | `/api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/facility-groups/{resort-facility-group-id}/locales/count` | Count a resort room category facility group's used platform locales |
+| POST   | `/api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/facility-groups/{resort-facility-group-id}/locales`      | Create a resort room category facility group locale  |
+| PUT    | `/api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/facility-groups/{resort-facility-group-id}/locales/{id}` | Update a resort room category facility group locale  |
+| DELETE | `/api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/facility-groups/{resort-facility-group-id}/locales/{id}` | Delete a resort room category facility group locale  |
 
 ---
 
@@ -101,7 +101,7 @@ be unique within its owning resort room category (a DB-level unique index on
 
 ## Create Resort Room Category Facility Group
 
-`POST /api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facility-groups`
+`POST /api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/facility-groups`
 
 Creates a new facility group for the resort room category, together with exactly **one** initial locale
 translation. `facility_group_id` is optional — supply it to base the new group on a platform facility group
@@ -178,7 +178,7 @@ are added afterward via the Resort Room Category Facility Group Locales sub-reso
 
 ## Get Resort Room Category Facility Group
 
-`GET /api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facility-groups/{id}`
+`GET /api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/facility-groups/{id}`
 
 Returns a single active resort room category facility group, scoped to its owning resort room category — an
 `id` that exists but belongs to a different resort room category returns `404 ENTITY_NOT_FOUND`, the same as
@@ -230,7 +230,7 @@ to `en`, then `null` if the group has no translations at all). To fetch every tr
 
 ## List / Search Resort Room Category Facility Groups
 
-`GET /api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facility-groups`
+`GET /api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/facility-groups`
 
 Returns a paginated, filterable list of a resort room category's active (non-deleted) facility groups. All
 filter parameters are optional; omitting them returns every facility group belonging to the resort room
@@ -344,7 +344,7 @@ category. Multiple filters are combined with AND. `name` and `code` perform a ca
 
 ## Update Resort Room Category Facility Group
 
-`PUT /api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facility-groups/{id}`
+`PUT /api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/facility-groups/{id}`
 
 Updates `sort_order`, `icon_type`, `icon_value`, and `icon_meta`. `facility_group_id` and `code` are set at
 creation and cannot be changed — to base a group on a different platform facility group or change its code,
@@ -396,7 +396,7 @@ Category Facility Group Locales sub-resource endpoints below, not through this e
 
 ## Delete Resort Room Category Facility Group
 
-`DELETE /api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facility-groups/{id}`
+`DELETE /api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/facility-groups/{id}`
 
 Soft-deletes the resort room category facility group. The record is not removed from the database but will no
 longer appear in any response.
@@ -423,7 +423,7 @@ longer appear in any response.
 ## Resort Room Category Facility Group Locales
 
 Resort Room Category Facility Group Locale endpoints manage locale-specific name/description translations for
-a resort room category facility group. The `{resort-id}`/`{room-category-id}`/`{facility-group-id}` path
+a resort room category facility group. The `{resort-id}`/`{resort-room-category-id}`/`{resort-facility-group-id}` path
 parameters must reference an existing, active resort, resort room category, and resort room category facility
 group respectively (a `facility-group-id` belonging to a different resort room category behaves the same as
 an unknown one — `404 ENTITY_NOT_FOUND`).
@@ -432,7 +432,7 @@ an unknown one — `404 ENTITY_NOT_FOUND`).
 
 ### List Resort Room Category Facility Group Locales
 
-`GET /api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facility-groups/{facility-group-id}/locales`
+`GET /api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/facility-groups/{resort-facility-group-id}/locales`
 
 Returns a paginated list of every locale translation belonging to a resort room category facility group — this
 is the only way to see more than the single Accept-Language-matched translation returned by
@@ -507,7 +507,7 @@ contains a given substring.
 
 ### Count Resort Room Category Facility Group Locales
 
-`GET /api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facility-groups/{facility-group-id}/locales/count`
+`GET /api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/facility-groups/{resort-facility-group-id}/locales/count`
 
 Returns how many active, non-deleted platform [Locale](locales-api.md) codes this resort room category facility
 group already has an active translation for, together with each one's `code`. Matched via `locale_id`. `count`
@@ -540,7 +540,7 @@ for this resort room category facility group, or the create call returns `409 CO
 
 ### Create Resort Room Category Facility Group Locale
 
-`POST /api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facility-groups/{facility-group-id}/locales`
+`POST /api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/facility-groups/{resort-facility-group-id}/locales`
 
 Adds a new locale translation to an existing resort room category facility group. `locale_id` must reference
 an existing, active locale — an unknown `locale_id` returns `404 ENTITY_NOT_FOUND`. The combination of resort
@@ -589,7 +589,7 @@ constraint on `(resort_room_category_facility_group_id, locale_id)` as a last-re
 
 ### Update Resort Room Category Facility Group Locale
 
-`PUT /api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facility-groups/{facility-group-id}/locales/{id}`
+`PUT /api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/facility-groups/{resort-facility-group-id}/locales/{id}`
 
 Updates `name`, `description`, and `sort_order` for an existing resort room category facility group locale
 translation. The associated resort room category facility group and locale cannot be changed after creation.
@@ -634,7 +634,7 @@ translation. The associated resort room category facility group and locale canno
 
 ### Delete Resort Room Category Facility Group Locale
 
-`DELETE /api/v1/resorts/{resort-id}/room-categories/{room-category-id}/facility-groups/{facility-group-id}/locales/{id}`
+`DELETE /api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/facility-groups/{resort-facility-group-id}/locales/{id}`
 
 Soft-deletes a resort room category facility group locale. The record is not removed from the database but
 will no longer appear in any response.

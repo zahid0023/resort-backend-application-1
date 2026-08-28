@@ -1,6 +1,6 @@
 # Resort Facility Operating Hours API
 
-Base URL: `/api/v1/resorts/{resort-id}/facilities/{facility-id}/operating-hours`
+Base URL: `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/operating-hours`
 
 A resort facility operating hours row describes a single open window for a [Resort
 Facility](resort-facilities-api.md) on a single [Day of Week](days-of-week-api.md) (e.g. a swimming pool open
@@ -20,7 +20,7 @@ that list endpoint plus the one write endpoint; there is no `POST`, no `GET /{id
 
 Operating hours are always reached nested under their owning resort facility; there is no top-level
 `/api/v1/resort-facility-operating-hours` route. Every endpoint below also validates the `{resort-id}`/
-`{facility-id}` pair first — an unknown resort, an unknown facility, or a facility that exists but belongs to
+`{resort-facility-id}` pair first — an unknown resort, an unknown facility, or a facility that exists but belongs to
 a different resort all return `404 ENTITY_NOT_FOUND`.
 
 **`is_closed` and `is_twenty_four_hours` govern `opens_at`/`closes_at`, enforced on every write:** exactly one
@@ -74,8 +74,8 @@ resources directly.
 
 | Method | Path                                                                            | Description                                          |
 |--------|---------------------------------------------------------------------------------|------------------------------------------------------|
-| PUT    | `/api/v1/resorts/{resort-id}/facilities/{facility-id}/operating-hours/schedule` | Set the facility's entire weekly schedule atomically |
-| GET    | `/api/v1/resorts/{resort-id}/facilities/{facility-id}/operating-hours`          | List a facility's operating hours                    |
+| PUT    | `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/operating-hours/schedule` | Set the facility's entire weekly schedule atomically |
+| GET    | `/api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/operating-hours`          | List a facility's operating hours                    |
 
 **A facility's schedule is all-or-nothing: if any day is set, every day must be set.** There is no way to have
 just Monday set and the other six days unconfigured — [Set Weekly Schedule](#set-weekly-schedule) (and
@@ -130,7 +130,7 @@ rule only (it does not — and cannot — enforce cross-row or cross-day overlap
 
 ## Set Weekly Schedule
 
-`PUT /api/v1/resorts/{resort-id}/facilities/{facility-id}/operating-hours/schedule`
+`PUT /api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/operating-hours/schedule`
 
 Replaces the facility's **entire** operating-hours schedule in one atomic write: every currently active row for
 the facility (across all days) is soft-deleted, and every row described in the request is created fresh. This
@@ -328,7 +328,7 @@ translation the same way as [List Operating Hours](#list-operating-hours)):
 
 ## List Operating Hours
 
-`GET /api/v1/resorts/{resort-id}/facilities/{facility-id}/operating-hours`
+`GET /api/v1/resorts/{resort-id}/facilities/{resort-facility-id}/operating-hours`
 
 Returns a paginated list of every active operating-hours row belonging to the facility (typically at most
 seven — one per day of week — but more if any day has a break, since each window is its own row). There is no

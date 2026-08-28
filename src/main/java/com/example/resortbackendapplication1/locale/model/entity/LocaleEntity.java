@@ -11,18 +11,22 @@ import com.example.resortbackendapplication1.dayofweek.model.entity.DayOfWeekLoc
 import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupLocaleEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityLocaleEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeLocaleEntity;
-import com.example.resortbackendapplication1.price.model.entity.PriceTypeLocaleEntity;
 import com.example.resortbackendapplication1.price.model.entity.PriceScopeLocaleEntity;
 import com.example.resortbackendapplication1.price.model.entity.PriceUnitLocaleEntity;
-import com.example.resortbackendapplication1.resort.model.entity.ResortAddressLocaleEntity;
-import com.example.resortbackendapplication1.resort.model.entity.ResortBasicInfoLocaleEntity;
-import com.example.resortbackendapplication1.resort.model.entity.ResortFacilityGroupLocaleEntity;
-import com.example.resortbackendapplication1.resort.model.entity.ResortFacilityLocaleEntity;
-import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryFacilityGroupLocaleEntity;
-import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryFacilityLocaleEntity;
-import com.example.resortbackendapplication1.resort.model.entity.ResortRoomCategoryLocaleEntity;
+import com.example.resortbackendapplication1.price.model.entity.FacilityPriceTypeLocaleEntity;
+import com.example.resortbackendapplication1.resort.address.model.entity.ResortAddressLocaleEntity;
+import com.example.resortbackendapplication1.resort.core.model.entity.ResortBasicInfoLocaleEntity;
+import com.example.resortbackendapplication1.resort.facility.model.entity.ResortFacilityGroupLocaleEntity;
+import com.example.resortbackendapplication1.resort.facility.model.entity.ResortFacilityLocaleEntity;
+import com.example.resortbackendapplication1.resort.roomcategory.model.entity.ResortRoomCategoryFacilityGroupLocaleEntity;
+import com.example.resortbackendapplication1.resort.roomcategory.model.entity.ResortRoomCategoryFacilityLocaleEntity;
+import com.example.resortbackendapplication1.resort.roomcategory.model.entity.ResortRoomCategoryLocaleEntity;
+import com.example.resortbackendapplication1.resort.room.model.entity.ResortRoomFacilityGroupLocaleEntity;
+import com.example.resortbackendapplication1.resort.room.model.entity.ResortRoomFacilityLocaleEntity;
+import com.example.resortbackendapplication1.resort.room.model.entity.ResortRoomLocaleEntity;
 import com.example.resortbackendapplication1.resortpermissiontype.model.entity.ResortPermissionTypeLocaleEntity;
 import com.example.resortbackendapplication1.resortroletype.model.entity.ResortRoleTypeLocaleEntity;
+import com.example.resortbackendapplication1.roomstatus.model.entity.RoomStatusLocaleEntity;
 import com.example.resortbackendapplication1.roomcategory.model.entity.RoomCategoryLocaleEntity;
 import com.example.resortbackendapplication1.unit.model.entity.UnitLocaleEntity;
 import com.example.resortbackendapplication1.unit.model.entity.UnitTypeLocaleEntity;
@@ -94,7 +98,7 @@ public class LocaleEntity extends AuditableEntity {
     private Set<PriceScopeLocaleEntity> priceScopeLocaleEntities = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "localeEntity")
-    private Set<PriceTypeLocaleEntity> priceTypeLocaleEntities = new LinkedHashSet<>();
+    private Set<FacilityPriceTypeLocaleEntity> facilityPriceTypeLocaleEntities = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "localeEntity")
     private Set<PriceUnitLocaleEntity> priceUnitLocaleEntities = new LinkedHashSet<>();
@@ -133,10 +137,22 @@ public class LocaleEntity extends AuditableEntity {
     private Set<ResortRoomCategoryLocaleEntity> resortRoomCategoryLocaleEntities = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "localeEntity")
+    private Set<ResortRoomLocaleEntity> resortRoomLocaleEntities = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "localeEntity")
     private Set<ResortRoomCategoryFacilityGroupLocaleEntity> resortRoomCategoryFacilityGroupLocaleEntities = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "localeEntity")
     private Set<ResortRoomCategoryFacilityLocaleEntity> resortRoomCategoryFacilityLocaleEntities = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "localeEntity")
+    private Set<ResortRoomFacilityGroupLocaleEntity> resortRoomFacilityGroupLocaleEntities = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "localeEntity")
+    private Set<ResortRoomFacilityLocaleEntity> resortRoomFacilityLocaleEntities = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "localeEntity")
+    private Set<RoomStatusLocaleEntity> roomStatusLocaleEntities = new LinkedHashSet<>();
 
     // -------------------------------------------------------------------------
     // Country Locale relationship helpers
@@ -259,15 +275,15 @@ public class LocaleEntity extends AuditableEntity {
     }
 
     // -------------------------------------------------------------------------
-    // PriceType Locale relationship helpers
+    // FacilityPriceType Locale relationship helpers
     // -------------------------------------------------------------------------
 
-    public void addPriceTypeLocaleEntity(PriceTypeLocaleEntity entity) {
-        addChild(priceTypeLocaleEntities, entity, PriceTypeLocaleEntity::assignLocale, this);
+    public void addFacilityPriceTypeLocaleEntity(FacilityPriceTypeLocaleEntity entity) {
+        addChild(facilityPriceTypeLocaleEntities, entity, FacilityPriceTypeLocaleEntity::assignLocale, this);
     }
 
-    public void removePriceTypeLocaleEntity(PriceTypeLocaleEntity entity) {
-        removeChild(priceTypeLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
+    public void removeFacilityPriceTypeLocaleEntity(FacilityPriceTypeLocaleEntity entity) {
+        removeChild(facilityPriceTypeLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
     }
 
     // -------------------------------------------------------------------------
@@ -414,6 +430,14 @@ public class LocaleEntity extends AuditableEntity {
         removeChild(resortRoomCategoryLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
     }
 
+    public void addResortRoomLocaleEntity(ResortRoomLocaleEntity entity) {
+        addChild(resortRoomLocaleEntities, entity, ResortRoomLocaleEntity::assignLocale, this);
+    }
+
+    public void removeResortRoomLocaleEntity(ResortRoomLocaleEntity entity) {
+        removeChild(resortRoomLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
+    }
+
     // -------------------------------------------------------------------------
     // ResortRoomCategoryFacilityGroup Locale relationship helpers
     // -------------------------------------------------------------------------
@@ -436,6 +460,42 @@ public class LocaleEntity extends AuditableEntity {
 
     public void removeResortRoomCategoryFacilityLocaleEntity(ResortRoomCategoryFacilityLocaleEntity entity) {
         removeChild(resortRoomCategoryFacilityLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
+    }
+
+    // -------------------------------------------------------------------------
+    // ResortRoomFacilityGroup Locale relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addResortRoomFacilityGroupLocaleEntity(ResortRoomFacilityGroupLocaleEntity entity) {
+        addChild(resortRoomFacilityGroupLocaleEntities, entity, ResortRoomFacilityGroupLocaleEntity::assignLocale, this);
+    }
+
+    public void removeResortRoomFacilityGroupLocaleEntity(ResortRoomFacilityGroupLocaleEntity entity) {
+        removeChild(resortRoomFacilityGroupLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
+    }
+
+    // -------------------------------------------------------------------------
+    // ResortRoomFacility Locale relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addResortRoomFacilityLocaleEntity(ResortRoomFacilityLocaleEntity entity) {
+        addChild(resortRoomFacilityLocaleEntities, entity, ResortRoomFacilityLocaleEntity::assignLocale, this);
+    }
+
+    public void removeResortRoomFacilityLocaleEntity(ResortRoomFacilityLocaleEntity entity) {
+        removeChild(resortRoomFacilityLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
+    }
+
+    // -------------------------------------------------------------------------
+    // RoomStatus Locale relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addRoomStatusLocaleEntity(RoomStatusLocaleEntity entity) {
+        addChild(roomStatusLocaleEntities, entity, RoomStatusLocaleEntity::assignLocale, this);
+    }
+
+    public void removeRoomStatusLocaleEntity(RoomStatusLocaleEntity entity) {
+        removeChild(roomStatusLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
     }
 
 }
