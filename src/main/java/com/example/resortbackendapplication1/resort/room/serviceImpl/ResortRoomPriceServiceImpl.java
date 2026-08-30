@@ -33,6 +33,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -73,8 +74,9 @@ public class ResortRoomPriceServiceImpl implements ResortRoomPriceService {
     public SuccessResponse createSpecial(CreateResortRoomSpecialPriceRequest request,
                                          ResortRoomEntity resortRoomEntity,
                                          CurrencyEntity currencyEntity,
-                                         PriceUnitEntity priceUnitEntity) {
-        requireActiveMainPrice(resortRoomEntity, currencyEntity);
+                                         PriceUnitEntity priceUnitEntity,
+                                         boolean categoryHasActiveMain) {
+        requireResolvableMainPrice(resortRoomEntity, currencyEntity, categoryHasActiveMain);
         ResortRoomSpecialPriceEntity entity = ResortRoomPriceMapper.createSpecial(
                 request, resortRoomEntity, priceUnitEntity, currencyEntity);
         resortRoomSpecialPriceRepository.save(entity);
@@ -83,18 +85,26 @@ public class ResortRoomPriceServiceImpl implements ResortRoomPriceService {
     }
 
     /**
-     * Locked so this contends on the same physical row {@code deleteByCurrency} locks — closes the write-skew
-     * race where this check and a concurrent {@code deleteByCurrency} call for the same currency could each
-     * read a stale, independent snapshot and both proceed, orphaning a freshly created row. Mirrors
-     * {@code ResortRoomCategoryPriceServiceImpl.requireActiveMainPrice}.
+     * A Special override needs *some* main price resolvable for this currency — the room's own, or (now that
+     * Main/Specials are independent) its category's — not necessarily the room's own. The room's own row is
+     * still checked via the locked {@code findForUpdate}, so this still contends on the same physical row
+     * {@code deleteByCurrency} locks when the room does have its own override — closing the write-skew race
+     * where this check and a concurrent {@code deleteByCurrency} call for the same currency could each read a
+     * stale, independent snapshot and both proceed, orphaning a freshly created row. When the room has no own
+     * override, {@code categoryHasActiveMain} (an unlocked existence check, per
+     * {@code ResortRoomCategoryMainPriceRepository.existsBy...}) decides instead — there is no row of the
+     * room's own to lock in that case. Mirrors {@code ResortRoomCategoryPriceServiceImpl.requireActiveMainPrice}.
      */
-    private void requireActiveMainPrice(ResortRoomEntity resortRoomEntity, CurrencyEntity currencyEntity) {
-        if (resortRoomMainPriceRepository
+    private void requireResolvableMainPrice(ResortRoomEntity resortRoomEntity, CurrencyEntity currencyEntity,
+                                             boolean categoryHasActiveMain) {
+        boolean ownMainActive = resortRoomMainPriceRepository
                 .findForUpdate(resortRoomEntity.getId(), currencyEntity.getId())
-                .isEmpty()) {
+                .isPresent();
+        if (!ownMainActive && !categoryHasActiveMain) {
             throw new EntityNotFoundException(
-                    "This room has no active main price override for currency id: " + currencyEntity.getId()
-                            + " — create a main price override for this currency first");
+                    "No active main price resolvable for currency id: " + currencyEntity.getId()
+                            + " — this room has none of its own, and its category has none either;"
+                            + " create a main price for this currency first");
         }
     }
 
@@ -106,6 +116,18 @@ public class ResortRoomPriceServiceImpl implements ResortRoomPriceService {
     }
 
     @Override
+    public Optional<ResortRoomMainPriceEntity> getMainEntityByCurrency(Long resortRoomId, Long currencyId) {
+        return resortRoomMainPriceRepository
+                .findByResortRoomEntity_IdAndCurrencyEntity_IdAndIsActiveAndIsDeleted(resortRoomId, currencyId, true, false);
+    }
+
+    @Override
+    public List<ResortRoomSpecialPriceEntity> getSpecialEntitiesByCurrency(Long resortRoomId, Long currencyId) {
+        return resortRoomSpecialPriceRepository
+                .findByResortRoomEntity_IdAndCurrencyEntity_IdAndIsActiveAndIsDeleted(resortRoomId, currencyId, true, false);
+    }
+
+    @Override
     public ResortRoomPriceGroupResponse getAllGroupedByCurrency(Long resortRoomId, CurrencyEntity currencyEntity,
                                                                  List<ResortWeeklyScheduleDayEntity> weekdayScheduleDays,
                                                                  List<ResortWeeklyScheduleDayEntity> weekendScheduleDays,
@@ -113,34 +135,32 @@ public class ResortRoomPriceServiceImpl implements ResortRoomPriceService {
         var ownMain = resortRoomMainPriceRepository
                 .findByResortRoomEntity_IdAndCurrencyEntity_IdAndIsActiveAndIsDeleted(
                         resortRoomId, currencyEntity.getId(), true, false);
-
-        if (ownMain.isEmpty()) {
-            ResortRoomPriceGroupDto inheritedDto = ResortRoomPriceGroupDto.builder()
-                    .currency(CurrencyMapper.toDto(currencyEntity).build())
-                    .inherited(true)
-                    .main(ResortRoomPriceMapper.fromCategoryMain(categoryFallback.getMain()))
-                    .specials(categoryFallback.getSpecials().stream()
-                            .map(ResortRoomPriceMapper::fromCategoryDateRange)
-                            .toList())
-                    .build();
-            return new ResortRoomPriceGroupResponse(inheritedDto);
-        }
+        var ownSpecials = resortRoomSpecialPriceRepository
+                .findByResortRoomEntity_IdAndCurrencyEntity_IdAndIsActiveAndIsDeleted(
+                        resortRoomId, currencyEntity.getId(), true, false);
 
         List<ResortWeeklyScheduleDayDto> weekdayDays = mapDays(weekdayScheduleDays);
         List<ResortWeeklyScheduleDayDto> weekendDays = mapDays(weekendScheduleDays);
 
-        ResortRoomMainPriceDto mainDto = buildMainDto(ownMain.get(), weekdayDays, weekendDays);
+        boolean mainInherited = ownMain.isEmpty();
+        boolean specialsInherited = ownSpecials.isEmpty();
 
-        List<ResortRoomDateRangePriceDto> specials = resortRoomSpecialPriceRepository
-                .findByResortRoomEntity_IdAndCurrencyEntity_IdAndIsActiveAndIsDeleted(
-                        resortRoomId, currencyEntity.getId(), true, false)
-                .stream()
-                .map(entity -> buildSpecialDto(entity, weekdayDays, weekendDays))
-                .toList();
+        ResortRoomMainPriceDto mainDto = mainInherited
+                ? ResortRoomPriceMapper.fromCategoryMain(categoryFallback.getMain())
+                : buildMainDto(ownMain.get(), weekdayDays, weekendDays);
+
+        List<ResortRoomDateRangePriceDto> specials = specialsInherited
+                ? categoryFallback.getSpecials().stream()
+                        .map(ResortRoomPriceMapper::fromCategoryDateRange)
+                        .toList()
+                : ownSpecials.stream()
+                        .map(entity -> buildSpecialDto(entity, weekdayDays, weekendDays))
+                        .toList();
 
         ResortRoomPriceGroupDto groupDto = ResortRoomPriceGroupDto.builder()
                 .currency(CurrencyMapper.toDto(currencyEntity).build())
-                .inherited(false)
+                .mainInherited(mainInherited)
+                .specialsInherited(specialsInherited)
                 .main(mainDto)
                 .specials(specials)
                 .build();

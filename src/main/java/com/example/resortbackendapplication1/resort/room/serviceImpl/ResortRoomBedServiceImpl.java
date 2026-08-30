@@ -19,15 +19,19 @@ import com.example.resortbackendapplication1.resort.room.model.mapper.ResortRoom
 import com.example.resortbackendapplication1.resort.room.repository.ResortRoomBedRepository;
 import com.example.resortbackendapplication1.resort.room.service.ResortRoomBedService;
 import com.example.resortbackendapplication1.resort.room.specification.ResortRoomBedSpecification;
+import com.example.resortbackendapplication1.resort.roomcategory.model.dto.ResortRoomCategoryBedDto;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -81,10 +85,25 @@ public class ResortRoomBedServiceImpl implements ResortRoomBedService {
     }
 
     @Override
-    public PaginatedResponse<ResortRoomBedDto> getAll(Long resortRoomId, ResortRoomBedFilterRequest request) {
+    public PaginatedResponse<ResortRoomBedDto> getAll(Long resortRoomId, ResortRoomBedFilterRequest request,
+                                                       List<ResortRoomCategoryBedDto> resortRoomCategoryBedsFallback) {
+        Pageable pageable = request.toPageable(ALLOWED_SORT_FIELDS, ResortRoomBedSortField.localeSortFields());
+
+        boolean hasOwnBeds = resortRoomBedRepository
+                .existsByResortRoomEntity_IdAndIsActiveAndIsDeleted(resortRoomId, true, false);
+        if (!hasOwnBeds) {
+            // Returned as a single unpaginated page (sort/search on `request` is not applied) — same
+            // simplification ResortRoomPriceServiceImpl makes for its category fallback bundle.
+            List<ResortRoomBedDto> inheritedBeds = resortRoomCategoryBedsFallback.stream()
+                    .map(ResortRoomBedMapper::fromCategory)
+                    .toList();
+            Page<@NonNull ResortRoomBedDto> inheritedPage =
+                    new PageImpl<>(inheritedBeds, PageRequest.of(0, Math.max(inheritedBeds.size(), 1)), inheritedBeds.size());
+            return Pagination.buildPaginatedResponse(inheritedPage, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
+        }
+
         Specification<@NonNull ResortRoomBedEntity> specification =
                 ResortRoomBedSpecification.filter(resortRoomId, request);
-        Pageable pageable = request.toPageable(ALLOWED_SORT_FIELDS, ResortRoomBedSortField.localeSortFields());
         Page<@NonNull ResortRoomBedDto> page = resortRoomBedRepository
                 .findAll(specification, pageable)
                 .map(entity -> ResortRoomBedMapper.toDto(entity)

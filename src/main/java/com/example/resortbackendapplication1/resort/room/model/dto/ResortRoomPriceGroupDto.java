@@ -12,9 +12,10 @@ import tools.jackson.databind.annotation.JsonNaming;
 import java.util.List;
 
 /**
- * {@code inherited} is {@code true} when the room has no active {@code main} override for {@link #currency} of
- * its own, so {@code main}/{@code specials} below are the room's category's bundle for this currency instead —
- * {@code false} means every field below is the room's own override.
+ * {@code mainInherited}/{@code specialsInherited} are independent — a room can override just its Main rate,
+ * just its Special rates, both, or neither, for the same currency. {@code true} means the corresponding field
+ * below ({@code main}/{@code specials}) is the room's category's data instead of the room's own; {@code false}
+ * means it's the room's own override(s).
  */
 @Data
 @Builder
@@ -26,7 +27,9 @@ public class ResortRoomPriceGroupDto {
 
     private CurrencyDto currency;
 
-    private Boolean inherited;
+    private Boolean mainInherited;
+
+    private Boolean specialsInherited;
 
     private ResortRoomMainPriceDto main;
 

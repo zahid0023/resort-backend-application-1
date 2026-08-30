@@ -5,6 +5,7 @@ import com.example.resortbackendapplication1.resort.room.dto.request.resortroomm
 import com.example.resortbackendapplication1.resort.room.dto.request.resortroommeta.UpdateResortRoomMetaRequest;
 import com.example.resortbackendapplication1.resort.room.model.dto.ResortRoomMetaDto;
 import com.example.resortbackendapplication1.resort.room.model.entity.ResortRoomMetaEntity;
+import com.example.resortbackendapplication1.resort.roomcategory.model.dto.ResortRoomCategoryMetaDto;
 import com.example.resortbackendapplication1.unit.model.entity.UnitEntity;
 import com.example.resortbackendapplication1.unit.model.mapper.UnitMapper;
 import lombok.experimental.UtilityClass;
@@ -48,6 +49,31 @@ public class ResortRoomMetaMapper {
                 .bedroomCount(entity.getBedroomCount())
                 .bathroomCount(entity.getBathroomCount())
                 .minimumStayNights(entity.getMinimumStayNights())
-                .maximumStayNights(entity.getMaximumStayNights());
+                .maximumStayNights(entity.getMaximumStayNights())
+                .inherited(false);
+    }
+
+    /**
+     * Converts a room CATEGORY's meta into the room-meta DTO shape, for the "this room has no own meta
+     * override, inherit the category's meta" fallback path in {@code ResortRoomServiceImpl}/
+     * {@code ResortRoomMetaServiceImpl}. Lives here (not in a ServiceImpl) because a ServiceImpl must never
+     * depend on another entity's DTOs/services directly — see {@code ResortRoomPriceMapper.fromCategoryMain}
+     * for the same escape hatch used by prices.
+     */
+    public ResortRoomMetaDto fromCategory(ResortRoomCategoryMetaDto categoryDto) {
+        return ResortRoomMetaDto.builder()
+                .id(categoryDto.getId())
+                .maxAdults(categoryDto.getMaxAdults())
+                .maxChildren(categoryDto.getMaxChildren())
+                .maxInfants(categoryDto.getMaxInfants())
+                .maxOccupancy(categoryDto.getMaxOccupancy())
+                .roomSize(categoryDto.getRoomSize())
+                .roomSizeUnit(categoryDto.getRoomSizeUnit())
+                .bedroomCount(categoryDto.getBedroomCount())
+                .bathroomCount(categoryDto.getBathroomCount())
+                .minimumStayNights(categoryDto.getMinimumStayNights())
+                .maximumStayNights(categoryDto.getMaximumStayNights())
+                .inherited(true)
+                .build();
     }
 }

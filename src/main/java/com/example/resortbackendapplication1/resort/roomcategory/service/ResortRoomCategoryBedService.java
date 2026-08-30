@@ -11,6 +11,8 @@ import com.example.resortbackendapplication1.resort.roomcategory.model.dto.Resor
 import com.example.resortbackendapplication1.resort.roomcategory.model.entity.ResortRoomCategoryBedEntity;
 import com.example.resortbackendapplication1.resort.roomcategory.model.entity.ResortRoomCategoryEntity;
 
+import java.util.List;
+
 public interface ResortRoomCategoryBedService {
 
     SuccessResponse create(CreateResortRoomCategoryBedRequest request,
@@ -22,6 +24,9 @@ public interface ResortRoomCategoryBedService {
     ResortRoomCategoryBedResponse getById(Long resortRoomCategoryId, Long id);
 
     PaginatedResponse<ResortRoomCategoryBedDto> getAll(Long resortRoomCategoryId, ResortRoomCategoryBedFilterRequest request);
+
+    /** Every active bed row for the category, unpaginated — used as the room-level fallback bundle when a room has no own beds. */
+    List<ResortRoomCategoryBedDto> getAllActive(Long resortRoomCategoryId);
 
     SuccessResponse update(ResortRoomCategoryBedEntity entity, UpdateResortRoomCategoryBedRequest request);
 

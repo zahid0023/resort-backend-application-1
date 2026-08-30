@@ -16,7 +16,7 @@ import java.util.List;
 
 /**
  * {@code resortRoom} is {@code null} when this bundle is inherited from the room's category (see
- * {@link ResortRoomPriceGroupDto#getInherited()}) — an inherited row has no resort-room-owned id of its own.
+ * {@link ResortRoomPriceGroupDto#getMainInherited()}) — an inherited row has no resort-room-owned id of its own.
  */
 @Data
 @Builder

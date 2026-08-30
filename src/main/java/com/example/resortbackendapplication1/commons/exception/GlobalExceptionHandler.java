@@ -20,6 +20,9 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -88,14 +91,53 @@ public class GlobalExceptionHandler {
 
         log.warn("Database rule violation: {}", rootMessage);
 
+        String userMessage = resolveDatabaseRuleMessage(rootMessage);
+
         ApiErrorResponse response = new ApiErrorResponse(
                 request.getHeader("X-Request-Id"),
                 HttpStatus.CONFLICT.value(),
                 "DATABASE_RULE_VIOLATION",
-                rootMessage
+                userMessage
         );
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    private static final Pattern PRICE_UNIT_SCOPE_PATTERN =
+            Pattern.compile("price_unit_id (\\d+) is not assigned to the (\\w+) price scope");
+
+    private static final Pattern DUPLICATE_ROOM_CODE_PATTERN =
+            Pattern.compile("code (\\S+) is already used by another room in resort (\\d+)");
+
+    /**
+     * Translates raw Postgres trigger {@code RAISE EXCEPTION} text (see {@link #handleDatabaseRuleViolation})
+     * into a message a client can act on without reading PL/pgSQL source. Falls back to the raw root message
+     * for any trigger text not recognized here — add a new pattern below rather than changing the trigger's
+     * wording, since the wording is also read by developers/DBAs directly in Postgres logs.
+     */
+    private String resolveDatabaseRuleMessage(String rootMessage) {
+        if (rootMessage == null) return "A database business rule was violated.";
+
+        Matcher scopeMatcher = PRICE_UNIT_SCOPE_PATTERN.matcher(rootMessage);
+        if (scopeMatcher.find()) {
+            String priceUnitId = scopeMatcher.group(1);
+            String scope = scopeMatcher.group(2);
+            String scopeLabel = scope.replace('_', ' ').toLowerCase(Locale.ROOT);
+            return "The selected price unit (id " + priceUnitId + ") can't be used for " + scopeLabel
+                    + " prices — pick a price unit that's assigned to the " + scope + " price scope.";
+        }
+
+        if (rootMessage.contains("requires the resort to have at least one weekly schedule day")) {
+            return "This resort has no weekly schedule set up yet, so weekday/weekend prices can't be validated "
+                    + "— set one via PUT /resorts/{resort-id}/weekly-schedule first, then retry.";
+        }
+
+        Matcher codeMatcher = DUPLICATE_ROOM_CODE_PATTERN.matcher(rootMessage);
+        if (codeMatcher.find()) {
+            return "Room code '" + codeMatcher.group(1) + "' is already used by another room in this resort — choose a different code.";
+        }
+
+        return rootMessage;
     }
 
     /**
@@ -152,6 +194,9 @@ public class GlobalExceptionHandler {
         }
         if (rootMessage.contains("uq_resort_room_main_price_active")) {
             return "This room already has an active main price override for this currency.";
+        }
+        if (rootMessage.contains("excl_reservations_no_overlap")) {
+            return "This room is already booked for an overlapping date range — choose different dates or a different room.";
         }
         return rootMessage;
     }

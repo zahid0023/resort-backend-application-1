@@ -28,4 +28,7 @@ public class ResortRoomBedDto {
     private Boolean isExtraBedAllowed;
 
     private Integer maxExtraBeds;
+
+    /** {@code true} when this row is the room's category's bed (the room has no own bed rows at all). */
+    private Boolean inherited;
 }

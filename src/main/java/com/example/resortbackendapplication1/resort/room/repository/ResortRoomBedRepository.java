@@ -17,4 +17,7 @@ public interface ResortRoomBedRepository extends
 
     boolean existsByResortRoomEntity_IdAndBedTypeEntity_IdAndIsActiveAndIsDeleted(
             Long resortRoomId, Long bedTypeId, Boolean isActive, Boolean isDeleted);
+
+    boolean existsByResortRoomEntity_IdAndIsActiveAndIsDeleted(
+            Long resortRoomId, Boolean isActive, Boolean isDeleted);
 }

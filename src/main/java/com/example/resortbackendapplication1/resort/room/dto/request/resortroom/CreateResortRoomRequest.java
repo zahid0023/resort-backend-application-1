@@ -3,9 +3,9 @@ package com.example.resortbackendapplication1.resort.room.dto.request.resortroom
 import com.example.resortbackendapplication1.resort.room.dto.request.resortroom.locale.ResortRoomLocaleRequest;
 import com.example.resortbackendapplication1.resort.room.dto.request.resortroombed.CreateResortRoomBedRequest;
 import com.example.resortbackendapplication1.resort.room.dto.request.resortroommeta.CreateResortRoomMetaRequest;
+import com.example.resortbackendapplication1.resort.room.dto.request.resortroomprice.CreateResortRoomMainPriceRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -33,12 +33,22 @@ public class CreateResortRoomRequest extends ResortRoomRequest {
     @NotNull
     private ResortRoomLocaleRequest locale;
 
+    /** Optional — if omitted, the room inherits its category's meta until its own is added via POST /meta. */
     @Valid
-    @NotNull
     private CreateResortRoomMetaRequest meta;
 
-    /** At least one bed configuration is required. Additional beds can be added afterward via POST /beds. */
+    /** Optional — if omitted, the room inherits its category's beds until its own are added via POST /beds. */
     @Valid
-    @NotEmpty
     private List<CreateResortRoomBedRequest> beds;
+
+    /**
+     * Optional, one entry per currency — same shape as
+     * {@link com.example.resortbackendapplication1.resort.roomcategory.dto.request.resortroomcategory.CreateResortRoomCategoryRequest#getPrices()}
+     * so the frontend can reuse the same price-entry UI for both. If omitted (or a currency is missing from
+     * this list), the room inherits that currency's price from its category until an override is added
+     * afterward via POST /prices/main. Special prices are never created here — add them afterward via
+     * POST /prices/specials.
+     */
+    @Valid
+    private List<CreateResortRoomMainPriceRequest> prices;
 }

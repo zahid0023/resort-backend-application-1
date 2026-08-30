@@ -28,6 +28,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -92,6 +93,17 @@ public class ResortRoomCategoryBedServiceImpl implements ResortRoomCategoryBedSe
                         .bedType(BedTypeMapper.toDto(entity.getBedTypeEntity()).build())
                         .build());
         return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, ALLOWED_SEARCH_FIELDS);
+    }
+
+    @Override
+    public List<ResortRoomCategoryBedDto> getAllActive(Long resortRoomCategoryId) {
+        return resortRoomCategoryBedRepository
+                .findByResortRoomCategoryEntity_IdAndIsActiveAndIsDeleted(resortRoomCategoryId, true, false)
+                .stream()
+                .map(entity -> ResortRoomCategoryBedMapper.toDto(entity)
+                        .bedType(BedTypeMapper.toDto(entity.getBedTypeEntity()).build())
+                        .build())
+                .toList();
     }
 
     @Transactional

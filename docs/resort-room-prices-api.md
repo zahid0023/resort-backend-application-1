@@ -12,32 +12,40 @@ category; for any currency with no override, the room's price for that currency 
 
 - **Main** — a room's overridden per-currency rate structure: `base_price`, `weekday_price`, and
   `weekend_price`, one row per currency the room overrides. Same shape and rules as the category's Main.
-- **Special** — any number of date-ranged rules per overridden currency. Requires the room to already have its
-  own active Main override for that currency (see [Create Resort Room Special
-  Price](#create-resort-room-special-price)) — a room can't override a special rate without first overriding
-  the base rate it layers on top of. There is no separate holiday concept: a holiday is just a Special row
-  whose `name`/`description` say so, exactly like a promotion or surcharge.
+- **Special** — any number of date-ranged rules per overridden currency. Requires *some* active main price to
+  be resolvable for that currency — the room's own, or (if the room doesn't override Main for that currency)
+  its category's (see [Create Resort Room Special Price](#create-resort-room-special-price)). There is no
+  separate holiday concept: a holiday is just a Special row whose `name`/`description` say so, exactly like a
+  promotion or surcharge.
+
+**Main and Specials are resolved independently** — for a given currency, a room can override just Main, just
+Specials, both, or neither. Whichever side has no active room-level override for that currency falls back to
+the category's bundle for that side only; the other side still uses the room's own override if it has one.
 
 **Which days of week count as WEEKDAY vs. WEEKEND is not part of this API** — same shared, resort-level
 weekly schedule the category API uses. See [Resort Room Category Prices](resort-room-category-prices-api.md)
-for the full precedence rules (Special > Weekday/Weekend > Base) — they apply identically here,
-just resolved against whichever bundle (the room's own, or its category's) `inherited` on
-[List](#list-resort-room-prices) indicates is in effect for that currency.
+for the full precedence rules (Special > Weekday/Weekend > Base) — they apply identically here, just resolved
+against whichever bundle (the room's own, or its category's) `main_inherited`/`specials_inherited` on
+[List](#list-resort-room-prices) indicates is in effect for that currency's Main/Specials respectively.
 
-**`inherited` on the [List](#list-resort-room-prices) response is the key field**: `true` means the room has no
-override for the requested currency and every field below it (`main`/`specials`) is the room's
-*category's* bundle, verbatim; `false` means every field is the room's own override rows. A `main`/`specials`
-entry from an inherited bundle has `resort_room: null`, since it isn't actually one of this room's own rows.
+**`main_inherited`/`specials_inherited` on the [List](#list-resort-room-prices) response are the key
+fields**, and are independent of each other: `true` on either means the corresponding field below
+(`main`/`specials`) is the room's *category's* data for that side, verbatim; `false` means it's the room's own
+override(s). A `main`/`specials` entry that's inherited has `resort_room: null`, since it isn't actually one of
+this room's own rows.
 
 Resort room prices are always reached nested under their owning resort room (which is itself nested under its
 resort room category); there is no top-level `/api/v1/resort-room-prices` route. Every endpoint validates the
 `{resort-id}`/`{resort-room-category-id}`/`{resort-room-id}` triple first — an unknown resort, room category, or room
 (or one that exists but belongs to a different parent) returns `404 ENTITY_NOT_FOUND`.
 
-**Main can only ever be created via [Create Resort Room Main
-Price](#create-resort-room-main-price)** — unlike the category level, there is no "first currency created
-alongside the parent" path, since a room needs no price of its own at creation time (it simply inherits).
-There is no way to delete just a currency's main override while leaving its Special overrides behind;
+**Main is usually created via [Create Resort Room Main Price](#create-resort-room-main-price)**, but a room can
+also get its first currency overrides inline, via the optional `prices` field on [Create Resort
+Room](resort-rooms-api.md#create-resort-room) (same shape as this endpoint's request body, one entry per
+currency) — same convenience [Meta](resort-rooms-api.md#resort-room-meta) and [Beds](resort-room-beds-api.md)
+also get via their own optional `meta`/`beds` create-time fields; this is purely a shortcut for setting
+overrides up front, not a separate concept from the standalone endpoint. There is no way to delete just a
+currency's main override while leaving its Special overrides behind;
 [Delete Resort Room Prices By Currency](#delete-resort-room-prices-by-currency) removes both at once, and
 reverts the room back to inheriting that currency's price from its category. **Unlike the category level,
 there is no "at least one currency must remain" restriction** — a room is allowed to have zero overrides (every
@@ -76,7 +84,7 @@ Paths above are relative to the Base URL. There is no `GET /{id}` — same reaso
 ### ResortRoomMainPrice
 
 Same shape as [ResortRoomCategoryMainPrice](resort-room-category-prices-api.md#data-model), with `resort_room`
-in place of `resort_room_category`. When a bundle is inherited (`inherited: true` on the parent [List
+in place of `resort_room_category`. When this bundle is inherited (`main_inherited: true` on the parent [List
 response](#list-resort-room-prices)), `resort_room` is `null`, since the row is really the category's, not the
 room's own.
 
@@ -188,10 +196,10 @@ Main Price](resort-room-category-prices-api.md#create-resort-room-category-main-
 Creates a Special override for the room — a date-ranged rule with its own weekday/weekend price pair, used
 both for holidays and for promotions/surcharges. Same shape and rules as [Create Resort Room Category Special
 Price](resort-room-category-prices-api.md#create-resort-room-category-special-price). **`currency_id` must
-already have an active room-level main price override** (see [Create Resort Room Main
-Price](#create-resort-room-main-price)) — otherwise the call fails with `404 ENTITY_NOT_FOUND`. This checks the
-room's *own* main override, never the category's — a room inheriting a currency entirely cannot be given a
-special override for it without first overriding that currency's main price too.
+have *some* active main price resolvable** — the room's own override, or (if the room has none) its category's
+— otherwise the call fails with `404 ENTITY_NOT_FOUND`. Unlike an earlier version of this API, this does
+**not** require the room's own Main override specifically: a room can add a Special for a currency it fully
+inherits Main from, as long as the category has an active Main price for that currency.
 
 ### Path Parameters
 
@@ -237,9 +245,10 @@ Price](resort-room-category-prices-api.md#create-resort-room-category-special-pr
 
 `GET .../rooms/{resort-room-id}/prices?currency-id={currency-id}`
 
-Returns the room's active prices for one currency — its own override bundle if it has one, otherwise its
-category's bundle. Same bucketed-by-type shape as [List Resort Room Category
-Prices](resort-room-category-prices-api.md#list-resort-room-category-prices), plus the `inherited` flag.
+Returns the room's active prices for one currency. Main and Specials are resolved independently — each is the
+room's own override if it has one, otherwise the category's. Same bucketed-by-type shape as [List Resort Room
+Category Prices](resort-room-category-prices-api.md#list-resort-room-category-prices), plus the
+`main_inherited`/`specials_inherited` flags.
 
 ### Path Parameters
 
@@ -255,13 +264,14 @@ Prices](resort-room-category-prices-api.md#list-resort-room-category-prices), pl
 |----------------|------|----------|-----------------------------------------|
 | `currency-id`  | Long | Yes      | ID of the currency to return prices for |
 
-### Response `200 OK` — room has its own override
+### Response `200 OK` — room overrides both Main and Specials
 
 ```json
 {
   "data": {
     "currency": { "id": 1, "code": "USD", "...": "..." },
-    "inherited": false,
+    "main_inherited": false,
+    "specials_inherited": false,
     "main": {
       "id": 40,
       "resort_room": { "id": 5, "code": "DLX-101", "...": "..." },
@@ -273,18 +283,55 @@ Prices](resort-room-category-prices-api.md#list-resort-room-category-prices), pl
       "weekday_days": ["..."],
       "weekend_days": ["..."]
     },
-    "specials": []
+    "specials": [
+      {
+        "id": 13,
+        "resort_room": { "id": 5, "code": "DLX-101", "...": "..." },
+        "...": "..."
+      }
+    ]
   }
 }
 ```
 
-### Response `200 OK` — room has no override, inherited from category
+### Response `200 OK` — room overrides only Specials, Main inherited from category
 
 ```json
 {
   "data": {
     "currency": { "id": 1, "code": "USD", "...": "..." },
-    "inherited": true,
+    "main_inherited": true,
+    "specials_inherited": false,
+    "main": {
+      "id": 10,
+      "resort_room": null,
+      "price_unit": { "id": 1, "code": "PER_NIGHT", "...": "..." },
+      "currency": { "id": 1, "code": "USD", "...": "..." },
+      "base_price": 200.00,
+      "weekday_price": 180.00,
+      "weekend_price": 200.00,
+      "weekday_days": ["..."],
+      "weekend_days": ["..."]
+    },
+    "specials": [
+      {
+        "id": 13,
+        "resort_room": { "id": 5, "code": "DLX-101", "...": "..." },
+        "...": "..."
+      }
+    ]
+  }
+}
+```
+
+### Response `200 OK` — room has no override at all, both inherited from category
+
+```json
+{
+  "data": {
+    "currency": { "id": 1, "code": "USD", "...": "..." },
+    "main_inherited": true,
+    "specials_inherited": true,
     "main": {
       "id": 10,
       "resort_room": null,
@@ -415,10 +462,12 @@ Soft-deletes the Special override row.
 
 `DELETE .../rooms/{resort-room-id}/prices?currency-id={currency-id}`
 
-Soft-deletes every active override for one currency — main plus any special — atomically. **Reverts
-the room to inheriting that currency's price from its category.** Unlike the category-level equivalent, there
-is no minimum-currency restriction — a room may end up with zero overrides. Fails with `404 ENTITY_NOT_FOUND`
-if `currency-id` has no active override for this room.
+Soft-deletes every active override for one currency — main and/or special, whichever side(s) the room actually
+has — atomically. **Reverts the room to inheriting that currency's price from its category for whichever side
+was deleted.** Since Main and Specials are independent, a room may have only one side overridden (e.g.
+Specials with no Main override); this still deletes it. Unlike the category-level equivalent, there is no
+minimum-currency restriction — a room may end up with zero overrides. Fails with `404 ENTITY_NOT_FOUND` only if
+`currency-id` has no active override on *either* side for this room.
 
 ### Query Parameters
 
@@ -455,7 +504,7 @@ Same structure as every other endpoint in this API:
 | HTTP Status | Error Code                 | Cause                                                                                                                                                                                                                                                                                                                                                                              |
 |-------------|-----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 400         | `INVALID_ARGUMENT`          | Missing or blank `Accept-Language` header; missing `currency-id` query parameter on [List](#list-resort-room-prices)/[Update Main](#update-resort-room-main-price)/[Delete By Currency](#delete-resort-room-prices-by-currency); missing/invalid required fields on any create/update endpoint; `weekday_price`/`weekend_price` greater than `base_price` on Main create/update |
-| 404         | `ENTITY_NOT_FOUND`          | Resort/room category/room not found for the given path triple; price not found for the given `room-id`/`id` pair on Update/Delete Special; no active override found for the given `currency-id` on [Update Main](#update-resort-room-main-price)/[Delete By Currency](#delete-resort-room-prices-by-currency); `currency_id` has no active room-level main override yet on [Create Special](#create-resort-room-special-price); the price unit or currency not found |
+| 404         | `ENTITY_NOT_FOUND`          | Resort/room category/room not found for the given path triple; price not found for the given `room-id`/`id` pair on Update/Delete Special; no active override found for the given `currency-id` on [Update Main](#update-resort-room-main-price); no active override on either side for `currency-id` on [Delete By Currency](#delete-resort-room-prices-by-currency); `currency_id` has no main price resolvable (neither the room's own nor its category's) on [Create Special](#create-resort-room-special-price); the price unit or currency not found |
 | 409         | `CONFLICT`                  | On [Create Main](#create-resort-room-main-price): the room already has an active override for the given `currency_id` — can also surface as `409 DATA_INTEGRITY_VIOLATION` on a concurrent-insert race                                                                                                                                                                            |
 | 409         | `DATA_INTEGRITY_VIOLATION`  | A foreign key or the underlying unique constraint (`uq_resort_room_main_price_active`) somehow references/duplicates a row unexpectedly — normally only reachable via the same concurrent-insert race as the category level                                                                                                                                                      |
 | 500         | `INTERNAL_SERVER_ERROR`     | The `price_unit_id` used isn't assigned to the `ROOM` price scope (see [Price unit rules](#price-unit-rules)); or the resort has no active weekly schedule for `WKD`/`WKE` yet                                                                                                                                                                                                     |

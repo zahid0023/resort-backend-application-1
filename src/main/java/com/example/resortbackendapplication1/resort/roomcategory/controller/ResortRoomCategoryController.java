@@ -2,6 +2,7 @@ package com.example.resortbackendapplication1.resort.roomcategory.controller;
 
 import com.example.resortbackendapplication1.bedtype.model.entity.BedTypeEntity;
 import com.example.resortbackendapplication1.bedtype.service.BedTypeService;
+import com.example.resortbackendapplication1.commons.utils.CollectionUtils;
 import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
 import com.example.resortbackendapplication1.currency.service.CurrencyService;
 import com.example.resortbackendapplication1.locale.model.entity.LocaleEntity;
@@ -29,7 +30,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/resorts/{resort-id}/room-categories")
@@ -72,9 +72,7 @@ public class ResortRoomCategoryController {
         UnitEntity roomSizeUnitEntity = request.getMeta().getRoomSizeUnitId() != null
                 ? unitService.getEntityById(request.getMeta().getRoomSizeUnitId())
                 : null;
-        Set<Long> bedTypeIds = request.getBeds().stream()
-                .map(CreateResortRoomCategoryBedRequest::getBedTypeId)
-                .collect(Collectors.toSet());
+        Set<Long> bedTypeIds = CollectionUtils.extractIds(request.getBeds(), CreateResortRoomCategoryBedRequest::getBedTypeId);
         List<BedTypeEntity> bedTypeEntities = bedTypeService.getAll(bedTypeIds);
 
         List<CurrencyEntity> currencyEntities = request.getPrices().stream()

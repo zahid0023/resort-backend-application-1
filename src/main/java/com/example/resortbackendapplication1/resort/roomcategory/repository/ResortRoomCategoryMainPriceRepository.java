@@ -17,6 +17,15 @@ public interface ResortRoomCategoryMainPriceRepository extends
     Optional<ResortRoomCategoryMainPriceEntity> findByResortRoomCategoryEntity_IdAndCurrencyEntity_IdAndIsActiveAndIsDeleted(
             Long resortRoomCategoryId, Long currencyId, Boolean isActive, Boolean isDeleted);
 
+    /**
+     * Plain, non-locking existence check — used by {@code ResortRoomCategoryPriceService.hasActiveMain} so a
+     * room-level {@code createSpecial} call can check whether the category has a resolvable main price without
+     * taking a write lock on the category's row (unlike {@link #findForUpdate}, which is reserved for
+     * same-aggregate write contention within the category's own create/delete flow).
+     */
+    boolean existsByResortRoomCategoryEntity_IdAndCurrencyEntity_IdAndIsActiveAndIsDeleted(
+            Long resortRoomCategoryId, Long currencyId, Boolean isActive, Boolean isDeleted);
+
     @Query("select distinct p.currencyEntity.code from ResortRoomCategoryMainPriceEntity p "
             + "where p.resortRoomCategoryEntity.id = :resortRoomCategoryId "
             + "and p.isActive = :isActive and p.isDeleted = :isDeleted")

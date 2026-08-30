@@ -5,6 +5,7 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
+import java.util.List;
 import java.util.Optional;
 
 @SuppressWarnings("unused")
@@ -17,4 +18,7 @@ public interface ResortRoomCategoryBedRepository extends
 
     boolean existsByResortRoomCategoryEntity_IdAndBedTypeEntity_IdAndIsActiveAndIsDeleted(
             Long resortRoomCategoryId, Long bedTypeId, Boolean isActive, Boolean isDeleted);
+
+    List<ResortRoomCategoryBedEntity> findByResortRoomCategoryEntity_IdAndIsActiveAndIsDeleted(
+            Long resortRoomCategoryId, Boolean isActive, Boolean isDeleted);
 }

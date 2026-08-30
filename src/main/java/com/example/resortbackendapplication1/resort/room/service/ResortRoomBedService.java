@@ -10,6 +10,9 @@ import com.example.resortbackendapplication1.resort.room.dto.response.resortroom
 import com.example.resortbackendapplication1.resort.room.model.dto.ResortRoomBedDto;
 import com.example.resortbackendapplication1.resort.room.model.entity.ResortRoomBedEntity;
 import com.example.resortbackendapplication1.resort.room.model.entity.ResortRoomEntity;
+import com.example.resortbackendapplication1.resort.roomcategory.model.dto.ResortRoomCategoryBedDto;
+
+import java.util.List;
 
 public interface ResortRoomBedService {
 
@@ -21,7 +24,13 @@ public interface ResortRoomBedService {
 
     ResortRoomBedResponse getById(Long resortRoomId, Long id);
 
-    PaginatedResponse<ResortRoomBedDto> getAll(Long resortRoomId, ResortRoomBedFilterRequest request);
+    /**
+     * If the room has zero own active bed rows, returns its category's beds instead (each entry's
+     * {@code inherited} flag is {@code true}), ignoring {@code request}'s sort/search — same simplification
+     * {@code ResortRoomPriceService.getAllGroupedByCurrency} makes for its category fallback.
+     */
+    PaginatedResponse<ResortRoomBedDto> getAll(Long resortRoomId, ResortRoomBedFilterRequest request,
+                                               List<ResortRoomCategoryBedDto> resortRoomCategoryBedsFallback);
 
     SuccessResponse update(ResortRoomBedEntity entity, UpdateResortRoomBedRequest request);
 

@@ -5,11 +5,16 @@ Base URL: `/api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}
 A resort room bed row describes one bed configuration for a [Resort Room](resort-rooms-api.md) — a platform
 [Bed Type](bed-types-api.md) (`bed_type`, e.g. `KING`/`QUEEN`/`SOFA_BED`) plus a `quantity`, and optional
 extra-bed rules (`is_extra_bed_allowed`, `max_extra_beds`). A room typically has more than one row — e.g. 1
-king bed + 1 sofa bed for the same room. **At least one bed row is required** — every resort room must be
-created with at least one bed configuration, via the required `beds` array on [Create Resort
-Room](resort-rooms-api.md#create-resort-room) — the same per-entry shape as [Create Resort Room
-Bed](#create-resort-room-bed) below, with the resort room resolved from the URL path rather than the request
-body. Additional beds are added afterward through this sub-resource.
+king bed + 1 sofa bed for the same room.
+
+**Bed rows are an optional, full-replacement override of the room's [Resort Room Category
+Beds](resort-room-category-beds-api.md)** — a room needs no bed rows of its own. `beds` is optional on [Create Resort Room](resort-rooms-api.md#create-resort-room); each entry there has
+the same shape as [Create Resort Room Bed](#create-resort-room-bed) below, minus the resort room (resolved
+from the URL path there instead). The moment a room has even one of its own active bed rows — whether added at
+creation or afterward via [Create Resort Room Bed](#create-resort-room-bed) — [List Resort Room
+Beds](#list-resort-room-beds) shows the room's own rows exclusively; the category's beds are used only when
+the room has zero of its own (see `inherited` in [Data Model](#data-model) and
+[List](#list-resort-room-beds) below). There is no partial merge between a room's own rows and its category's.
 
 Resort room beds are always reached nested under their owning resort room; there is no top-level
 `/api/v1/resort-room-beds` route. Every endpoint below also validates the
@@ -51,11 +56,12 @@ on [bed types](bed-types-api.md) directly.
 | Field                   | Type    | Required | Constraints                                                             | Description                                                                                       |
 |--------------------------|---------|----------|-----------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
 | `id`                     | Long    | —        | read-only                                                                   | Auto-generated identifier                                                                              |
-| `resort_room`            | Object  | —        | read-only; see [ResortRoom](resort-rooms-api.md)                            | The resort room this bed row belongs to. Resolved from the URL path, never a request body field       |
+| `resort_room`            | Object  | —        | read-only; see [ResortRoom](resort-rooms-api.md); `null`/omitted when this row is inherited from the category | The resort room this bed row belongs to. Resolved from the URL path, never a request body field |
 | `bed_type`               | Object  | —        | read-only; see [BedType](bed-types-api.md); resolved from `bed_type_id`     | The platform bed type this row represents. Immutable after creation                                    |
 | `quantity`               | Integer | Yes      | default 1; >= 1                                                             | Number of beds of this type                                                                             |
 | `is_extra_bed_allowed`   | Boolean | Yes      | default false                                                               | Whether an extra bed of this type can be added on request                                              |
 | `max_extra_beds`         | Integer | Yes      | default 0; >= 0                                                             | Maximum extra beds of this type allowed                                                                 |
+| `inherited`              | Boolean | —        | read-only; only meaningful on [List Resort Room Beds](#list-resort-room-beds) | `true` when the room has no bed rows of its own and this entry is actually the room's *category's* bed row instead; `false`/omitted for a room-owned row |
 
 > **Note:** `bed_type_id` (used to resolve `bed_type`) is a write-only input, supplied only at creation — see
 > [Create Resort Room Bed](#create-resort-room-bed) — and does not appear on this data model because the
@@ -171,11 +177,17 @@ a different resort room (or a resort room that belongs to a different resort roo
 
 `GET /api/v1/resorts/{resort-id}/room-categories/{resort-room-category-id}/rooms/{resort-room-id}/beds`
 
-Returns a paginated list of every active bed row belonging to the resort room. Optionally filtered to a single
-`bed_type_id`.
+Returns a paginated list of every active bed row belonging to the resort room, **if it has any of its own** —
+optionally filtered to a single `bed_type_id`. **If the room has zero active bed rows of its own, this
+instead returns its category's bed rows** (`inherited: true` on each, `resort_room` omitted since they aren't
+really this room's own rows) — see the example below. The `bed_type_id` filter, pagination, and sort are
+**not** applied to the inherited fallback list — the same simplification [List Resort Room
+Prices](resort-room-prices-api.md#list-resort-room-prices) makes for its own category fallback bundle — every
+active category bed row is returned on a single page.
 
 > **Note:** `sortBy` accepts only `createdAt` — passing any other value throws
 > `400 INVALID_ARGUMENT: Invalid sort field: <value>`. Omitting `sortBy` entirely sorts by `id` (implicit).
+> Only applies when the room has its own bed rows — see above.
 
 ### Path Parameters
 
@@ -195,14 +207,13 @@ Returns a paginated list of every active bed row belonging to the resort room. O
 | `sortBy`        | String | `id` (implicit)   | `createdAt` only   | Field to sort by                      |
 | `sortDir`       | String | `ASC`             | `ASC`, `DESC`      | Sort direction                        |
 
-### Response `200 OK`
+### Response `200 OK` — room has its own bed rows
 
 ```json
 {
   "data": [
     {
       "id": 25,
-      "resort_room": null,
       "bed_type": {
         "id": 3,
         "code": "KING",
@@ -222,7 +233,8 @@ Returns a paginated list of every active bed row belonging to the resort room. O
       },
       "quantity": 1,
       "is_extra_bed_allowed": true,
-      "max_extra_beds": 1
+      "max_extra_beds": 1,
+      "inherited": false
     }
   ],
   "current_page": 0,
@@ -240,6 +252,53 @@ Returns a paginated list of every active bed row belonging to the resort room. O
 
 > **Note:** unlike [Get Resort Room Bed](#get-resort-room-bed), list rows omit `resort_room` entirely (`null`,
 > dropped by `JsonInclude.NON_NULL`) — it's identical on every row and already known from the URL path.
+
+### Response `200 OK` — room has no beds of its own, inherited from category
+
+```json
+{
+  "data": [
+    {
+      "id": 6,
+      "bed_type": {
+        "id": 3,
+        "code": "KING",
+        "sort_order": 1,
+        "locale": {
+          "id": 5,
+          "locale": {
+            "id": 1,
+            "code": "en",
+            "name": "English",
+            "sort_order": 1
+          },
+          "name": "King Bed",
+          "description": "",
+          "sort_order": 1
+        }
+      },
+      "quantity": 1,
+      "is_extra_bed_allowed": true,
+      "max_extra_beds": 1,
+      "inherited": true
+    }
+  ],
+  "current_page": 0,
+  "total_pages": 1,
+  "total_elements": 1,
+  "page_size": 1,
+  "has_next": false,
+  "has_previous": false,
+  "sortable_fields": [
+    "createdAt"
+  ],
+  "searchable_fields": []
+}
+```
+
+`id` here (`6`) is the *category's* bed row id, not a room-level id — the room has no bed rows of its own in
+this scenario. Pagination doesn't apply to the fallback bundle (see above) — `page_size` reflects the full
+inherited list size instead of the requested `size`.
 
 ---
 

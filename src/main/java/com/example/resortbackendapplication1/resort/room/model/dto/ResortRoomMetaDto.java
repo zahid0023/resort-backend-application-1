@@ -40,4 +40,7 @@ public class ResortRoomMetaDto {
     private Integer minimumStayNights;
 
     private Integer maximumStayNights;
+
+    /** {@code true} when this room has no own meta override, so the fields above are its category's instead. */
+    private Boolean inherited;
 }

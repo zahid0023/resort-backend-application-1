@@ -76,15 +76,17 @@ public class ResortRoomPriceController {
         ResortRoomEntity resortRoomEntity = resolveRoom(resortId, resortRoomCategoryId, resortRoomId);
         CurrencyEntity currencyEntity = currencyService.getEntityById(request.getCurrencyId());
         PriceUnitEntity priceUnitEntity = priceUnitService.getEntityById(request.getPriceUnitId());
+        boolean categoryHasActiveMain = resortRoomCategoryPriceService.hasActiveMain(
+                resortRoomCategoryId, currencyEntity.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(resortRoomPriceService.createSpecial(
-                request, resortRoomEntity, currencyEntity, priceUnitEntity));
+                request, resortRoomEntity, currencyEntity, priceUnitEntity, categoryHasActiveMain));
     }
 
     /**
-     * Returns the room's own price override bundle for the currency if it has one, otherwise the room's
-     * category's bundle instead (see {@code inherited} on the response). The category fallback is resolved
-     * here, not in {@code ResortRoomPriceServiceImpl}, since a ServiceImpl must never call another entity's
-     * Service.
+     * Main and Specials are resolved independently — the room's own override is returned for whichever side it
+     * has, and the category's bundle for whichever side it doesn't (see {@code mainInherited}/
+     * {@code specialsInherited} on the response). The category fallback is resolved here, not in
+     * {@code ResortRoomPriceServiceImpl}, since a ServiceImpl must never call another entity's Service.
      */
     @GetMapping
     public ResponseEntity<?> getAll(

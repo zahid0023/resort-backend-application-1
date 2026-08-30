@@ -10,10 +10,12 @@ import com.example.resortbackendapplication1.resort.roomcategory.dto.request.res
 import com.example.resortbackendapplication1.resort.roomcategory.dto.response.resortroomcategoryprices.ResortRoomCategoryPriceCountResponse;
 import com.example.resortbackendapplication1.resort.roomcategory.dto.response.resortroomcategoryprices.ResortRoomCategoryPriceGroupResponse;
 import com.example.resortbackendapplication1.resort.roomcategory.model.entity.ResortRoomCategoryEntity;
+import com.example.resortbackendapplication1.resort.roomcategory.model.entity.ResortRoomCategoryMainPriceEntity;
 import com.example.resortbackendapplication1.resort.roomcategory.model.entity.ResortRoomCategorySpecialPriceEntity;
 import com.example.resortbackendapplication1.resort.core.model.entity.ResortWeeklyScheduleDayEntity;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Coordinates both resort room category price tables (main/special) — an intentional exception to "a
@@ -41,6 +43,23 @@ public interface ResortRoomCategoryPriceService {
                                   PriceUnitEntity priceUnitEntity);
 
     ResortRoomCategorySpecialPriceEntity getSpecialEntityById(Long resortRoomCategoryId, Long id);
+
+    /**
+     * Whether the category has an active main price for this currency — used by
+     * {@code ResortRoomPriceController.createSpecial} to resolve the room-level "some main price must be
+     * resolvable" check (the room's own, or its category's) without a ServiceImpl calling another entity's
+     * Service directly.
+     */
+    boolean hasActiveMain(Long resortRoomCategoryId, Long currencyId);
+
+    /**
+     * The category's active main price row for this currency, if any — used as the fallback when a room has
+     * no main price override of its own (e.g. by BookingController computing a reservation's total_price).
+     */
+    Optional<ResortRoomCategoryMainPriceEntity> getMainEntityByCurrency(Long resortRoomCategoryId, Long currencyId);
+
+    /** The category's active special price overrides for this currency — the fallback when a room has none of its own. */
+    List<ResortRoomCategorySpecialPriceEntity> getSpecialEntitiesByCurrency(Long resortRoomCategoryId, Long currencyId);
 
     /**
      * {@code weekdayScheduleDays}/{@code weekendScheduleDays} are the resort's current weekly schedule rows

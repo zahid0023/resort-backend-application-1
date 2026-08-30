@@ -5,6 +5,7 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
+import java.util.List;
 import java.util.Optional;
 
 @SuppressWarnings("unused")
@@ -14,6 +15,10 @@ public interface ResortRoomRepository extends
 
     Optional<ResortRoomEntity> findByResortRoomCategoryEntity_IdAndIdAndIsActiveAndIsDeleted(
             Long resortRoomCategoryId, Long id, Boolean isActive, Boolean isDeleted);
+
+    /** Backs AvailabilityService — every active room across every category of one resort, in one query. */
+    List<ResortRoomEntity> findByResortRoomCategoryEntity_ResortEntity_IdAndIsActiveAndIsDeleted(
+            Long resortId, Boolean isActive, Boolean isDeleted);
 
     /**
      * Application-level uniqueness check backing the same "unique per resort" rule the

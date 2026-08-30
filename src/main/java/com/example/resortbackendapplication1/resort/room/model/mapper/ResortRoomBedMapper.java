@@ -5,6 +5,7 @@ import com.example.resortbackendapplication1.resort.room.dto.request.resortroomb
 import com.example.resortbackendapplication1.resort.room.dto.request.resortroombed.UpdateResortRoomBedRequest;
 import com.example.resortbackendapplication1.resort.room.model.dto.ResortRoomBedDto;
 import com.example.resortbackendapplication1.resort.room.model.entity.ResortRoomBedEntity;
+import com.example.resortbackendapplication1.resort.roomcategory.model.dto.ResortRoomCategoryBedDto;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -31,6 +32,24 @@ public class ResortRoomBedMapper {
                 .id(entity.getId())
                 .quantity(entity.getQuantity())
                 .isExtraBedAllowed(entity.getIsExtraBedAllowed())
-                .maxExtraBeds(entity.getMaxExtraBeds());
+                .maxExtraBeds(entity.getMaxExtraBeds())
+                .inherited(false);
+    }
+
+    /**
+     * Converts a room CATEGORY's bed row into the room-bed DTO shape, for the "this room has no own bed
+     * rows, inherit the category's beds" fallback path. Lives here (not in a ServiceImpl) because a
+     * ServiceImpl must never depend on another entity's DTOs/services directly — see
+     * {@code ResortRoomPriceMapper.fromCategoryMain} for the same escape hatch used by prices.
+     */
+    public ResortRoomBedDto fromCategory(ResortRoomCategoryBedDto categoryDto) {
+        return ResortRoomBedDto.builder()
+                .id(categoryDto.getId())
+                .bedType(categoryDto.getBedType())
+                .quantity(categoryDto.getQuantity())
+                .isExtraBedAllowed(categoryDto.getIsExtraBedAllowed())
+                .maxExtraBeds(categoryDto.getMaxExtraBeds())
+                .inherited(true)
+                .build();
     }
 }

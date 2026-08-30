@@ -27,6 +27,15 @@ Category Special Price](resort-room-category-prices-api.md#create-resort-room-ca
 `beds`, `prices` is not embedded on this entity's `GET` responses** — fetch [List Resort Room Category
 Prices](resort-room-category-prices-api.md#list-resort-room-category-prices) separately to see them.
 
+**A resort room category is a fully-specified template that its [Resort Rooms](resort-rooms-api.md) inherit
+from.** Every resort room category always has its own `meta`, at least one `beds` row, and at least one
+`prices` entry, all required right here at creation. Each resort room underneath it, by contrast, has none of
+these required — a room inherits its category's meta/beds/prices by default, and can independently override
+any subset of them later, drifting from the category over time. Because a resort room's `meta`/`beds`/`prices`
+request fields use the exact same shapes as this entity's, a frontend can reuse the identical creation
+form/schema for both — see [How a Resort Room relates to its Resort Room
+Category](resort-rooms-api.md#how-a-resort-room-relates-to-its-resort-room-category) for the full explanation.
+
 All records support soft-delete — deleted records are hidden from all responses.
 
 **`Accept-Language` is required on every endpoint below, with no exceptions** — a request missing (or with

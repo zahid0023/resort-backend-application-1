@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -95,6 +96,27 @@ public class ResortRoomCategoryPriceServiceImpl implements ResortRoomCategoryPri
                     "This room category has no active main price for currency id: " + currencyEntity.getId()
                             + " — create a main price for this currency first");
         }
+    }
+
+    @Override
+    public boolean hasActiveMain(Long resortRoomCategoryId, Long currencyId) {
+        return resortRoomCategoryMainPriceRepository
+                .existsByResortRoomCategoryEntity_IdAndCurrencyEntity_IdAndIsActiveAndIsDeleted(
+                        resortRoomCategoryId, currencyId, true, false);
+    }
+
+    @Override
+    public Optional<ResortRoomCategoryMainPriceEntity> getMainEntityByCurrency(Long resortRoomCategoryId, Long currencyId) {
+        return resortRoomCategoryMainPriceRepository
+                .findByResortRoomCategoryEntity_IdAndCurrencyEntity_IdAndIsActiveAndIsDeleted(
+                        resortRoomCategoryId, currencyId, true, false);
+    }
+
+    @Override
+    public List<ResortRoomCategorySpecialPriceEntity> getSpecialEntitiesByCurrency(Long resortRoomCategoryId, Long currencyId) {
+        return resortRoomCategorySpecialPriceRepository
+                .findByResortRoomCategoryEntity_IdAndCurrencyEntity_IdAndIsActiveAndIsDeleted(
+                        resortRoomCategoryId, currencyId, true, false);
     }
 
     @Override
