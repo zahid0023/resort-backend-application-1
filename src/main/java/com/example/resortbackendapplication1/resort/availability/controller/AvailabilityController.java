@@ -41,7 +41,7 @@ import java.util.Objects;
  *
  * <p>Availability itself (AvailabilityService) knows nothing about pricing — it only ever answers "which rooms
  * are free for this date range." Pricing each available room for the requested currency, night by night, is
- * entirely {@link RoomPricingResolver}'s job (the same resolver {@code BookingController} uses to compute
+ * entirely {@link RoomPricingResolver}'s job (the same resolver {@code ResortBookingController} uses to compute
  * {@code total_price} at reservation-creation time, so the figure quoted here can never drift from what
  * actually gets charged) — this controller only orchestrates the call and, via
  * {@link AvailableRoomPriceMapper}, its DTO shape. Whether a room counts as "unpriceable" for the requested

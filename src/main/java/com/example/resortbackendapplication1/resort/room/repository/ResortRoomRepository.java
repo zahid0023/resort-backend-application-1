@@ -16,6 +16,10 @@ public interface ResortRoomRepository extends
     Optional<ResortRoomEntity> findByResortRoomCategoryEntity_IdAndIdAndIsActiveAndIsDeleted(
             Long resortRoomCategoryId, Long id, Boolean isActive, Boolean isDeleted);
 
+    /** Backs ResortRoomService#getEntityByResortId — for a caller that knows a room's resort but not its category. */
+    Optional<ResortRoomEntity> findByResortRoomCategoryEntity_ResortEntity_IdAndIdAndIsActiveAndIsDeleted(
+            Long resortId, Long id, Boolean isActive, Boolean isDeleted);
+
     /** Backs AvailabilityService — every active room across every category of one resort, in one query. */
     List<ResortRoomEntity> findByResortRoomCategoryEntity_ResortEntity_IdAndIsActiveAndIsDeleted(
             Long resortId, Boolean isActive, Boolean isDeleted);

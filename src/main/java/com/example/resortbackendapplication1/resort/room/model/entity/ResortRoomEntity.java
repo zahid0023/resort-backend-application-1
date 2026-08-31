@@ -2,7 +2,7 @@ package com.example.resortbackendapplication1.resort.room.model.entity;
 import com.example.resortbackendapplication1.resort.roomcategory.model.entity.ResortRoomCategoryEntity;
 
 import com.example.resortbackendapplication1.commons.model.entity.AuditableEntity;
-import com.example.resortbackendapplication1.resort.reservation.model.entity.ReservationEntity;
+import com.example.resortbackendapplication1.resort.roomreservation.model.entity.ResortRoomReservationEntity;
 import com.example.resortbackendapplication1.roomstatus.model.entity.RoomStatusEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -203,13 +203,13 @@ public class ResortRoomEntity extends AuditableEntity {
      * record, never an owned lifecycle child of the room it's booked against.
      */
     @OneToMany(mappedBy = "resortRoomEntity")
-    private Set<ReservationEntity> reservationEntities = new LinkedHashSet<>();
+    private Set<ResortRoomReservationEntity> resortRoomReservationEntities = new LinkedHashSet<>();
 
-    public void addReservationEntity(ReservationEntity entity) {
-        addChild(reservationEntities, entity, ReservationEntity::assignResortRoom, this);
+    public void addResortRoomReservationEntity(ResortRoomReservationEntity entity) {
+        addChild(resortRoomReservationEntities, entity, ResortRoomReservationEntity::assignResortRoom, this);
     }
 
-    public void removeReservationEntity(ReservationEntity entity) {
-        removeChild(reservationEntities, entity, (child, ignored) -> child.unassignResortRoom());
+    public void removeResortRoomReservationEntity(ResortRoomReservationEntity entity) {
+        removeChild(resortRoomReservationEntities, entity, (child, ignored) -> child.unassignResortRoom());
     }
 }

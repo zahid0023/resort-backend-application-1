@@ -2,7 +2,7 @@ package com.example.resortbackendapplication1.resort.availability.serviceImpl;
 
 import com.example.resortbackendapplication1.resort.availability.dto.request.availability.AvailabilityRequest;
 import com.example.resortbackendapplication1.resort.availability.service.AvailabilityService;
-import com.example.resortbackendapplication1.resort.reservation.repository.ReservationRepository;
+import com.example.resortbackendapplication1.resort.roomreservation.repository.ResortRoomReservationRepository;
 import com.example.resortbackendapplication1.resort.room.model.entity.ResortRoomEntity;
 import com.example.resortbackendapplication1.resort.room.repository.ResortRoomRepository;
 import org.springframework.stereotype.Service;
@@ -17,12 +17,12 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     private static final String AVAILABLE_ROOM_STATUS_CODE = "AVAILABLE";
 
     private final ResortRoomRepository resortRoomRepository;
-    private final ReservationRepository reservationRepository;
+    private final ResortRoomReservationRepository resortRoomReservationRepository;
 
     public AvailabilityServiceImpl(ResortRoomRepository resortRoomRepository,
-                                   ReservationRepository reservationRepository) {
+                                   ResortRoomReservationRepository resortRoomReservationRepository) {
         this.resortRoomRepository = resortRoomRepository;
-        this.reservationRepository = reservationRepository;
+        this.resortRoomReservationRepository = resortRoomReservationRepository;
     }
 
     @Override
@@ -37,7 +37,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         Set<Long> roomIds = rooms.stream().map(ResortRoomEntity::getId).collect(Collectors.toSet());
         Set<Long> occupiedRoomIds = roomIds.isEmpty()
                 ? Set.of()
-                : reservationRepository.findOccupiedResortRoomIds(roomIds, request.getCheckIn(), request.getCheckOut());
+                : resortRoomReservationRepository.findOccupiedResortRoomIds(roomIds, request.getCheckIn(), request.getCheckOut());
 
         return rooms.stream().filter(room -> isAvailable(room, occupiedRoomIds)).toList();
     }

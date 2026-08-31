@@ -54,7 +54,7 @@ public interface ResortRoomCategoryPriceService {
 
     /**
      * The category's active main price row for this currency, if any — used as the fallback when a room has
-     * no main price override of its own (e.g. by BookingController computing a reservation's total_price).
+     * no main price override of its own (e.g. by ResortBookingController computing a reservation's total_price).
      */
     Optional<ResortRoomCategoryMainPriceEntity> getMainEntityByCurrency(Long resortRoomCategoryId, Long currencyId);
 

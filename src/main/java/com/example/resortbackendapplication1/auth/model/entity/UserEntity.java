@@ -3,7 +3,6 @@ package com.example.resortbackendapplication1.auth.model.entity;
 import com.example.resortbackendapplication1.commons.model.entity.AuditableEntity;
 import com.example.resortbackendapplication1.contact.model.entity.UserEmailEntity;
 import com.example.resortbackendapplication1.contact.model.entity.UserPhoneEntity;
-import com.example.resortbackendapplication1.resort.reservation.model.entity.ReservationEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -69,20 +68,5 @@ public class UserEntity extends AuditableEntity {
 
     public void removeUserPhoneEntity(UserPhoneEntity entity) {
         removeChild(userPhoneEntities, entity, (child, ignored) -> child.unassignUser());
-    }
-
-    /**
-     * No cascade/orphanRemoval, unlike userEmailEntities/userPhoneEntities above — a reservation is an
-     * independent transactional record, never an owned lifecycle child of its customer.
-     */
-    @OneToMany(mappedBy = "userEntity")
-    private Set<ReservationEntity> reservationEntities = new LinkedHashSet<>();
-
-    public void addReservationEntity(ReservationEntity entity) {
-        addChild(reservationEntities, entity, ReservationEntity::assignUser, this);
-    }
-
-    public void removeReservationEntity(ReservationEntity entity) {
-        removeChild(reservationEntities, entity, (child, ignored) -> child.unassignUser());
     }
 }

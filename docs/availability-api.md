@@ -3,8 +3,8 @@
 Base URL: `/api/v1/resorts/{resort-id}/availability`
 
 Availability answers one question — **"which rooms in this resort are actually bookable for these dates,
-right now?"** — as a single, channel-independent read. It is not part of the Reservations API (not yet
-documented as its own `docs/*.md` — see `resort/reservation/` in the codebase); it exists so that every
+right now?"** — as a single, channel-independent read. It is not part of the Room Reservations API (not yet
+documented as its own `docs/*.md` — see `resort/roomreservation/` in the codebase); it exists so that every
 booking channel (today's POS/booker flow, and later the resort website, mobile app, or an OTA integration)
 asks the exact same question the exact same way, instead of each channel growing its own "is this room free"
 logic that can quietly drift out of sync with the others.
@@ -43,8 +43,9 @@ a customer self-serving on a website. A typical flow looks like this:
 > it's simply omitted, not returned with a false flag). The booker relays this back to the customer over the
 > same channel ("yes, we have two Standard rooms free those dates — STA-101 is 8,000 BDT total, STA-102 is
 > 7,500 BDT total" or "sorry, nothing available for those dates"), the customer picks one, and the booker
-> proceeds to create the reservation via `POST .../rooms/{room-id}/reservations` (see `BookingController`) with
-> `source = WHATSAPP` / `PHONE` / `FACEBOOK` / `WALK_IN` / etc. and `created_by` set to the booker.
+> proceeds to create the reservation via `POST /api/v1/resorts/{resort-id}/bookings` (see `ResortBookingController`,
+> with a `rooms` list of size 1 for a single-room booking) with `source = WHATSAPP` / `PHONE` / `FACEBOOK` /
+> `WALK_IN` / etc. and `created_by` set to the booker.
 
 **Why this can't just be "check the reservations table for gaps" ad hoc, per caller:** the same question gets
 asked again later by very different callers — a future `Booking API` behind the resort website (`source =
@@ -56,8 +57,8 @@ one or the other) applied identically. Centralizing it here is what makes that g
 **Why this alone doesn't prevent overbooking:** this endpoint is a **point-in-time snapshot** — nothing is
 locked or reserved by calling it. Two bookers (or a booker and a website customer) could both see `STA-101` as
 available and both attempt to create a reservation for overlapping dates a moment later. The actual
-overbooking guard is not here — it's the `excl_reservations_no_overlap` GiST exclusion constraint on the
-`reservations` table itself (see `V45__create_reservations_table.sql`), which makes the *second* conflicting
+overbooking guard is not here — it's the `excl_resort_room_reservations_no_overlap` GiST exclusion constraint on the
+`room_reservations` table itself (see `V46__create_room_reservations_table.sql`), which makes the *second* conflicting
 insert/status-transition fail atomically at the database level, race-free, regardless of what this endpoint
 returned moments earlier. This endpoint exists to make the search fast and shared, not to hand out a guarantee
 — always expect (and handle) the create step being rejected even after a room showed as available here.
@@ -116,7 +117,7 @@ frontend can render an available room with the identical component it already us
 
 ### Price
 
-Resolved by `RoomPricingResolver` — the exact same resolver `BookingController`/`BookingGroupController` use to
+Resolved by `RoomPricingResolver` — the exact same resolver `ResortBookingController` uses to
 compute a reservation's `total_price`, so the quote shown here is exactly what booking the room would charge,
 not an approximation. Main and Special prices are resolved independently (the room's own override if it has
 one, else its category's — see [Resort Room Prices API](resort-room-prices-api.md)); each night in `nights` is

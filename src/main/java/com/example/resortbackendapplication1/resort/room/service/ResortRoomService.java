@@ -33,6 +33,13 @@ public interface ResortRoomService {
 
     ResortRoomEntity getEntityById(Long resortRoomCategoryId, Long id);
 
+    /**
+     * Resort-scoped lookup (no category id) — for a caller like ResortBookingController that knows which resort
+     * a room's reservation is being created under but not which category the room itself belongs to; the
+     * category is instead derived from the returned entity's own resortRoomCategoryEntity.
+     */
+    ResortRoomEntity getEntityByResortId(Long resortId, Long id);
+
     ResortRoomResponse getById(Long resortRoomCategoryId, Long id,
                                ResortRoomCategoryMetaDto resortRoomCategoryMetaFallback,
                                List<ResortRoomCategoryBedDto> resortRoomCategoryBedsFallback);

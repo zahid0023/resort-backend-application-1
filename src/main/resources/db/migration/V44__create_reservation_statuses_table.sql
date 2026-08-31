@@ -1,6 +1,6 @@
--- Reservation lifecycle status. `blocks_availability` on `reservations` (V45) is derived from this table's
--- code via trigger, so the codes below are relied on by name, not just by seed convenience — renaming a code
--- requires updating fn_sync_reservation_blocks_availability in V45 too.
+-- Reservation lifecycle status. `blocks_availability` on `resort_room_reservations` (V46) is derived from this
+-- table's code via trigger, so the codes below are relied on by name, not just by seed convenience — renaming
+-- a code requires updating fn_sync_resort_room_reservation_blocks_availability in V46 too.
 create table if not exists reservation_statuses
 (
     id         bigserial primary key,

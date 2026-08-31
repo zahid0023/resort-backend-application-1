@@ -20,7 +20,9 @@ public class CorsConfig {
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:3000",
                 "http://localhost:3001",
-                "http://localhost:8080"
+                "http://localhost:8080",
+                "http://192.168.68.51:3001",
+                "https://resort-owner-platform-application-1.vercel.app"
         ));
 
         // Allow HTTP methods

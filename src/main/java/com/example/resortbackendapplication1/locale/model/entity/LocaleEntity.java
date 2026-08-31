@@ -14,7 +14,7 @@ import com.example.resortbackendapplication1.facility.model.entity.FacilityScope
 import com.example.resortbackendapplication1.price.model.entity.PriceScopeLocaleEntity;
 import com.example.resortbackendapplication1.price.model.entity.PriceUnitLocaleEntity;
 import com.example.resortbackendapplication1.price.model.entity.FacilityPriceTypeLocaleEntity;
-import com.example.resortbackendapplication1.reservation.model.entity.ReservationSourceLocaleEntity;
+import com.example.resortbackendapplication1.bookingsource.model.entity.BookingSourceLocaleEntity;
 import com.example.resortbackendapplication1.reservation.model.entity.ReservationStatusLocaleEntity;
 import com.example.resortbackendapplication1.resort.address.model.entity.ResortAddressLocaleEntity;
 import com.example.resortbackendapplication1.resort.core.model.entity.ResortBasicInfoLocaleEntity;
@@ -157,7 +157,7 @@ public class LocaleEntity extends AuditableEntity {
     private Set<RoomStatusLocaleEntity> roomStatusLocaleEntities = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "localeEntity")
-    private Set<ReservationSourceLocaleEntity> reservationSourceLocaleEntities = new LinkedHashSet<>();
+    private Set<BookingSourceLocaleEntity> bookingSourceLocaleEntities = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "localeEntity")
     private Set<ReservationStatusLocaleEntity> reservationStatusLocaleEntities = new LinkedHashSet<>();
@@ -510,12 +510,12 @@ public class LocaleEntity extends AuditableEntity {
     // ReservationSource Locale relationship helpers
     // -------------------------------------------------------------------------
 
-    public void addReservationSourceLocaleEntity(ReservationSourceLocaleEntity entity) {
-        addChild(reservationSourceLocaleEntities, entity, ReservationSourceLocaleEntity::assignLocale, this);
+    public void addBookingSourceLocaleEntity(BookingSourceLocaleEntity entity) {
+        addChild(bookingSourceLocaleEntities, entity, BookingSourceLocaleEntity::assignLocale, this);
     }
 
-    public void removeReservationSourceLocaleEntity(ReservationSourceLocaleEntity entity) {
-        removeChild(reservationSourceLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
+    public void removeBookingSourceLocaleEntity(BookingSourceLocaleEntity entity) {
+        removeChild(bookingSourceLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
     }
 
     // -------------------------------------------------------------------------

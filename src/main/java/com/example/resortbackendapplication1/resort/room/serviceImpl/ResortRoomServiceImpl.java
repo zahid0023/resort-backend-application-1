@@ -160,6 +160,12 @@ public class ResortRoomServiceImpl implements ResortRoomService {
     }
 
     @Override
+    public ResortRoomEntity getEntityByResortId(Long resortId, Long id) {
+        return resortRoomRepository.findByResortRoomCategoryEntity_ResortEntity_IdAndIdAndIsActiveAndIsDeleted(resortId, id, true, false)
+                .orElseThrow(() -> new EntityNotFoundException("ResortRoom not found with id: " + id));
+    }
+
+    @Override
     public ResortRoomResponse getById(Long resortRoomCategoryId, Long id,
                                       ResortRoomCategoryMetaDto resortRoomCategoryMetaFallback,
                                       List<ResortRoomCategoryBedDto> resortRoomCategoryBedsFallback) {

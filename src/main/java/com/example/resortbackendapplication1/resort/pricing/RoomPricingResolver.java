@@ -69,7 +69,7 @@ public class RoomPricingResolver {
     /**
      * Same resolution as {@link #resolve}, broken out night by night instead of summed. Throws when the room
      * (and its category) has no resolvable Main price for the currency — the right behavior for a caller like
-     * {@code BookingController} where an unpriceable room at reservation-creation time is a genuine error.
+     * {@code ResortBookingController} where an unpriceable room at reservation-creation time is a genuine error.
      */
     public NightlyResult resolveNightly(ResortEntity resortEntity, ResortRoomEntity resortRoomEntity, Long resortRoomCategoryId,
                                         Long currencyId, LocalDate checkIn, LocalDate checkOut) {

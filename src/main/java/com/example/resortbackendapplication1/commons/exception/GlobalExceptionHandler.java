@@ -195,7 +195,7 @@ public class GlobalExceptionHandler {
         if (rootMessage.contains("uq_resort_room_main_price_active")) {
             return "This room already has an active main price override for this currency.";
         }
-        if (rootMessage.contains("excl_reservations_no_overlap")) {
+        if (rootMessage.contains("excl_resort_room_reservations_no_overlap")) {
             return "This room is already booked for an overlapping date range — choose different dates or a different room.";
         }
         return rootMessage;
