@@ -164,11 +164,13 @@ public class ResortRoomReservationEntity extends AuditableEntity {
 
     /**
      * Free-text reason captured on the transition that produced this row's status (e.g. why it's CANCELLED or
-     * NO_SHOW). Null on every row whose status was never explained. Not carried forward from the row this one
-     * supersedes; each row's reason describes only its own transition.
+     * NO_SHOW). Empty string ("") on every row whose status was never explained. Not carried forward from the
+     * row this one supersedes; each row's reason describes only its own transition.
      */
-    @Column(name = "cancellation_reason", columnDefinition = "text")
-    private String cancellationReason;
+    @NotNull
+    @ColumnDefault("''")
+    @Column(name = "cancellation_reason", nullable = false, columnDefinition = "text")
+    private String cancellationReason = "";
 
     /**
      * True for statuses that occupy the room (PENDING/CONFIRMED/CHECKED_IN); false for statuses that free it

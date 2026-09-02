@@ -43,22 +43,20 @@ public class ResortRoomReservationServiceImpl implements ResortRoomReservationSe
     }
 
     @Override
-    public List<ResortRoomReservationEntity> initialize(List<CreateResortRoomReservationRequest> request,
-                                                        ResortBookingEntity resortBookingEntity,
-                                                        Map<Long, ResortRoomEntity> resortRoomEntityMap,
-                                                        Map<Long, ReservationStatusEntity> reservationStatusEntityMap,
-                                                        CurrencyEntity currencyEntity) {
-        return request.stream()
-                .map(roomRequest -> buildAndAttach(roomRequest, resortBookingEntity, resortRoomEntityMap,
-                        reservationStatusEntityMap, currencyEntity))
-                .toList();
+    public void attachReservationEntities(List<CreateResortRoomReservationRequest> request,
+                                   ResortBookingEntity resortBookingEntity,
+                                   Map<Long, ResortRoomEntity> resortRoomEntityMap,
+                                   Map<Long, ReservationStatusEntity> reservationStatusEntityMap,
+                                   CurrencyEntity currencyEntity) {
+        request.forEach(roomRequest -> buildAndAttach(roomRequest, resortBookingEntity, resortRoomEntityMap,
+                reservationStatusEntityMap, currencyEntity));
     }
 
-    private ResortRoomReservationEntity buildAndAttach(CreateResortRoomReservationRequest roomRequest,
-                                                       ResortBookingEntity resortBookingEntity,
-                                                       Map<Long, ResortRoomEntity> resortRoomEntityMap,
-                                                       Map<Long, ReservationStatusEntity> reservationStatusEntityMap,
-                                                       CurrencyEntity currencyEntity) {
+    private void buildAndAttach(CreateResortRoomReservationRequest roomRequest,
+                                ResortBookingEntity resortBookingEntity,
+                                Map<Long, ResortRoomEntity> resortRoomEntityMap,
+                                Map<Long, ReservationStatusEntity> reservationStatusEntityMap,
+                                CurrencyEntity currencyEntity) {
         ResortRoomEntity resortRoomEntity = resortRoomEntityMap.get(roomRequest.getResortRoomId());
         ReservationStatusEntity reservationStatusEntity = reservationStatusEntityMap.get(roomRequest.getReservationStatusId());
         Long resortRoomCategoryId = resortRoomEntity.getResortRoomCategoryEntity().getId();
@@ -67,11 +65,14 @@ public class ResortRoomReservationServiceImpl implements ResortRoomReservationSe
                 resortRoomEntity.getResortRoomCategoryEntity().getResortEntity(), resortRoomEntity, resortRoomCategoryId,
                 currencyEntity.getId(), roomRequest.getCheckIn(), roomRequest.getCheckOut());
 
-        ResortRoomReservationEntity entity = ResortRoomReservationMapper.create(roomRequest, reservationStatusEntity,
-                currencyEntity, pricing.priceUnitEntity(), pricing.nights());
+        ResortRoomReservationEntity entity = ResortRoomReservationMapper.create(roomRequest);
+        entity.setReservationStatusEntity(reservationStatusEntity);
+        entity.setCurrencyEntity(currencyEntity);
+        entity.setPriceUnitEntity(pricing.priceUnitEntity());
+        ResortRoomReservationMapper.applyPricing(entity, pricing.nights());
         resortRoomEntity.addResortRoomReservationEntity(entity);
+
         resortBookingEntity.addResortRoomReservationEntity(entity);
-        return entity;
     }
 
     @Override

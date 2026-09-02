@@ -1,5 +1,6 @@
 package com.example.resortbackendapplication1.resort.booking.controller;
 
+import com.example.resortbackendapplication1.auth.dto.request.RegistrationRequest;
 import com.example.resortbackendapplication1.auth.model.entity.UserEntity;
 import com.example.resortbackendapplication1.auth.service.UserService;
 import com.example.resortbackendapplication1.bookingsource.model.entity.BookingSourceEntity;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.SecureRandom;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -36,12 +38,17 @@ import java.util.stream.Collectors;
  * one new ResortBookingEntity so they can be shown together afterward (a "group of one" for a lone room, for
  * consistency — every reservation belongs to a booking).
  *
- * <p>booking_source_id/customer_username/notes/currency_id are booking-level — booking_source_id in particular
+ * <p>booking_source_id/email/phone_number/notes/currency_id are booking-level — booking_source_id in particular
  * is owned exclusively by the booking, never duplicated per room (a room resolves its channel by reaching
  * through its booking); every room in a booking shares one currency. check_in/check_out/reservation_status_id/
  * notes on each room entry are that room's own, so rooms in the same booking need not share a stay window or
  * even a reservation status; each room's effective price (room override, else category's) is resolved inside
  * {@code ResortRoomReservationServiceImpl}, via {@code RoomPricingResolver}, not here.
+ *
+ * <p>The customer is resolved by a find-or-create on username: if {@code email} is present, it (not
+ * {@code phone_number}) is used as the username to look up/create the customer; otherwise {@code phone_number}
+ * is used. If no user exists yet for that username, one is registered on the fly with a random password (see
+ * {@link #registerCustomer}) rather than requiring the booker to register the customer separately first.
  */
 @RestController
 @RequestMapping("/api/v1/resorts/{resort-id}/bookings")
@@ -71,13 +78,20 @@ public class ResortBookingController {
         this.currencyService = currencyService;
     }
 
-    @PostMapping
-    public ResponseEntity<?> create(
+    @PostMapping("/pos")
+    public ResponseEntity<?> createPosBooking(
             @PathVariable("resort-id") Long resortId,
             @Valid @RequestBody CreateResortBookingRequest request) {
         ResortEntity resortEntity = resortService.getEntityById(resortId);
 
-        UserEntity customerEntity = userService.getUserByUsername(request.getCustomerUsername());
+        String userName = request.getEmail() != null && !request.getEmail().isEmpty()
+                ? request.getEmail()
+                : request.getPhoneNumber();
+
+        UserEntity userEntity = userService.existsByUsername(userName)
+                ? userService.getUserByUsername(userName)
+                : registerCustomer(userName);
+
         BookingSourceEntity bookingSourceEntity = bookingSourceService.getEntityById(request.getBookingSourceId());
         CurrencyEntity currencyEntity = currencyService.getEntityById(request.getCurrencyId());
 
@@ -92,9 +106,36 @@ public class ResortBookingController {
                 .collect(Collectors.toMap(Function.identity(), reservationStatusService::getEntityById));
 
         SuccessResponse response = resortBookingService.createPosBooking(
-                request, resortEntity, customerEntity, bookingSourceEntity, request.getRooms(),
+                request, resortEntity, userEntity, bookingSourceEntity, request.getRooms(),
                 resortRoomEntityMap, reservationStatusEntityMap, currencyEntity);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    private static final String PASSWORD_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private static final int PASSWORD_LENGTH = 7;
+    private static final SecureRandom PASSWORD_RANDOM = new SecureRandom();
+
+    /**
+     * Registers a new customer on the fly with {@code userName} (the email or phone number the booker supplied)
+     * as the username and a random password — the manual reservation flow's find-or-create: if no user exists
+     * yet for that email/phone, one is created here rather than requiring the booker to register the customer
+     * separately first.
+     */
+    private UserEntity registerCustomer(String userName) {
+        RegistrationRequest registrationRequest = new RegistrationRequest();
+        registrationRequest.setUserName(userName);
+        String password = generateRandomPassword();
+        registrationRequest.setPassword(password);
+        registrationRequest.setConfirmPassword(password);
+        SuccessResponse response = userService.registerUser(registrationRequest);
+        return userService.getUserById(response.getId());
+    }
+
+    private String generateRandomPassword() {
+        return PASSWORD_RANDOM.ints(PASSWORD_LENGTH, 0, PASSWORD_CHARACTERS.length())
+                .mapToObj(PASSWORD_CHARACTERS::charAt)
+                .map(String::valueOf)
+                .collect(Collectors.joining());
     }
 }

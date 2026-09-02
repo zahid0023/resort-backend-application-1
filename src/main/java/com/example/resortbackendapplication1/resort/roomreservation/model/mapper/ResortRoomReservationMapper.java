@@ -1,8 +1,5 @@
 package com.example.resortbackendapplication1.resort.roomreservation.model.mapper;
 
-import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
-import com.example.resortbackendapplication1.price.model.entity.PriceUnitEntity;
-import com.example.resortbackendapplication1.reservation.model.entity.ReservationStatusEntity;
 import com.example.resortbackendapplication1.resort.pricing.PricingCalculator;
 import com.example.resortbackendapplication1.resort.roomreservation.dto.request.roomreservation.CreateResortRoomReservationGuestRequest;
 import com.example.resortbackendapplication1.resort.roomreservation.dto.request.roomreservation.CreateResortRoomReservationRequest;
@@ -22,24 +19,22 @@ import java.util.List;
 @UtilityClass
 public class ResortRoomReservationMapper {
 
-    public ResortRoomReservationEntity create(CreateResortRoomReservationRequest request,
-                                              ReservationStatusEntity reservationStatusEntity,
-                                              CurrencyEntity currencyEntity,
-                                              PriceUnitEntity priceUnitEntity,
-                                              List<PricingCalculator.NightlyRate> nights) {
+    public ResortRoomReservationEntity create(CreateResortRoomReservationRequest request) {
         ResortRoomReservationEntity entity = new ResortRoomReservationEntity();
-        entity.setReservationStatusEntity(reservationStatusEntity);
         entity.setCheckIn(request.getCheckIn());
         entity.setCheckOut(request.getCheckOut());
         entity.setAdultCount(request.getAdultCount());
         entity.setChildCount(request.getChildCount());
-        entity.setCurrencyEntity(currencyEntity);
-        entity.setPriceUnitEntity(priceUnitEntity);
-        entity.setTotalPrice(sumNightlyPrices(nights));
         entity.setNotes(request.getNotes() != null ? request.getNotes() : "");
         mapGuests(entity, request.getGuests());
-        mapNightlyPrices(entity, nights);
         return entity;
+    }
+
+    /** Resolved separately from {@code create} since nightly pricing comes from RoomPricingResolver, not the request. */
+    public void applyPricing(ResortRoomReservationEntity entity,
+                             List<PricingCalculator.NightlyRate> nights) {
+        entity.setTotalPrice(sumNightlyPrices(nights));
+        mapNightlyPrices(entity, nights);
     }
 
     private BigDecimal sumNightlyPrices(List<PricingCalculator.NightlyRate> nights) {
@@ -49,30 +44,36 @@ public class ResortRoomReservationMapper {
     }
 
     private void mapGuests(ResortRoomReservationEntity entity, List<CreateResortRoomReservationGuestRequest> guests) {
-        int sortOrder = 0;
-        for (CreateResortRoomReservationGuestRequest guest : guests) {
-            ResortRoomReservationGuestEntity guestEntity = new ResortRoomReservationGuestEntity();
-            guestEntity.setName(guest.getName());
-            guestEntity.setGuestType(guest.getGuestType());
-            guestEntity.setSortOrder(sortOrder++);
-            entity.addResortRoomReservationGuestEntity(guestEntity);
-        }
+        guests.stream()
+                .map(ResortRoomReservationMapper::toGuestEntity)
+                .forEach(entity::addResortRoomReservationGuestEntity);
+    }
+
+    private ResortRoomReservationGuestEntity toGuestEntity(CreateResortRoomReservationGuestRequest guest) {
+        ResortRoomReservationGuestEntity guestEntity = new ResortRoomReservationGuestEntity();
+        guestEntity.setName(guest.getName());
+        guestEntity.setGuestType(guest.getGuestType());
+        guestEntity.setSortOrder(guest.getSortOrder());
+        return guestEntity;
     }
 
     private void mapNightlyPrices(ResortRoomReservationEntity entity, List<PricingCalculator.NightlyRate> nights) {
-        for (PricingCalculator.NightlyRate night : nights) {
-            ResortRoomReservationNightlyPriceEntity nightlyPriceEntity = new ResortRoomReservationNightlyPriceEntity();
-            nightlyPriceEntity.setNightDate(night.date());
-            nightlyPriceEntity.setRateType(night.rateType());
-            nightlyPriceEntity.setPrice(night.price());
-            entity.addResortRoomReservationNightlyPriceEntity(nightlyPriceEntity);
-        }
+        nights.stream()
+                .map(ResortRoomReservationMapper::toNightlyPriceEntity)
+                .forEach(entity::addResortRoomReservationNightlyPriceEntity);
+    }
+
+    private ResortRoomReservationNightlyPriceEntity toNightlyPriceEntity(PricingCalculator.NightlyRate night) {
+        ResortRoomReservationNightlyPriceEntity nightlyPriceEntity = new ResortRoomReservationNightlyPriceEntity();
+        nightlyPriceEntity.setNightDate(night.date());
+        nightlyPriceEntity.setRateType(night.rateType());
+        nightlyPriceEntity.setPrice(night.price());
+        return nightlyPriceEntity;
     }
 
     private List<ResortRoomReservationGuestDto> activeGuestDtos(ResortRoomReservationEntity entity) {
         return entity.getResortRoomReservationGuestEntities().stream()
                 .filter(guest -> Boolean.TRUE.equals(guest.getIsActive()) && Boolean.FALSE.equals(guest.getIsDeleted()))
-                .sorted(Comparator.comparing(ResortRoomReservationGuestEntity::getSortOrder))
                 .map(guest -> ResortRoomReservationGuestDto.builder()
                         .name(guest.getName())
                         .guestType(guest.getGuestType())

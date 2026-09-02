@@ -19,4 +19,6 @@ public interface UserService extends UserDetailsService {
     UserEntity getAuthenticatedUserEntity();
 
     UserEntity getUserByUsername(String username);
+
+    Boolean existsByUsername(String username);
 }

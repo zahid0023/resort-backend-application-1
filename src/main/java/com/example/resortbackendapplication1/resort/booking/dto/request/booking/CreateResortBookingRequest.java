@@ -14,11 +14,15 @@ import java.util.List;
 
 /**
  * Books 2+ rooms — possibly across different resort room categories — in one transaction, tagged with one new
- * ResortBookingEntity. booking_source_id/customer_username/notes/currency_id are booking-level, owned
+ * ResortBookingEntity. booking_source_id/email/phone_number/notes/currency_id are booking-level, owned
  * exclusively by the booking (never duplicated per room — see ResortBookingEntity#getBookingSourceEntity; every
  * room in a booking is charged in the same currency). Each entry in {@code rooms} picks its own room+dates+
  * occupancy+reservation_status_id+notes (see CreateResortRoomReservationRequest) — rooms in the same booking
  * are not required to share a stay window or even a reservation status.
+ *
+ * <p>{@code phone_number} is required; {@code email} is optional. The customer is resolved (or registered on
+ * the fly if none exists yet) by username — {@code email} when present, else {@code phone_number} — see
+ * {@code ResortBookingController#createPosBooking}.
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -26,7 +30,9 @@ import java.util.List;
 public class CreateResortBookingRequest extends ResortBookingRequest {
 
     @NotBlank
-    private String customerUsername;
+    private String phoneNumber;
+
+    private String email;
 
     @NotNull
     private Long bookingSourceId;

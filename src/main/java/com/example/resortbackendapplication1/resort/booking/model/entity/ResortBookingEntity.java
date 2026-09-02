@@ -14,6 +14,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
@@ -36,15 +37,37 @@ import static com.example.resortbackendapplication1.commons.model.entity.EntityR
 @Table(name = "resort_bookings")
 public class ResortBookingEntity extends AuditableEntity {
 
+    @Setter(AccessLevel.NONE)
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "resort_id", nullable = false)
     private ResortEntity resortEntity;
 
+    /** Internal — call via {@link ResortEntity#addResortBookingEntity}. */
+    public void assignResort(ResortEntity resortEntity) {
+        this.resortEntity = resortEntity;
+    }
+
+    /** Internal — call via {@link ResortEntity#removeResortBookingEntity}. */
+    public void unassignResort() {
+        this.resortEntity = null;
+    }
+
+    @Setter(AccessLevel.NONE)
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "customer_id", nullable = false)
     private UserEntity userEntity;
+
+    /** Internal — call via {@link UserEntity#addResortBookingEntity}. */
+    public void assignUser(UserEntity userEntity) {
+        this.userEntity = userEntity;
+    }
+
+    /** Internal — call via {@link UserEntity#removeResortBookingEntity}. */
+    public void unassignUser() {
+        this.userEntity = null;
+    }
 
     /**
      * Human-readable code (e.g. "BK00000123") a customer can quote back over phone/WhatsApp instead of this
@@ -59,10 +82,21 @@ public class ResortBookingEntity extends AuditableEntity {
      * by the booking, not duplicated per room reservation; a room reservation resolves its channel by reaching
      * through {@code resortBookingEntity.getBookingSourceEntity()} rather than storing its own.
      */
+    @Setter(AccessLevel.NONE)
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "booking_source_id", nullable = false)
     private BookingSourceEntity bookingSourceEntity;
+
+    /** Internal — call via {@link BookingSourceEntity#addResortBookingEntity}. */
+    public void assignBookingSource(BookingSourceEntity bookingSourceEntity) {
+        this.bookingSourceEntity = bookingSourceEntity;
+    }
+
+    /** Internal — call via {@link BookingSourceEntity#removeResortBookingEntity}. */
+    public void unassignBookingSource() {
+        this.bookingSourceEntity = null;
+    }
 
     @NotNull
     @ColumnDefault("''")

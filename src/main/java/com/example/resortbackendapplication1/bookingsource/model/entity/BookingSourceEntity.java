@@ -1,6 +1,7 @@
 package com.example.resortbackendapplication1.bookingsource.model.entity;
 
 import com.example.resortbackendapplication1.commons.model.entity.AuditableEntity;
+import com.example.resortbackendapplication1.resort.booking.model.entity.ResortBookingEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -43,5 +44,17 @@ public class BookingSourceEntity extends AuditableEntity {
 
     public void removeBookingSourceLocaleEntity(BookingSourceLocaleEntity entity) {
         removeChild(bookingSourceLocaleEntities, entity, (child, ignored) -> child.unassignBookingSource());
+    }
+
+    /** No cascade — a booking is a historical record of a channel, not owned by it. */
+    @OneToMany(mappedBy = "bookingSourceEntity")
+    private Set<ResortBookingEntity> resortBookingEntities = new LinkedHashSet<>();
+
+    public void addResortBookingEntity(ResortBookingEntity entity) {
+        addChild(resortBookingEntities, entity, ResortBookingEntity::assignBookingSource, this);
+    }
+
+    public void removeResortBookingEntity(ResortBookingEntity entity) {
+        removeChild(resortBookingEntities, entity, (child, ignored) -> child.unassignBookingSource());
     }
 }

@@ -28,19 +28,20 @@ public interface ResortBookingService {
      * {@code ResortRoomReservationService} directly (a deliberate, named exception to the usual
      * controller-orchestrates-cross-domain rule) — a reservation's whole purpose is to serve availability and
      * booking, so booking is the one caller allowed to reach it directly rather than going through the
-     * controller. {@code request}/{@code resortEntity}/{@code customerEntity}/{@code bookingSourceEntity} are
+     * controller. {@code request}/{@code resortEntity}/{@code userEntity}/{@code bookingSourceEntity} are
      * booking-level; {@code roomRequests} plus the two lookup maps are handed straight through to
-     * {@code ResortRoomReservationService#initialize} so this method can attach the reservations to the new
+     * {@code ResortRoomReservationService#attachReservationEntities} so this method can attach the reservations to the new
      * booking and let the save cascade insert everything in one transaction. {@code currencyEntity} is shared
      * by every room, since a booking is charged in one currency.
      *
+     * @param userEntity the customer the booking is for, looked up by username
      * @return a SuccessResponse with {@code id} set to the new booking's id — there is no GET /{id} endpoint to
      * follow up with (removed deliberately, see ResortBookingController), so the response body doesn't need to
      * carry the full nested booking either
      */
     SuccessResponse createPosBooking(CreateResortBookingRequest request,
                                      ResortEntity resortEntity,
-                                     UserEntity customerEntity,
+                                     UserEntity userEntity,
                                      BookingSourceEntity bookingSourceEntity,
                                      List<CreateResortRoomReservationRequest> roomRequests,
                                      Map<Long, ResortRoomEntity> resortRoomEntityMap,

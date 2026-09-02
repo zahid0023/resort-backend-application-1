@@ -3,6 +3,7 @@ package com.example.resortbackendapplication1.auth.model.entity;
 import com.example.resortbackendapplication1.commons.model.entity.AuditableEntity;
 import com.example.resortbackendapplication1.contact.model.entity.UserEmailEntity;
 import com.example.resortbackendapplication1.contact.model.entity.UserPhoneEntity;
+import com.example.resortbackendapplication1.resort.booking.model.entity.ResortBookingEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -68,5 +69,17 @@ public class UserEntity extends AuditableEntity {
 
     public void removeUserPhoneEntity(UserPhoneEntity entity) {
         removeChild(userPhoneEntities, entity, (child, ignored) -> child.unassignUser());
+    }
+
+    /** No cascade — a booking is a historical record of a customer, not owned by it. */
+    @OneToMany(mappedBy = "userEntity")
+    private Set<ResortBookingEntity> resortBookingEntities = new LinkedHashSet<>();
+
+    public void addResortBookingEntity(ResortBookingEntity entity) {
+        addChild(resortBookingEntities, entity, ResortBookingEntity::assignUser, this);
+    }
+
+    public void removeResortBookingEntity(ResortBookingEntity entity) {
+        removeChild(resortBookingEntities, entity, (child, ignored) -> child.unassignUser());
     }
 }

@@ -43,20 +43,22 @@ public class ResortBookingServiceImpl implements ResortBookingService {
     @Override
     public SuccessResponse createPosBooking(CreateResortBookingRequest request,
                                             ResortEntity resortEntity,
-                                            UserEntity customerEntity,
+                                            UserEntity userEntity,
                                             BookingSourceEntity bookingSourceEntity,
                                             List<CreateResortRoomReservationRequest> roomRequests,
                                             Map<Long, ResortRoomEntity> resortRoomEntityMap,
                                             Map<Long, ReservationStatusEntity> reservationStatusEntityMap,
                                             CurrencyEntity currencyEntity) {
-        ResortBookingEntity entity = ResortBookingMapper.create(request, resortEntity, customerEntity, bookingSourceEntity, generateReferenceCode());
-        resortRoomReservationService.initialize(roomRequests, entity, resortRoomEntityMap, reservationStatusEntityMap, currencyEntity);
+        ResortBookingEntity entity = ResortBookingMapper.create(request);
+
+        resortEntity.addResortBookingEntity(entity);
+        userEntity.addResortBookingEntity(entity);
+        bookingSourceEntity.addResortBookingEntity(entity);
+
+        resortRoomReservationService.attachReservationEntities(roomRequests, entity, resortRoomEntityMap, reservationStatusEntityMap, currencyEntity);
+
         resortBookingRepository.save(entity);
         log.info("Booking created with id: {}", entity.getId());
         return new SuccessResponse(true, entity.getId());
-    }
-
-    private String generateReferenceCode() {
-        return "BK" + String.format("%08d", resortBookingRepository.nextReferenceCodeSequenceValue());
     }
 }

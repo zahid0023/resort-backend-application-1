@@ -17,4 +17,7 @@ public class CreateResortRoomReservationGuestRequest {
 
     @NotNull
     private GuestType guestType;
+
+    @NotNull
+    private Integer sortOrder;
 }

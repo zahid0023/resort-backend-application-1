@@ -2,6 +2,7 @@ package com.example.resortbackendapplication1.resort.core.model.entity;
 
 import com.example.resortbackendapplication1.commons.model.entity.AuditableEntity;
 import com.example.resortbackendapplication1.resort.address.model.entity.ResortAddressEntity;
+import com.example.resortbackendapplication1.resort.booking.model.entity.ResortBookingEntity;
 import com.example.resortbackendapplication1.resort.contact.model.entity.ResortContactEntity;
 import com.example.resortbackendapplication1.resort.facility.model.entity.ResortFacilityEntity;
 import com.example.resortbackendapplication1.resort.roomcategory.model.entity.ResortRoomCategoryEntity;
@@ -149,5 +150,25 @@ public class ResortEntity extends AuditableEntity {
 
     public void removeResortWeeklyScheduleDayEntity(ResortWeeklyScheduleDayEntity entity) {
         removeChild(resortWeeklyScheduleDayEntities, entity, (child, ignored) -> child.unassignResort());
+    }
+
+    /**
+     * No cascade — a booking is a historical record of a resort, not owned by it (contrast with the
+     * cascade = ALL collections above). See {@code ResortBookingEntity#resortRoomReservationEntities} for the
+     * same reasoning one level down.
+     */
+    @OneToMany(mappedBy = "resortEntity")
+    private Set<ResortBookingEntity> resortBookingEntities = new LinkedHashSet<>();
+
+    // -------------------------------------------------------------------------
+    // ResortBooking relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addResortBookingEntity(ResortBookingEntity entity) {
+        addChild(resortBookingEntities, entity, ResortBookingEntity::assignResort, this);
+    }
+
+    public void removeResortBookingEntity(ResortBookingEntity entity) {
+        removeChild(resortBookingEntities, entity, (child, ignored) -> child.unassignResort());
     }
 }
