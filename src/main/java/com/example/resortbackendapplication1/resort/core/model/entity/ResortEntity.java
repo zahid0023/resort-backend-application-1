@@ -5,6 +5,7 @@ import com.example.resortbackendapplication1.resort.address.model.entity.ResortA
 import com.example.resortbackendapplication1.resort.booking.model.entity.ResortBookingEntity;
 import com.example.resortbackendapplication1.resort.contact.model.entity.ResortContactEntity;
 import com.example.resortbackendapplication1.resort.facility.model.entity.ResortFacilityEntity;
+import com.example.resortbackendapplication1.resort.mail.model.entity.ResortMailConfigEntity;
 import com.example.resortbackendapplication1.resort.roomcategory.model.entity.ResortRoomCategoryEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -105,6 +106,21 @@ public class ResortEntity extends AuditableEntity {
 
     public void removeResortContactEntity(ResortContactEntity entity) {
         removeChild(resortContactEntities, entity, (child, ignored) -> child.unassignResort());
+    }
+
+    @OneToMany(mappedBy = "resortEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ResortMailConfigEntity> resortMailConfigEntities = new LinkedHashSet<>();
+
+    // -------------------------------------------------------------------------
+    // ResortMailConfig relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addResortMailConfigEntity(ResortMailConfigEntity entity) {
+        addChild(resortMailConfigEntities, entity, ResortMailConfigEntity::assignResort, this);
+    }
+
+    public void removeResortMailConfigEntity(ResortMailConfigEntity entity) {
+        removeChild(resortMailConfigEntities, entity, (child, ignored) -> child.unassignResort());
     }
 
     @OneToMany(mappedBy = "resortEntity", cascade = CascadeType.ALL, orphanRemoval = true)

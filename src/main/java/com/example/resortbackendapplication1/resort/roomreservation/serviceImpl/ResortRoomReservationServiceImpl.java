@@ -1,7 +1,5 @@
 package com.example.resortbackendapplication1.resort.roomreservation.serviceImpl;
 
-import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
-import com.example.resortbackendapplication1.commons.utils.Pagination;
 import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
 import com.example.resortbackendapplication1.currency.model.mapper.CurrencyMapper;
 import com.example.resortbackendapplication1.price.model.mapper.PriceUnitMapper;
@@ -11,27 +9,19 @@ import com.example.resortbackendapplication1.resort.booking.model.entity.ResortB
 import com.example.resortbackendapplication1.resort.pricing.RoomPricingResolver;
 import com.example.resortbackendapplication1.resort.room.model.entity.ResortRoomEntity;
 import com.example.resortbackendapplication1.resort.roomreservation.dto.request.roomreservation.CreateResortRoomReservationRequest;
-import com.example.resortbackendapplication1.resort.roomreservation.dto.request.roomreservation.ResortRoomReservationFilterRequest;
 import com.example.resortbackendapplication1.resort.roomreservation.model.dto.ResortRoomReservationDto;
 import com.example.resortbackendapplication1.resort.roomreservation.model.entity.ResortRoomReservationEntity;
-import com.example.resortbackendapplication1.resort.roomreservation.model.enums.ResortRoomReservationSortField;
 import com.example.resortbackendapplication1.resort.roomreservation.model.mapper.ResortRoomReservationMapper;
 import com.example.resortbackendapplication1.resort.roomreservation.repository.ResortRoomReservationRepository;
 import com.example.resortbackendapplication1.resort.roomreservation.service.ResortRoomReservationService;
 import com.example.resortbackendapplication1.resort.room.model.mapper.ResortRoomMapper;
-import org.jspecify.annotations.NonNull;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Service
 public class ResortRoomReservationServiceImpl implements ResortRoomReservationService {
-
-    private static final Set<String> ALLOWED_SORT_FIELDS = ResortRoomReservationSortField.allowedFields();
 
     private final ResortRoomReservationRepository resortRoomReservationRepository;
     private final RoomPricingResolver roomPricingResolver;
@@ -76,15 +66,7 @@ public class ResortRoomReservationServiceImpl implements ResortRoomReservationSe
     }
 
     @Override
-    public PaginatedResponse<ResortRoomReservationDto> getAll(Long resortId, ResortRoomReservationFilterRequest request) {
-        Pageable pageable = request.toPageable(ALLOWED_SORT_FIELDS);
-        Page<@NonNull ResortRoomReservationDto> page = resortRoomReservationRepository
-                .findByResortRoomEntity_ResortRoomCategoryEntity_ResortEntity_IdAndIsActiveAndIsDeleted(resortId, true, false, pageable)
-                .map(this::toFullDto);
-        return Pagination.buildPaginatedResponse(page, ALLOWED_SORT_FIELDS, Set.of());
-    }
-
-    private ResortRoomReservationDto toFullDto(ResortRoomReservationEntity entity) {
+    public ResortRoomReservationDto toDto(ResortRoomReservationEntity entity) {
         return ResortRoomReservationMapper.toDto(entity)
                 .resortRoom(ResortRoomMapper.toDto(entity.getResortRoomEntity()).build())
                 .reservationStatus(ReservationStatusMapper.toDto(entity.getReservationStatusEntity()).build())

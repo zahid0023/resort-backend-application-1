@@ -21,4 +21,6 @@ public interface UserService extends UserDetailsService {
     UserEntity getUserByUsername(String username);
 
     Boolean existsByUsername(String username);
+
+    SuccessResponse resetPassword(UserEntity userEntity, String rawNewPassword);
 }

@@ -2,10 +2,13 @@ package com.example.resortbackendapplication1.resort.booking.service;
 
 import com.example.resortbackendapplication1.auth.model.entity.UserEntity;
 import com.example.resortbackendapplication1.bookingsource.model.entity.BookingSourceEntity;
+import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.commons.dto.response.SuccessResponse;
 import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
 import com.example.resortbackendapplication1.reservation.model.entity.ReservationStatusEntity;
 import com.example.resortbackendapplication1.resort.booking.dto.request.booking.CreateResortBookingRequest;
+import com.example.resortbackendapplication1.resort.booking.dto.request.booking.ResortBookingFilterRequest;
+import com.example.resortbackendapplication1.resort.booking.model.dto.ResortBookingDto;
 import com.example.resortbackendapplication1.resort.core.model.entity.ResortEntity;
 import com.example.resortbackendapplication1.resort.room.model.entity.ResortRoomEntity;
 import com.example.resortbackendapplication1.resort.roomreservation.dto.request.roomreservation.CreateResortRoomReservationRequest;
@@ -35,9 +38,8 @@ public interface ResortBookingService {
      * by every room, since a booking is charged in one currency.
      *
      * @param userEntity the customer the booking is for, looked up by username
-     * @return a SuccessResponse with {@code id} set to the new booking's id — there is no GET /{id} endpoint to
-     * follow up with (removed deliberately, see ResortBookingController), so the response body doesn't need to
-     * carry the full nested booking either
+     * @return a SuccessResponse with {@code id} set to the new booking's id — see {@link #getAll} to follow up
+     * with the full detailed booking afterward
      */
     SuccessResponse createPosBooking(CreateResortBookingRequest request,
                                      ResortEntity resortEntity,
@@ -47,4 +49,6 @@ public interface ResortBookingService {
                                      Map<Long, ResortRoomEntity> resortRoomEntityMap,
                                      Map<Long, ReservationStatusEntity> reservationStatusEntityMap,
                                      CurrencyEntity currencyEntity);
+
+    PaginatedResponse<ResortBookingDto> getAll(Long resortId, ResortBookingFilterRequest request);
 }

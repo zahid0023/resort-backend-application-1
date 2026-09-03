@@ -1,12 +1,11 @@
 package com.example.resortbackendapplication1.resort.roomreservation.service;
 
-import com.example.resortbackendapplication1.commons.dto.response.PaginatedResponse;
 import com.example.resortbackendapplication1.currency.model.entity.CurrencyEntity;
 import com.example.resortbackendapplication1.reservation.model.entity.ReservationStatusEntity;
 import com.example.resortbackendapplication1.resort.room.model.entity.ResortRoomEntity;
 import com.example.resortbackendapplication1.resort.roomreservation.dto.request.roomreservation.CreateResortRoomReservationRequest;
-import com.example.resortbackendapplication1.resort.roomreservation.dto.request.roomreservation.ResortRoomReservationFilterRequest;
 import com.example.resortbackendapplication1.resort.roomreservation.model.dto.ResortRoomReservationDto;
+import com.example.resortbackendapplication1.resort.roomreservation.model.entity.ResortRoomReservationEntity;
 import com.example.resortbackendapplication1.resort.booking.model.entity.ResortBookingEntity;
 
 import java.util.List;
@@ -39,5 +38,12 @@ public interface ResortRoomReservationService {
                             Map<Long, ReservationStatusEntity> reservationStatusEntityMap,
                             CurrencyEntity currencyEntity);
 
-    PaginatedResponse<ResortRoomReservationDto> getAll(Long resortId, ResortRoomReservationFilterRequest request);
+    /**
+     * The full nested DTO (room, category, reservation status, currency, price unit, nightly prices, guests) for
+     * one reservation — exposed publicly (rather than kept private inside the ServiceImpl) so
+     * {@code ResortBookingServiceImpl}, already permitted to inject this service directly (see
+     * {@code ResortBookingService#createPosBooking}'s javadoc), can reuse it when assembling a booking's detail
+     * view instead of duplicating the nested-mapping logic.
+     */
+    ResortRoomReservationDto toDto(ResortRoomReservationEntity entity);
 }

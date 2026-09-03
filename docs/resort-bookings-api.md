@@ -1,7 +1,6 @@
 # Resort Bookings API
 
-Base URLs: `/api/v1/resorts/{resort-id}/bookings` (create a booking) and
-`/api/v1/resorts/{resort-id}/reservations` (list the resulting room reservations).
+Base URL: `/api/v1/resorts/{resort-id}/bookings` (create/list bookings).
 
 A **booking** is the single entry point for reserving one or more rooms in a resort in one transaction —
 possibly across different room categories, since a booking is not scoped to one category's URL. Booking-level
@@ -13,32 +12,51 @@ booking are **not** required to share a stay window or even a reservation status
 The customer is resolved by a find-or-create on username, where the username is either the email or the phone
 number: if `email` is present in the request, it is used as the username to look up (or, if none exists yet,
 register) the customer; otherwise `phone_number` is used. A newly registered customer gets a random,
-system-generated password — the booker never types one in.
+system-generated password — the booker never types one in, and it's never included in any API response either
+(see [password-reset-api.md](password-reset-api.md) for how the customer eventually sets a real one).
 
-Creating a booking does not return the booking itself — there is no `GET /{id}` endpoint for it. Instead, each
-room in the booking becomes its own **ResortRoomReservation** row, and those are what `GET .../reservations`
-returns (resort-wide, paginated, across every room/category). A reservation always belongs to exactly one
-booking, even a lone single-room booking (a "group of one") — reachable from a reservation via its
-`booking_id`/`customer_id` fields.
+Each room in the booking becomes its own **ResortRoomReservation** row, owned by the booking. A reservation has
+**no endpoints of its own** — it's an internal building block, not a public resource: `resort_room_id` +
+`check_in`/`check_out` availability is checked by the resort's availability API, and the only way to read a
+reservation back over HTTP is nested inside its parent booking via **`GET .../bookings`**, which returns every
+booking's full detail (reference code, customer, booking source, booking-level notes, and the full nested list
+of that booking's reservations — room, category, dates, per-room notes, nightly price breakdown, guest list,
+and price — plus the booking's total price). A reservation always belongs to exactly one booking, even a lone
+single-room booking (a "group of one") — reachable from a reservation via its `booking_id`/`customer_id`
+fields. There is no `GET .../bookings/{id}` either — a single booking is found by paging/sorting through the
+list endpoint.
 
 **`Accept-Language` is required on every endpoint below, with no exceptions** — a request missing (or with a
 blank) `Accept-Language` header is rejected with `400 INVALID_ARGUMENT` before it reaches any endpoint (see
-[Error Responses](#error-responses)). Its value has no effect on either endpoint's response shape — neither a
-booking nor a reservation carries any locale-specific field itself (nested objects like `resort_room` /
+[Error Responses](#error-responses)). Its value has no effect on any endpoint's response shape — none of
+booking/reservation carries any locale-specific field of its own (nested objects like `resort_room` /
 `reservation_status` / `currency` / `price_unit` still resolve their own single-locale fields the normal way).
 
 ---
 
 ## Endpoints
 
-| Method | Path                                       | Description                           |
-|--------|--------------------------------------------|---------------------------------------|
-| POST   | `/api/v1/resorts/{resort-id}/bookings/pos` | Create a booking (POS/booker channel) |
-| GET    | `/api/v1/resorts/{resort-id}/reservations` | List / paginate room reservations     |
+| Method | Path                                       | Description                                    |
+|--------|--------------------------------------------|------------------------------------------------|
+| POST   | `/api/v1/resorts/{resort-id}/bookings/pos` | Create a booking (POS/booker channel)          |
+| GET    | `/api/v1/resorts/{resort-id}/bookings`     | List / paginate bookings, grouped, full detail |
 
 ---
 
 ## Data Model
+
+### ResortBooking
+
+| Field            | Type    | Description                                                                              |
+|------------------|---------|------------------------------------------------------------------------------------------|
+| `id`             | Long    | Auto-generated identifier                                                                |
+| `reference_code` | String  | Human-readable code (e.g. `BK00000123`) the customer can quote back over phone/WhatsApp  |
+| `customer`       | Object  | The booking's customer — `id` and `username` only (never a password or other credential) |
+| `booking_source` | Object  | Which channel the booking originated from (e.g. `WHATSAPP`, `PHONE`, `WEBSITE`)          |
+| `notes`          | String  | Booking-level notes; not null (defaults to `""`)                                         |
+| `reservations`   | Array   | One entry per room in the booking — full `ResortRoomReservation` objects, see below      |
+| `total_price`    | Decimal | Sum of every reservation's own `total_price`                                             |
+| `currency`       | Object  | Shared by every reservation in the booking                                               |
 
 ### ResortRoomReservation
 
@@ -97,6 +115,16 @@ category's) is looked up for each night of the stay and frozen onto the created 
 `email` if present in the request, otherwise `phone_number` (`phone_number` is always required; `email` is
 optional). If no user exists yet for that username, one is registered on the fly with a random,
 system-generated password.
+
+**On success, the customer is sent a best-effort notification** pointing them at the customer portal and
+telling them to use "forgot password" to set their own — by email (via the platform's configured
+`CREATE_USER_EMAIL_NOTIFICATIONS` mail provider, see [mail-providers-api.md](mail-providers-api.md)) when
+`email` was used as the username, or by WhatsApp when `phone_number` was used and that phone is already marked
+WhatsApp-reachable. Sent for every booking, new customer or returning. A missing mail provider config, a send
+failure, or a phone that isn't WhatsApp-reachable is logged and skipped rather than failing the booking — the
+notification never appears in the response body either way. The password itself is never sent in this or any
+other notification (see [password-reset-api.md](password-reset-api.md) for how the customer eventually sets
+one).
 
 ### Path Parameters
 
@@ -180,17 +208,18 @@ system-generated password.
 }
 ```
 
-`id` is the new booking's id — not a reservation id. There is no `GET /bookings/{id}`; look up the resulting
-reservations via [List Reservations](#list-reservations) instead.
+`id` is the new booking's id — not a reservation id. There is no per-booking `GET .../bookings/{id}`; follow up
+with [List Bookings](#list-bookings) for the full detailed view.
 
 ---
 
-## List Reservations
+## List Bookings
 
-`GET /api/v1/resorts/{resort-id}/reservations`
+`GET /api/v1/resorts/{resort-id}/bookings`
 
-Returns a paginated list of active (non-deleted) room reservations across the whole resort — every room and
-category in one feed, not scoped to a single booking or room.
+Returns a paginated, detailed, resort-wide list of active (non-deleted) bookings — one row per booking, each
+carrying its full array of room reservations (room, category, dates, per-room notes, nightly price breakdown,
+guest list, per-room price) plus the booking's own reference code, customer, source, notes, and total price.
 
 ### Path Parameters
 
@@ -207,8 +236,8 @@ category in one feed, not scoped to a single booking or room.
 | `sortBy`  | String | `id` (implicit) | `createdAt` (only sortable field) | Field to sort by         |
 | `sortDir` | String | `ASC`           | `ASC`, `DESC`                     | Sort direction           |
 
-> **Note:** there are no filter parameters — a room reservation is reached via this resort-wide finder rather
-> than the generic filterable-specification framework used by other list endpoints.
+> **Note:** there are no filter parameters — a booking is reached via this resort-wide finder rather than the
+> generic filterable-specification framework used by other list endpoints.
 
 ### Response `200 OK`
 
@@ -216,58 +245,80 @@ category in one feed, not scoped to a single booking or room.
 {
   "data": [
     {
-      "id": 15,
-      "customer_id": 9,
-      "booking_id": 7,
-      "resort_room": {
-        "id": 12,
-        "code": "101",
+      "id": 7,
+      "reference_code": "BK1A2B3C4D5E",
+      "customer": {
+        "id": 9,
+        "username": "jane.doe@example.com"
+      },
+      "booking_source": {
+        "id": 4,
+        "code": "WHATSAPP",
         "sort_order": 1
       },
-      "reservation_status": {
-        "id": 1,
-        "code": "PENDING",
-        "sort_order": 1
-      },
-      "check_in": "2026-09-10",
-      "check_out": "2026-09-12",
-      "guests": [
+      "notes": "Anniversary trip, late check-in requested",
+      "reservations": [
         {
-          "name": "Jane Doe",
-          "guest_type": "ADULT"
-        },
-        {
-          "name": "John Doe",
-          "guest_type": "ADULT"
+          "id": 15,
+          "customer_id": 9,
+          "booking_id": 7,
+          "resort_room": {
+            "id": 12,
+            "code": "101",
+            "sort_order": 1
+          },
+          "reservation_status": {
+            "id": 1,
+            "code": "PENDING",
+            "sort_order": 1
+          },
+          "check_in": "2026-09-10",
+          "check_out": "2026-09-12",
+          "guests": [
+            {
+              "name": "Jane Doe",
+              "guest_type": "ADULT"
+            },
+            {
+              "name": "John Doe",
+              "guest_type": "ADULT"
+            }
+          ],
+          "adult_count": 2,
+          "child_count": 0,
+          "currency": {
+            "id": 1,
+            "code": "USD",
+            "symbol": "$"
+          },
+          "price_unit": {
+            "id": 1,
+            "code": "PER_NIGHT"
+          },
+          "nights": [
+            {
+              "date": "2026-09-10",
+              "price": 120.00,
+              "rate_type": "WEEKDAY"
+            },
+            {
+              "date": "2026-09-11",
+              "price": 150.00,
+              "rate_type": "WEEKEND"
+            }
+          ],
+          "total_price": 270.00,
+          "notes": "",
+          "cancellation_reason": null,
+          "blocks_availability": true
         }
       ],
-      "adult_count": 2,
-      "child_count": 0,
+      "total_price": 270.00,
       "currency": {
         "id": 1,
         "code": "USD",
         "symbol": "$"
-      },
-      "price_unit": {
-        "id": 1,
-        "code": "PER_NIGHT"
-      },
-      "nights": [
-        {
-          "date": "2026-09-10",
-          "price": 120.00,
-          "rate_type": "WEEKDAY"
-        },
-        {
-          "date": "2026-09-11",
-          "price": 150.00,
-          "rate_type": "WEEKEND"
-        }
-      ],
-      "total_price": 270.00,
-      "notes": "Anniversary trip, late check-in requested",
-      "cancellation_reason": null,
-      "blocks_availability": true
+      }
     }
   ],
   "current_page": 0,

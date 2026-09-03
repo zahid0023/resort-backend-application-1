@@ -32,8 +32,12 @@ docker-compose up
 
 The app itself requires additional env vars beyond `.env` (not all have defaults — see
 `src/main/resources/application.yaml`): `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, `JWT_SECRET`,
-`JWT_ACCESS_EXPIRATION_MINUTES`, `JWT_REFRESH_EXPIRATION_DAYS`, `OTP_EXPIRATION_MINUTES`, `MAIL_USER_NAME`,
-`MAIL_PASSWORD`, `MAIL_SENDER_NAME`, plus optional Cloudinary/S3 credentials.
+`JWT_ACCESS_EXPIRATION_MINUTES`, `JWT_REFRESH_EXPIRATION_DAYS`, `OTP_EXPIRATION_MINUTES`, plus `CUSTOMER_PORTAL_BASE_URL`
+(defaulted — points at the not-yet-built customer portal, referenced in booking/password-reset notifications).
+Mail (SMTP) and image hosting (Cloudinary/S3) credentials are **not** environment variables — they're stored in
+the database via `mail_provider_configs`/`resort_mail_configs` and `image_hosting_provider_configs`
+respectively (see `MailSendServiceImpl`, `CloudinaryHostingStrategy`, `S3HostingStrategy`, each of which takes
+its config as a `Map<String, Object>` sourced from one of those tables, never from `application.yaml`).
 
 There is no lint/format command configured beyond the IDE-driven `qodana.yaml` static analysis profile.
 

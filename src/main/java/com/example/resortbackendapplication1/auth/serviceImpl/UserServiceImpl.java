@@ -139,4 +139,12 @@ public class UserServiceImpl implements UserService {
     public Boolean existsByUsername(String username) {
         return userRepository.existsByUsername(username);
     }
+
+    @Transactional
+    @Override
+    public SuccessResponse resetPassword(UserEntity userEntity, String rawNewPassword) {
+        userEntity.setPassword(passwordEncoder.encode(rawNewPassword));
+        userRepository.save(userEntity);
+        return new SuccessResponse(true, userEntity.getId());
+    }
 }

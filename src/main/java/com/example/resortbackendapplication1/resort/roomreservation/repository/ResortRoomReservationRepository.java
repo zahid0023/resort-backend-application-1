@@ -2,8 +2,6 @@ package com.example.resortbackendapplication1.resort.roomreservation.repository;
 
 import com.example.resortbackendapplication1.resort.roomreservation.model.entity.ResortRoomReservationEntity;
 import org.jspecify.annotations.NonNull;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -28,7 +26,4 @@ public interface ResortRoomReservationRepository extends JpaRepository<@NonNull 
     Set<Long> findOccupiedResortRoomIds(@Param("resortRoomIds") Collection<Long> resortRoomIds,
                                         @Param("checkIn") LocalDate checkIn,
                                         @Param("checkOut") LocalDate checkOut);
-
-    Page<@NonNull ResortRoomReservationEntity> findByResortRoomEntity_ResortRoomCategoryEntity_ResortEntity_IdAndIsActiveAndIsDeleted(
-            Long resortId, Boolean isActive, Boolean isDeleted, Pageable pageable);
 }
