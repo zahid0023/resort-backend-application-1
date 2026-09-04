@@ -8,6 +8,9 @@ import com.example.resortbackendapplication1.contact.model.entity.CommunicationC
 import com.example.resortbackendapplication1.contact.model.entity.ContactTypeLocaleEntity;
 import com.example.resortbackendapplication1.currency.model.entity.CurrencyLocaleEntity;
 import com.example.resortbackendapplication1.dayofweek.model.entity.DayOfWeekLocaleEntity;
+import com.example.resortbackendapplication1.payment.model.entity.PaymentMethodLocaleEntity;
+import com.example.resortbackendapplication1.payment.model.entity.PaymentStatusLocaleEntity;
+import com.example.resortbackendapplication1.payment.model.entity.PaymentProviderLocaleEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityGroupLocaleEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityLocaleEntity;
 import com.example.resortbackendapplication1.facility.model.entity.FacilityScopeLocaleEntity;
@@ -161,6 +164,15 @@ public class LocaleEntity extends AuditableEntity {
 
     @OneToMany(mappedBy = "localeEntity")
     private Set<ReservationStatusLocaleEntity> reservationStatusLocaleEntities = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "localeEntity")
+    private Set<PaymentMethodLocaleEntity> paymentMethodLocaleEntities = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "localeEntity")
+    private Set<PaymentStatusLocaleEntity> paymentStatusLocaleEntities = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "localeEntity")
+    private Set<PaymentProviderLocaleEntity> paymentProviderLocaleEntities = new LinkedHashSet<>();
 
     // -------------------------------------------------------------------------
     // Country Locale relationship helpers
@@ -528,6 +540,42 @@ public class LocaleEntity extends AuditableEntity {
 
     public void removeReservationStatusLocaleEntity(ReservationStatusLocaleEntity entity) {
         removeChild(reservationStatusLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
+    }
+
+    // -------------------------------------------------------------------------
+    // PaymentMethod Locale relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addPaymentMethodLocaleEntity(PaymentMethodLocaleEntity entity) {
+        addChild(paymentMethodLocaleEntities, entity, PaymentMethodLocaleEntity::assignLocale, this);
+    }
+
+    public void removePaymentMethodLocaleEntity(PaymentMethodLocaleEntity entity) {
+        removeChild(paymentMethodLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
+    }
+
+    // -------------------------------------------------------------------------
+    // PaymentStatus Locale relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addPaymentStatusLocaleEntity(PaymentStatusLocaleEntity entity) {
+        addChild(paymentStatusLocaleEntities, entity, PaymentStatusLocaleEntity::assignLocale, this);
+    }
+
+    public void removePaymentStatusLocaleEntity(PaymentStatusLocaleEntity entity) {
+        removeChild(paymentStatusLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
+    }
+
+    // -------------------------------------------------------------------------
+    // PaymentProvider Locale relationship helpers
+    // -------------------------------------------------------------------------
+
+    public void addPaymentProviderLocaleEntity(PaymentProviderLocaleEntity entity) {
+        addChild(paymentProviderLocaleEntities, entity, PaymentProviderLocaleEntity::assignLocale, this);
+    }
+
+    public void removePaymentProviderLocaleEntity(PaymentProviderLocaleEntity entity) {
+        removeChild(paymentProviderLocaleEntities, entity, (child, ignored) -> child.unassignLocale());
     }
 
 }
